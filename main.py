@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import Dict, List, Optional
 import math
 
-app = FastAPI(title="CNC Open Tool Guide - Werkzeug-spezifische vc", version="5.0.0")
+app = FastAPI(title="CNC Open Tool Guide - Werkzeug-Material-Filter", version="6.0.0")
 
 # --- DATENBANKEN ---
 
@@ -11,7 +11,8 @@ materials_db: Dict[str, dict] = {
     "stahl_c45": {"name": "Stahl (z.B. C45)", "kc11": 1800},
     "alu_wrought": {"name": "Aluminium (knetlegiert)", "kc11": 700},
     "rostfrei": {"name": "Rostfreier Stahl (Inox)", "kc11": 2400},
-    "titan": {"name": "Titanlegierung", "kc11": 2800}
+    "titan": {"name": "Titanlegierung", "kc11": 2800},
+    "gehaertet_55hrc": {"name": "Gehärteter Stahl (55 HRC)", "kc11": 3200} # Neu als Beispiel für gehärtetes Material
 }
 
 milling_profiles: Dict[str, dict] = {
@@ -49,7 +50,7 @@ milling_profiles: Dict[str, dict] = {
     }
 }
 
-# Werkzeuge enthalten nun ein Dictionary für materialabhängige Schnittgeschwindigkeiten (vc_per_material)
+# Werkzeuge enthalten nun zusätzlich 'suitable_materials' (Liste der erlaubten Material-IDs)
 tools_db: Dict[str, dict] = {
     "tool_vhm_12": {
         "name": "VHM Schaftfräser D12 (Standard)",
@@ -64,7 +65,8 @@ tools_db: Dict[str, dict] = {
             "alu_wrought": 600,
             "rostfrei": 140,
             "titan": 60
-        }
+        },
+        "suitable_materials": ["stahl_c45", "alu_wrought", "rostfrei", "titan"] # EXKLUDIERT gehaertet_55hrc bewusst!
     },
     "tool_schrupp_16": {
         "name": "Schruppfräser Schrupp-Pro D16",
@@ -79,7 +81,8 @@ tools_db: Dict[str, dict] = {
             "alu_wrought": 500,
             "rostfrei": 110,
             "titan": 45
-        }
+        },
+        "suitable_materials": ["stahl_c45", "rostfrei"]
     }
 }
 
@@ -107,6 +110,7 @@ class AdminToolAdd(BaseModel):
     max_overhang: float
     helix_angle: float
     vc_per_material: Dict[str, float]
+    suitable_materials: List[str]
 
 class AdminProfileAdd(BaseModel):
     profile_id: str
@@ -136,7 +140,11 @@ def calculate_advanced_milling(data: CalculationRequest):
     if not tool or not mat or not profile:
         raise HTTPException(status_code=404, detail="Ungültige Parameter übergeben")
 
-    # vc wird nun vom Werkzeug für das spezifische Material bezogen (mit Fallback, falls nicht gepflegt)
+    # Sicherheitsprüfung: Ist das Werkzeug für dieses Material freigegeben?
+    suitable_list = tool.get("suitable_materials", [])
+    if suitable_list and data.material_id not in suitable_list:
+        raise HTTPException(status_code=400, detail=f"Das Werkzeug '{tool['name']}' ist für das Material '{mat['name']}' nicht zugelassen!")
+
     base_vc = tool.get("vc_per_material", {}).get(data.material_id, 200)
     effective_vc = base_vc * profile["vc_factor"]
     
@@ -176,6 +184,10 @@ def add_material(mat: AdminMaterialAdd):
 def delete_material(material_id: str):
     if material_id in materials_db:
         del materials_db[material_id]
+        # Auch aus Eignungslisten der Werkzeuge entfernen
+        for t in tools_db.values():
+            if material_id in t.get("suitable_materials", []):
+                t["suitable_materials"].remove(material_id)
     return {"message": "Gelöscht"}
 
 @app.post("/api/admin/tool")
