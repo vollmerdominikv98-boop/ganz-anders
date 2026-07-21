@@ -3,16 +3,16 @@ from pydantic import BaseModel
 from typing import Dict, List, Optional
 import math
 
-app = FastAPI(title="CNC Open Tool Guide - Werkzeug-Material-Filter", version="6.0.0")
+app = FastAPI(title="CNC Open Tool Guide - Praxis-Favoriten & Backend-Store", version="7.0.0")
 
-# --- DATENBANKEN ---
+# --- SERVER-SEITIGE DATENBANKEN (Zentral statt Browser) ---
 
 materials_db: Dict[str, dict] = {
     "stahl_c45": {"name": "Stahl (z.B. C45)", "kc11": 1800},
     "alu_wrought": {"name": "Aluminium (knetlegiert)", "kc11": 700},
     "rostfrei": {"name": "Rostfreier Stahl (Inox)", "kc11": 2400},
     "titan": {"name": "Titanlegierung", "kc11": 2800},
-    "gehaertet_55hrc": {"name": "Gehärteter Stahl (55 HRC)", "kc11": 3200} # Neu als Beispiel für gehärtetes Material
+    "gehaertet_55hrc": {"name": "Gehärteter Stahl (55 HRC)", "kc11": 3200}
 }
 
 milling_profiles: Dict[str, dict] = {
@@ -50,7 +50,6 @@ milling_profiles: Dict[str, dict] = {
     }
 }
 
-# Werkzeuge enthalten nun zusätzlich 'suitable_materials' (Liste der erlaubten Material-IDs)
 tools_db: Dict[str, dict] = {
     "tool_vhm_12": {
         "name": "VHM Schaftfräser D12 (Standard)",
@@ -66,7 +65,7 @@ tools_db: Dict[str, dict] = {
             "rostfrei": 140,
             "titan": 60
         },
-        "suitable_materials": ["stahl_c45", "alu_wrought", "rostfrei", "titan"] # EXKLUDIERT gehaertet_55hrc bewusst!
+        "suitable_materials": ["stahl_c45", "alu_wrought", "rostfrei", "titan"]
     },
     "tool_schrupp_16": {
         "name": "Schruppfräser Schrupp-Pro D16",
@@ -86,6 +85,23 @@ tools_db: Dict[str, dict] = {
     }
 }
 
+# Zentraler Speicher für bewährte Praxis-Favoriten (mit Rating / Feedback)
+favorites_db: List[dict] = [
+    {
+        "id": "fav_1",
+        "title": "Bewährtes C45 Schruppen mit D12",
+        "tool_id": "tool_vhm_12",
+        "material_id": "stahl_c45",
+        "profile_id": "schruppen",
+        "rating": 5,
+        "feedback": "Läuft extrem stabil, leiser Lauf, Standzeit top.",
+        "rpm": 5836.62,
+        "feed_rate_vf": 1391.14,
+        "ap": 12.0,
+        "ae": 8.4
+    }
+]
+
 # --- INPUT MODELLE ---
 
 class CalculationRequest(BaseModel):
@@ -94,6 +110,18 @@ class CalculationRequest(BaseModel):
     profile_id: str
     custom_ap: Optional[float] = None
     custom_ae: Optional[float] = None
+
+class FavoriteSaveRequest(BaseModel):
+    title: str
+    tool_id: str
+    material_id: str
+    profile_id: str
+    rating: int
+    feedback: str
+    rpm: float
+    feed_rate_vf: float
+    ap: float
+    ae: float
 
 class AdminMaterialAdd(BaseModel):
     material_id: str
@@ -128,7 +156,8 @@ def get_initial_data():
     return {
         "materials": materials_db,
         "profiles": milling_profiles,
-        "tools": tools_db
+        "tools": tools_db,
+        "favorites": favorites_db
     }
 
 @app.post("/api/calculate")
@@ -140,7 +169,6 @@ def calculate_advanced_milling(data: CalculationRequest):
     if not tool or not mat or not profile:
         raise HTTPException(status_code=404, detail="Ungültige Parameter übergeben")
 
-    # Sicherheitsprüfung: Ist das Werkzeug für dieses Material freigegeben?
     suitable_list = tool.get("suitable_materials", [])
     if suitable_list and data.material_id not in suitable_list:
         raise HTTPException(status_code=400, detail=f"Das Werkzeug '{tool['name']}' ist für das Material '{mat['name']}' nicht zugelassen!")
@@ -175,6 +203,19 @@ def calculate_advanced_milling(data: CalculationRequest):
         "power_required_kw": round(power_kw, 2)
     }
 
+@app.post("/api/favorites")
+def save_favorite(fav: FavoriteSaveRequest):
+    new_fav = fav.dict()
+    new_fav["id"] = f"fav_{len(favorites_db) + 1}"
+    favorites_db.append(new_fav)
+    return {"message": "Erfolgreich in den Praxis-Favoriten gespeichert!", "favorite": new_fav}
+
+@app.delete("/api/favorites/{fav_id}")
+def delete_favorite(fav_id: str):
+    global favorites_db
+    favorites_db = [f for f in favorites_db if f["id"] != fav_id]
+    return {"message": "Favorit gelöscht"}
+
 @app.post("/api/admin/material")
 def add_material(mat: AdminMaterialAdd):
     materials_db[mat.material_id] = {"name": mat.name, "kc11": mat.kc11}
@@ -184,7 +225,6 @@ def add_material(mat: AdminMaterialAdd):
 def delete_material(material_id: str):
     if material_id in materials_db:
         del materials_db[material_id]
-        # Auch aus Eignungslisten der Werkzeuge entfernen
         for t in tools_db.values():
             if material_id in t.get("suitable_materials", []):
                 t["suitable_materials"].remove(material_id)
