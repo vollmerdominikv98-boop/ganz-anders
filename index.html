@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CNC Open Tool Guide - Praxis-Favoriten, Maschinen, Steifigkeit & RCT</title>
+    <title>CNC Open Tool Guide - Bearbeitungstiefe, Steifigkeit & RCT</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans p-6">
@@ -11,7 +11,7 @@
         <header class="border-b border-slate-800 pb-4 flex justify-between items-center">
             <div>
                 <h1 class="text-3xl font-bold tracking-tight text-emerald-400">CNC Open Tool Guide</h1>
-                <p class="text-slate-400">Herstellerunabhängiger Fräsrechner mit zentraler Praxis-Datenbank, Maschinengrenzen, Steifigkeit & RCT</p>
+                <p class="text-slate-400">Herstellerunabhängiger Fräsrechner mit Schnittaufteilung, Maschinengrenzen & RCT</p>
             </div>
             <div class="flex gap-2">
                 <button onclick="exportDataReport()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg border border-slate-700 text-sm font-medium transition" title="Berechnete Werte kopieren">
@@ -40,9 +40,7 @@
         <div id="admin-panel" class="hidden bg-slate-900 p-6 rounded-xl border border-emerald-500/30 space-y-6">
             <h2 class="text-xl font-semibold text-emerald-400">Admin-Konsole: Lokale Datenbank-Verwaltung</h2>
             
-            <!-- HIER IST DER FIX: grid-cols-1 auf kleinen Screens, 2 auf mittleren, 3 auf großen -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 border-b border-slate-800 pb-6">
-                
                 <!-- 0. Maschinen -->
                 <div class="space-y-3 bg-slate-950/50 p-4 rounded-lg border border-slate-800">
                     <h3 class="font-medium text-slate-200">Maschine</h3>
@@ -140,7 +138,7 @@
                             <input type="text" id="adm-tool-mat" value="VHM" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div class="grid grid-cols-3 gap-2 text-xs">
                         <div>
                             <label class="block text-slate-400 mb-1">Ø (mm)</label>
                             <input type="number" id="adm-tool-d" value="10" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
@@ -148,6 +146,10 @@
                         <div>
                             <label class="block text-slate-400 mb-1">Zahn (Z)</label>
                             <input type="number" id="adm-tool-z" value="4" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1" title="Auskraglänge">L Max (mm)</label>
+                            <input type="number" id="adm-tool-overhang" value="30" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
                         </div>
                     </div>
 
@@ -236,7 +238,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm text-slate-400 mb-1">Steifigkeit / Stabilität (Spannmittel & Auskragung)</label>
+                    <label class="block text-sm text-slate-400 mb-1">Steifigkeit / Stabilität</label>
                     <select id="rigidity-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" onchange="calculate()"></select>
                 </div>
 
@@ -244,6 +246,27 @@
                     <label class="block text-sm text-slate-400 mb-1">Bearbeitungsprofil</label>
                     <select id="profile-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" onchange="calculate()"></select>
                     <div id="profile-specs" class="text-xs text-slate-400 mt-2 bg-slate-950 p-2 rounded border border-slate-800"></div>
+                </div>
+
+                <!-- NEU: Schnittaufteilung & Manuelle Parameter -->
+                <div class="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                    <h3 class="text-sm font-semibold text-emerald-400 mb-2">Schnittaufteilung (Optional)</h3>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <label class="block text-[10px] text-slate-400 mb-1">Gesamttiefe (mm)</label>
+                            <input type="number" id="input-total-depth" placeholder="z.B. 25" step="0.1" oninput="calculate()" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-400 mb-1">Zustellung ap (mm)</label>
+                            <input type="number" id="input-custom-ap" placeholder="Auto" step="0.1" oninput="calculate()" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-400 mb-1">Zustellung ae (mm)</label>
+                            <input type="number" id="input-custom-ae" placeholder="Auto" step="0.1" oninput="calculate()" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white text-xs">
+                        </div>
+                    </div>
+                    <div id="depth-info" class="text-[10px] text-slate-500 mt-2">Gibt die Gesamttiefe ein, um die benötigten Schnitte zu berechnen.</div>
+                    <div id="depth-warning" class="text-[10px] font-bold text-rose-500 mt-1 hidden"></div>
                 </div>
 
                 <!-- Radial Chip Thinning (RCT) Steuerungs-Box -->
@@ -276,9 +299,16 @@
                             <span id="res-vf" class="text-xl font-bold text-emerald-400">-- mm/min</span>
                         </div>
                         <div class="bg-slate-950 p-3 rounded border border-slate-800 flex justify-between items-center">
-                            <span class="text-sm text-slate-400">Schnitttiefe / -breite (ap/ae):</span>
+                            <span class="text-sm text-slate-400">Zustellung (ap / ae):</span>
                             <span id="res-apae" class="text-lg font-semibold text-white">-- / -- mm</span>
                         </div>
+                        
+                        <!-- NEU: Ausgabe der Schnitte -->
+                        <div id="res-passes-container" class="bg-slate-950 p-3 rounded border border-slate-800 flex justify-between items-center hidden">
+                            <span class="text-sm text-slate-400">Anzahl Z-Zustellungen (Schnitte):</span>
+                            <span id="res-passes" class="text-xl font-bold text-amber-400">--</span>
+                        </div>
+
                         <div class="bg-slate-950 p-3 rounded border border-slate-800 flex justify-between items-center">
                             <span class="text-sm text-slate-400">Zeitspanvolumen (Q):</span>
                             <span id="res-q" class="text-xl font-bold text-emerald-400">-- cm³/min</span>
@@ -294,7 +324,7 @@
                 <div class="bg-slate-950 p-4 rounded-xl border border-emerald-500/30 space-y-3">
                     <h3 class="text-sm font-semibold text-emerald-400">📝 Lauf in Praxis getestet? Als Favorit speichern</h3>
                     <div>
-                        <input type="text" id="fav-title" placeholder="Titel z.B. C45 Schruppen stabil" class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-white text-xs">
+                        <input type="text" id="fav-title" placeholder="Titel z.B. C45 Tiefe Tasche perfekt" class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-white text-xs">
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <div>
@@ -307,7 +337,7 @@
                         </div>
                         <div>
                             <label class="block text-[10px] text-slate-400 mb-1">Notiz</label>
-                            <input type="text" id="fav-feedback" placeholder="z.B. Läuft super" class="w-full bg-slate-900 border border-slate-800 rounded p-1 text-white text-xs">
+                            <input type="text" id="fav-feedback" placeholder="z.B. Läuft super in 4 Schnitten" class="w-full bg-slate-900 border border-slate-800 rounded p-1 text-white text-xs">
                         </div>
                     </div>
                     <button onclick="saveCurrentAsFavorite()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-xs font-medium transition">
@@ -350,6 +380,7 @@
                     "material_schneidstoff": "VHM",
                     "diameter": 12.0,
                     "z": 4,
+                    "max_overhang": 36.0,
                     "vc_per_material": { "stahl_c45": 220, "alu_wrought": 600, "rostfrei": 140, "titan": 60 },
                     "suitable_materials": ["stahl_c45", "alu_wrought", "rostfrei", "titan"]
                 },
@@ -359,6 +390,7 @@
                     "material_schneidstoff": "VHM",
                     "diameter": 16.0,
                     "z": 3,
+                    "max_overhang": 48.0,
                     "vc_per_material": { "stahl_c45": 180, "alu_wrought": 500, "rostfrei": 110, "titan": 45 },
                     "suitable_materials": ["stahl_c45", "rostfrei"]
                 }
@@ -367,10 +399,10 @@
         };
 
         let db = loadDatabase();
-        let currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0, q: 0, power: 0, fz_eff: 0 };
+        let currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0, q: 0, power: 0, fz_eff: 0, passes: 0 };
 
         function loadDatabase() {
-            const saved = localStorage.getItem('cnc_tool_guide_db_rigidity_var');
+            const saved = localStorage.getItem('cnc_tool_guide_db_depth_var');
             if (saved) {
                 try { 
                     const parsed = JSON.parse(saved);
@@ -381,11 +413,16 @@
                     }
                 } catch (e) { console.error(e); }
             }
-            return JSON.parse(JSON.stringify(defaultDb));
+            // Falls alte Versionen geladen wurden, max_overhang sicherstellen
+            const initial = JSON.parse(JSON.stringify(defaultDb));
+            for(let tId in initial.tools) {
+                if(!initial.tools[tId].max_overhang) initial.tools[tId].max_overhang = initial.tools[tId].diameter * 3;
+            }
+            return initial;
         }
 
         function saveDatabase() {
-            localStorage.setItem('cnc_tool_guide_db_rigidity_var', JSON.stringify(db));
+            localStorage.setItem('cnc_tool_guide_db_depth_var', JSON.stringify(db));
         }
 
         function resetToDefaultData() {
@@ -408,7 +445,6 @@
         }
 
         function populateDropdowns() {
-            // Maschinen
             const machSel = document.getElementById('machine-select');
             const delMachSel = document.getElementById('del-machine-select');
             machSel.innerHTML = ''; if(delMachSel) delMachSel.innerHTML = '';
@@ -417,7 +453,6 @@
                 if(delMachSel) delMachSel.add(new Option(m.name, id));
             }
 
-            // Steifigkeit
             const rigSel = document.getElementById('rigidity-select');
             const delRigSel = document.getElementById('del-rigidity-select');
             rigSel.innerHTML = ''; if(delRigSel) delRigSel.innerHTML = '';
@@ -427,7 +462,6 @@
             }
             if(db.rigidity["mittel"]) rigSel.value = "mittel";
 
-            // Werkzeuge
             const toolSel = document.getElementById('tool-select');
             const delToolSel = document.getElementById('del-tool-select');
             toolSel.innerHTML = ''; if(delToolSel) delToolSel.innerHTML = '';
@@ -436,7 +470,6 @@
                 if(delToolSel) delToolSel.add(new Option(t.name, id));
             }
 
-            // Profile
             const profSel = document.getElementById('profile-select');
             const delProfSel = document.getElementById('del-profile-select');
             profSel.innerHTML = ''; if(delProfSel) delProfSel.innerHTML = '';
@@ -445,7 +478,6 @@
                 if(delProfSel) delProfSel.add(new Option(p.name, id));
             }
 
-            // Materialien
             const delMatSel = document.getElementById('del-material-select');
             if(delMatSel) {
                 delMatSel.innerHTML = '';
@@ -531,7 +563,7 @@
             if(tool) {
                 const baseVc = tool.vc_per_material ? (tool.vc_per_material[matId] || 200) : 200;
                 document.getElementById('tool-specs').innerHTML = 
-                    `<strong>Typ:</strong> ${tool.type} | <strong>Ø:</strong> ${tool.diameter}mm | <strong>Z:</strong> ${tool.z} | <strong>vc:</strong> ${baseVc} m/min`;
+                    `<strong>Typ:</strong> ${tool.type} | <strong>Ø:</strong> ${tool.diameter}mm | <strong>Z:</strong> ${tool.z} | <strong>L Max:</strong> ${tool.max_overhang || (tool.diameter*3)}mm | <strong>vc:</strong> ${baseVc} m/min`;
             }
             if(prof) {
                 document.getElementById('profile-specs').innerHTML = 
@@ -562,7 +594,7 @@
                         </div>
                     </div>
                     <div class="flex gap-2 pt-1">
-                        <button onclick="loadFavorite('${fav.tool_id}', '${fav.material_id}', '${fav.profile_id}', '${fav.rigidity_id || ''}')" class="flex-1 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 text-xs py-1 rounded border border-emerald-500/30 font-medium">Laden</button>
+                        <button onclick="loadFavorite('${fav.id}')" class="flex-1 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 text-xs py-1 rounded border border-emerald-500/30 font-medium">Laden</button>
                         <button onclick="deleteFavorite('${fav.id}')" class="bg-rose-600/20 hover:bg-rose-600/40 text-rose-400 text-xs px-2 rounded border border-rose-500/30">🗑️</button>
                     </div>
                 `;
@@ -570,12 +602,20 @@
             });
         }
 
-        function loadFavorite(toolId, materialId, profileId, rigidityId) {
-            if(db.tools[toolId]) document.getElementById('tool-select').value = toolId;
+        function loadFavorite(favId) {
+            const fav = db.favorites.find(f => f.id === favId);
+            if(!fav) return;
+
+            if(db.tools[fav.tool_id]) document.getElementById('tool-select').value = fav.tool_id;
             updateMaterialDropdownForTool();
-            if(db.materials[materialId]) document.getElementById('material-select').value = materialId;
-            if(rigidityId && db.rigidity[rigidityId]) document.getElementById('rigidity-select').value = rigidityId;
-            if(db.profiles[profileId]) document.getElementById('profile-select').value = profileId;
+            if(db.materials[fav.material_id]) document.getElementById('material-select').value = fav.material_id;
+            if(fav.rigidity_id && db.rigidity[fav.rigidity_id]) document.getElementById('rigidity-select').value = fav.rigidity_id;
+            if(db.profiles[fav.profile_id]) document.getElementById('profile-select').value = fav.profile_id;
+            
+            document.getElementById('input-total-depth').value = fav.total_depth || '';
+            document.getElementById('input-custom-ap').value = fav.custom_ap || '';
+            document.getElementById('input-custom-ae').value = fav.custom_ae || '';
+
             calculate();
         }
 
@@ -583,16 +623,19 @@
             const title = document.getElementById('fav-title').value;
             const rating = parseInt(document.getElementById('fav-rating').value);
             const feedback = document.getElementById('fav-feedback').value;
-            const toolId = document.getElementById('tool-select').value;
-            const materialId = document.getElementById('material-select').value;
-            const profileId = document.getElementById('profile-select').value;
-            const rigidityId = document.getElementById('rigidity-select').value;
 
             if(!title) { alert('Bitte einen Titel vergeben'); return; }
 
             const newFav = {
                 id: 'fav_' + Date.now(),
-                title, tool_id: toolId, material_id: materialId, profile_id: profileId, rigidity_id: rigidityId,
+                title, 
+                tool_id: document.getElementById('tool-select').value, 
+                material_id: document.getElementById('material-select').value, 
+                profile_id: document.getElementById('profile-select').value, 
+                rigidity_id: document.getElementById('rigidity-select').value,
+                total_depth: document.getElementById('input-total-depth').value,
+                custom_ap: document.getElementById('input-custom-ap').value,
+                custom_ae: document.getElementById('input-custom-ae').value,
                 rating, feedback,
                 rpm: currentCalculatedResults.rpm,
                 feed_rate_vf: currentCalculatedResults.vf
@@ -612,72 +655,58 @@
             renderFavorites();
         }
 
+        // --- Admin Functions ---
         function addNewMachine() {
             const id = document.getElementById('adm-mach-id').value;
             const name = document.getElementById('adm-mach-name').value;
-            if(!id || !name) { alert('Bitte ausfüllen'); return; }
+            if(!id || !name) return alert('Bitte ausfüllen');
             db.machines[id] = {
                 name,
                 max_rpm: parseFloat(document.getElementById('adm-mach-rpm').value),
                 max_vf: parseFloat(document.getElementById('adm-mach-vf').value),
                 max_kw: parseFloat(document.getElementById('adm-mach-kw').value)
             };
-            saveDatabase();
-            populateDropdowns();
-            alert('Maschine hinzugefügt!');
+            saveDatabase(); populateDropdowns(); alert('Gespeichert!');
         }
 
         function deleteMachine() {
             const id = document.getElementById('del-machine-select').value;
-            if(Object.keys(db.machines).length <= 1) { alert('Mindestens eine Maschine nötig.'); return; }
-            delete db.machines[id];
-            saveDatabase();
-            populateDropdowns();
-            alert('Gelöscht!');
+            if(Object.keys(db.machines).length <= 1) return alert('Mindestens eine nötig.');
+            delete db.machines[id]; saveDatabase(); populateDropdowns(); alert('Gelöscht!');
         }
 
         function addNewMaterial() {
             const id = document.getElementById('adm-mat-id').value;
             const name = document.getElementById('adm-mat-name').value;
-            if(!id || !name) { alert('Bitte ausfüllen'); return; }
+            if(!id || !name) return alert('Bitte ausfüllen');
             db.materials[id] = { name, kc11: parseFloat(document.getElementById('adm-mat-kc11').value) };
-            saveDatabase();
-            populateDropdowns();
-            alert('Material hinzugefügt!');
+            saveDatabase(); populateDropdowns(); alert('Gespeichert!');
         }
 
         function deleteMaterial() {
             const id = document.getElementById('del-material-select').value;
-            delete db.materials[id];
-            saveDatabase();
-            populateDropdowns();
-            alert('Gelöscht!');
+            delete db.materials[id]; saveDatabase(); populateDropdowns(); alert('Gelöscht!');
         }
 
         function addNewRigidity() {
             const id = document.getElementById('adm-rigidity-id').value;
             const name = document.getElementById('adm-rigidity-name').value;
             const factor = parseFloat(document.getElementById('adm-rigidity-factor').value);
-            if(!id || !name || isNaN(factor)) { alert('Bitte alle Felder korrekt ausfüllen'); return; }
+            if(!id || !name || isNaN(factor)) return alert('Bitte korrekt ausfüllen');
             db.rigidity[id] = { name, factor };
-            saveDatabase();
-            populateDropdowns();
-            alert('Steifigkeitsprofil hinzugefügt/aktualisiert!');
+            saveDatabase(); populateDropdowns(); alert('Gespeichert!');
         }
 
         function deleteRigidity() {
             const id = document.getElementById('del-rigidity-select').value;
-            if(Object.keys(db.rigidity).length <= 1) { alert('Mindestens ein Steifigkeitsprofil muss erhalten bleiben.'); return; }
-            delete db.rigidity[id];
-            saveDatabase();
-            populateDropdowns();
-            alert('Gelöscht!');
+            if(Object.keys(db.rigidity).length <= 1) return alert('Mindestens eins nötig.');
+            delete db.rigidity[id]; saveDatabase(); populateDropdowns(); alert('Gelöscht!');
         }
 
         function addNewTool() {
             const id = document.getElementById('adm-tool-id').value;
             const name = document.getElementById('adm-tool-name').value;
-            if(!id || !name) { alert('Bitte ausfüllen'); return; }
+            if(!id || !name) return alert('Bitte ausfüllen');
             
             let vcMap = {}; let suitableList = [];
             for (const matId of Object.keys(db.materials)) {
@@ -693,27 +722,23 @@
                 material_schneidstoff: document.getElementById('adm-tool-mat').value,
                 diameter: parseFloat(document.getElementById('adm-tool-d').value),
                 z: parseInt(document.getElementById('adm-tool-z').value),
+                max_overhang: parseFloat(document.getElementById('adm-tool-overhang').value) || 30.0,
                 vc_per_material: vcMap,
                 suitable_materials: suitableList
             };
 
-            saveDatabase();
-            populateDropdowns();
-            alert('Werkzeug hinzugefügt!');
+            saveDatabase(); populateDropdowns(); alert('Gespeichert!');
         }
 
         function deleteTool() {
             const id = document.getElementById('del-tool-select').value;
-            delete db.tools[id];
-            saveDatabase();
-            populateDropdowns();
-            alert('Gelöscht!');
+            delete db.tools[id]; saveDatabase(); populateDropdowns(); alert('Gelöscht!');
         }
 
         function addNewProfile() {
             const id = document.getElementById('adm-prof-id').value;
             const name = document.getElementById('adm-prof-name').value;
-            if(!id || !name) { alert('Bitte ausfüllen'); return; }
+            if(!id || !name) return alert('Bitte ausfüllen');
             
             db.profiles[id] = {
                 name,
@@ -724,17 +749,12 @@
                 description: document.getElementById('adm-prof-desc').value
             };
 
-            saveDatabase();
-            populateDropdowns();
-            alert('Profil hinzugefügt!');
+            saveDatabase(); populateDropdowns(); alert('Gespeichert!');
         }
 
         function deleteProfile() {
             const id = document.getElementById('del-profile-select').value;
-            delete db.profiles[id];
-            saveDatabase();
-            populateDropdowns();
-            alert('Gelöscht!');
+            delete db.profiles[id]; saveDatabase(); populateDropdowns(); alert('Gelöscht!');
         }
 
         function calculate() {
@@ -754,15 +774,59 @@
             if(!mach || !tool || !mat || !profile || !rigidity) return;
             updateSpecs();
 
-            const baseVc = tool.vc_per_material ? (tool.vc_per_material[matId] || 200) : 200;
-            // Der variable Steifigkeits-Faktor wirkt direkt multiplikativ ein
-            const effectiveVc = baseVc * profile.vc_factor * rigidity.factor;
-            
             const D = tool.diameter;
             const z = tool.z;
+            const Lmax = tool.max_overhang || (D * 3);
+
+            // AUTO Werte aus Profil
+            const autoAp = D * profile.ap_factor;
+            const autoAe = D * profile.ae_factor;
             
-            const ap = D * profile.ap_factor;
-            const ae = D * profile.ae_factor;
+            // Manuelle Werte auslesen
+            document.getElementById('input-custom-ap').placeholder = `Auto: ${autoAp.toFixed(1)}`;
+            document.getElementById('input-custom-ae').placeholder = `Auto: ${autoAe.toFixed(1)}`;
+            
+            const customAp = parseFloat(document.getElementById('input-custom-ap').value);
+            const customAe = parseFloat(document.getElementById('input-custom-ae').value);
+            const totalDepth = parseFloat(document.getElementById('input-total-depth').value);
+
+            const ap = !isNaN(customAp) ? customAp : autoAp;
+            const ae = !isNaN(customAe) ? customAe : autoAe;
+
+            // Schnittaufteilung (Passes)
+            const passesContainer = document.getElementById('res-passes-container');
+            let passes = 0;
+            if (!isNaN(totalDepth) && totalDepth > 0) {
+                passes = Math.ceil(totalDepth / ap);
+                const lastPassAp = totalDepth - ((passes - 1) * ap);
+                
+                document.getElementById('res-passes').innerText = passes;
+                passesContainer.classList.remove('hidden');
+
+                let infoText = `${passes} Durchgänge erforderlich.`;
+                if (passes > 1 && Math.abs(lastPassAp - ap) > 0.01) {
+                    infoText += ` Letzter Schnitt: ${lastPassAp.toFixed(2)} mm.`;
+                }
+                document.getElementById('depth-info').innerText = infoText;
+            } else {
+                passesContainer.classList.add('hidden');
+                document.getElementById('depth-info').innerText = "Gibt die Gesamttiefe ein, um die benötigten Schnitte zu berechnen.";
+            }
+
+            // Kollisionswarnung
+            const warningBox = document.getElementById('depth-warning');
+            if (!isNaN(totalDepth) && totalDepth > Lmax) {
+                warningBox.classList.remove('hidden');
+                warningBox.innerText = `⚠️ WARNUNG: Gesamttiefe (${totalDepth}mm) überschreitet max. Werkzeug-Auskragung (${Lmax}mm)! Kollisionsgefahr.`;
+            } else if (ap > Lmax) {
+                warningBox.classList.remove('hidden');
+                warningBox.innerText = `⚠️ WARNUNG: Zustellung ap (${ap}mm) überschreitet max. Werkzeug-Auskragung (${Lmax}mm)!`;
+            } else {
+                warningBox.classList.add('hidden');
+            }
+
+            const baseVc = tool.vc_per_material ? (tool.vc_per_material[matId] || 200) : 200;
+            const effectiveVc = baseVc * profile.vc_factor * rigidity.factor;
 
             let baseFz = D * 0.007;
             let effectiveFz = baseFz * profile.fz_factor * rigidity.factor;
@@ -786,7 +850,7 @@
             const Q = (ap * ae * vf) / 1000;
             const power_kw = (Q * mat.kc11) / (60 * 1000);
 
-            currentCalculatedResults = { rpm: n, vf: vf, ap: ap, ae: ae, q: Q, power: power_kw, fz_eff: effectiveFz };
+            currentCalculatedResults = { rpm: n, vf: vf, ap: ap, ae: ae, q: Q, power: power_kw, fz_eff: effectiveFz, passes: passes };
 
             const rpmEl = document.getElementById('res-rpm');
             const vfEl = document.getElementById('res-vf');
@@ -834,9 +898,13 @@ Profil: ${prof}
 ----------------------------------
 Drehzahl (n): ${currentCalculatedResults.rpm.toFixed(2)} U/min
 Tischvorschub (vf): ${currentCalculatedResults.vf.toFixed(2)} mm/min
+Eff. fz: ${currentCalculatedResults.fz_eff.toFixed(4)} mm
+Schnitttiefe (ap): ${currentCalculatedResults.ap.toFixed(1)} mm
+Schnittbreite (ae): ${currentCalculatedResults.ae.toFixed(1)} mm
 Zeitspanvolumen (Q): ${currentCalculatedResults.q.toFixed(2)} cm³/min
 Leistungsbedarf (Pc): ${currentCalculatedResults.power.toFixed(2)} kW
-----------------------------------`;
+----------------------------------
+Schnittaufteilung: ${currentCalculatedResults.passes > 0 ? currentCalculatedResults.passes + ' Durchgänge' : 'Nicht angegeben'}`;
 
             navigator.clipboard.writeText(report).then(() => {
                 alert("Bericht in Zwischenablage kopiert!");
