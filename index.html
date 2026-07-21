@@ -40,166 +40,168 @@
         <div id="admin-panel" class="hidden bg-slate-900 p-6 rounded-xl border border-emerald-500/30 space-y-6">
             <h2 class="text-xl font-semibold text-emerald-400">Admin-Konsole: Lokale Datenbank-Verwaltung</h2>
             
-            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 border-b border-slate-800 pb-6">
+            <!-- HIER IST DER FIX: grid-cols-1 auf kleinen Screens, 2 auf mittleren, 3 auf großen -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 border-b border-slate-800 pb-6">
+                
                 <!-- 0. Maschinen -->
-                <div class="space-y-3">
+                <div class="space-y-3 bg-slate-950/50 p-4 rounded-lg border border-slate-800">
                     <h3 class="font-medium text-slate-200">Maschine</h3>
                     <div>
                         <label class="block text-slate-400 mb-1 text-xs">Maschinen-ID</label>
-                        <input type="text" id="adm-mach-id" placeholder="z.B. dmg_dmc" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                        <input type="text" id="adm-mach-id" placeholder="z.B. dmg_dmc" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm">
                     </div>
                     <div>
                         <label class="block text-slate-400 mb-1 text-xs">Bezeichnung</label>
-                        <input type="text" id="adm-mach-name" placeholder="z.B. DMG MORI" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                        <input type="text" id="adm-mach-name" placeholder="z.B. DMG MORI" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm">
                     </div>
-                    <div class="grid grid-cols-3 gap-1 text-xs">
+                    <div class="grid grid-cols-3 gap-2 text-xs">
                         <div>
                             <label class="block text-slate-400 mb-1">Max U/min</label>
-                            <input type="number" id="adm-mach-rpm" value="12000" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
+                            <input type="number" id="adm-mach-rpm" value="12000" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
                         </div>
                         <div>
                             <label class="block text-slate-400 mb-1">Max vf</label>
-                            <input type="number" id="adm-mach-vf" value="15000" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
+                            <input type="number" id="adm-mach-vf" value="15000" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
                         </div>
                         <div>
                             <label class="block text-slate-400 mb-1">Max kW</label>
-                            <input type="number" step="0.5" id="adm-mach-kw" value="25" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
+                            <input type="number" step="0.5" id="adm-mach-kw" value="25" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
                         </div>
                     </div>
-                    <button onclick="addNewMachine()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-sm font-medium">Hinzufügen</button>
-                    <div class="flex gap-2 pt-2">
-                        <select id="del-machine-select" class="flex-1 bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm"></select>
+                    <button onclick="addNewMachine()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-sm font-medium mt-2">Hinzufügen</button>
+                    <div class="flex gap-2 pt-2 border-t border-slate-800 mt-2">
+                        <select id="del-machine-select" class="flex-1 bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm"></select>
                         <button onclick="deleteMachine()" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1 rounded text-sm">Löschen</button>
                     </div>
                 </div>
 
                 <!-- 1. Materialien -->
-                <div class="space-y-3">
+                <div class="space-y-3 bg-slate-950/50 p-4 rounded-lg border border-slate-800">
                     <h3 class="font-medium text-slate-200">Material</h3>
                     <div>
                         <label class="block text-slate-400 mb-1 text-xs">Material-ID</label>
-                        <input type="text" id="adm-mat-id" placeholder="z.B. messing" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                        <input type="text" id="adm-mat-id" placeholder="z.B. messing" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm">
                     </div>
                     <div>
                         <label class="block text-slate-400 mb-1 text-xs">Bezeichnung</label>
-                        <input type="text" id="adm-mat-name" placeholder="z.B. Messing" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                        <input type="text" id="adm-mat-name" placeholder="z.B. Messing" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm">
                     </div>
                     <div>
                         <label class="block text-slate-400 mb-1 text-xs">Spez. kc1.1 (N/mm²)</label>
-                        <input type="number" id="adm-mat-kc11" value="1400" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                        <input type="number" id="adm-mat-kc11" value="1400" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm">
                     </div>
-                    <button onclick="addNewMaterial()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-sm font-medium">Hinzufügen</button>
-                    <div class="flex gap-2 pt-2">
-                        <select id="del-material-select" class="flex-1 bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm"></select>
+                    <button onclick="addNewMaterial()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-sm font-medium mt-2">Hinzufügen</button>
+                    <div class="flex gap-2 pt-2 border-t border-slate-800 mt-2">
+                        <select id="del-material-select" class="flex-1 bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm"></select>
                         <button onclick="deleteMaterial()" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1 rounded text-sm">Löschen</button>
                     </div>
                 </div>
 
-                <!-- 2. Steifigkeit (Variabel im Admin-Menü) -->
-                <div class="space-y-3">
+                <!-- 2. Steifigkeit -->
+                <div class="space-y-3 bg-slate-950/50 p-4 rounded-lg border border-slate-800">
                     <h3 class="font-medium text-slate-200">Steifigkeit</h3>
                     <div>
                         <label class="block text-slate-400 mb-1 text-xs">Steifigkeits-ID</label>
-                        <input type="text" id="adm-rigidity-id" placeholder="z.B. extrem" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                        <input type="text" id="adm-rigidity-id" placeholder="z.B. extrem" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm">
                     </div>
                     <div>
                         <label class="block text-slate-400 mb-1 text-xs">Bezeichnung</label>
-                        <input type="text" id="adm-rigidity-name" placeholder="z.B. Extrem stabil" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                        <input type="text" id="adm-rigidity-name" placeholder="z.B. Extrem stabil" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm">
                     </div>
                     <div>
                         <label class="block text-slate-400 mb-1 text-xs">Variabler Faktor (-)</label>
-                        <input type="number" step="0.05" id="adm-rigidity-factor" value="1.10" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                        <input type="number" step="0.05" id="adm-rigidity-factor" value="1.10" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm">
                     </div>
-                    <button onclick="addNewRigidity()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-sm font-medium">Hinzufügen</button>
-                    <div class="flex gap-2 pt-2">
-                        <select id="del-rigidity-select" class="flex-1 bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm"></select>
+                    <button onclick="addNewRigidity()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-sm font-medium mt-2">Hinzufügen</button>
+                    <div class="flex gap-2 pt-2 border-t border-slate-800 mt-2">
+                        <select id="del-rigidity-select" class="flex-1 bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm"></select>
                         <button onclick="deleteRigidity()" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1 rounded text-sm">Löschen</button>
                     </div>
                 </div>
 
                 <!-- 3. Werkzeuge -->
-                <div class="space-y-3">
+                <div class="space-y-3 bg-slate-950/50 p-4 rounded-lg border border-slate-800">
                     <h3 class="font-medium text-slate-200">Werkzeug</h3>
                     <div>
                         <label class="block text-slate-400 mb-1 text-xs">Werkzeug-ID</label>
-                        <input type="text" id="adm-tool-id" placeholder="z.B. tool_torus" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                        <input type="text" id="adm-tool-id" placeholder="z.B. tool_torus" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm">
                     </div>
                     <div>
                         <label class="block text-slate-400 mb-1 text-xs">Bezeichnung</label>
-                        <input type="text" id="adm-tool-name" placeholder="z.B. Torusfräser" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                        <input type="text" id="adm-tool-name" placeholder="z.B. Torusfräser" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm">
                     </div>
                     <div class="grid grid-cols-2 gap-2 text-xs">
                         <div>
                             <label class="block text-slate-400 mb-1">Typ</label>
-                            <input type="text" id="adm-tool-type" value="Schaftfräser" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
+                            <input type="text" id="adm-tool-type" value="Schaftfräser" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
                         </div>
                         <div>
                             <label class="block text-slate-400 mb-1">Schneidstoff</label>
-                            <input type="text" id="adm-tool-mat" value="VHM" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
+                            <input type="text" id="adm-tool-mat" value="VHM" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-2 text-xs">
                         <div>
                             <label class="block text-slate-400 mb-1">Ø (mm)</label>
-                            <input type="number" id="adm-tool-d" value="10" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
+                            <input type="number" id="adm-tool-d" value="10" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
                         </div>
                         <div>
                             <label class="block text-slate-400 mb-1">Zahn (Z)</label>
-                            <input type="number" id="adm-tool-z" value="4" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
+                            <input type="number" id="adm-tool-z" value="4" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
                         </div>
                     </div>
 
                     <div>
                         <label class="block text-slate-400 mb-1 text-xs">vc (m/min) je Material:</label>
-                        <div id="adm-tool-matrix-container" class="space-y-1 bg-slate-950 p-2 rounded border border-slate-800 text-xs max-h-24 overflow-y-auto"></div>
+                        <div id="adm-tool-matrix-container" class="space-y-1 bg-slate-900 p-2 rounded border border-slate-700 text-xs max-h-32 overflow-y-auto"></div>
                     </div>
 
-                    <button onclick="addNewTool()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-sm font-medium">Hinzufügen</button>
-                    <div class="flex gap-2 pt-2">
-                        <select id="del-tool-select" class="flex-1 bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm"></select>
+                    <button onclick="addNewTool()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-sm font-medium mt-2">Hinzufügen</button>
+                    <div class="flex gap-2 pt-2 border-t border-slate-800 mt-2">
+                        <select id="del-tool-select" class="flex-1 bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm"></select>
                         <button onclick="deleteTool()" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1 rounded text-sm">Löschen</button>
                     </div>
                 </div>
 
                 <!-- 4. Bearbeitungsprofile -->
-                <div class="space-y-3">
+                <div class="space-y-3 bg-slate-950/50 p-4 rounded-lg border border-slate-800">
                     <h3 class="font-medium text-slate-200">Profil</h3>
                     <div>
                         <label class="block text-slate-400 mb-1 text-xs">Profil-ID</label>
-                        <input type="text" id="adm-prof-id" placeholder="z.B. trochoidal" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                        <input type="text" id="adm-prof-id" placeholder="z.B. trochoidal" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm">
                     </div>
                     <div>
                         <label class="block text-slate-400 mb-1 text-xs">Profil-Name</label>
-                        <input type="text" id="adm-prof-name" placeholder="z.B. Trochoidal" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                        <input type="text" id="adm-prof-name" placeholder="z.B. Trochoidal" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm">
                     </div>
                     
                     <div class="grid grid-cols-2 gap-2 text-xs">
                         <div>
                             <label class="block text-slate-400 mb-1">vc-Faktor</label>
-                            <input type="number" step="0.05" id="adm-prof-vc" value="1.0" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
+                            <input type="number" step="0.05" id="adm-prof-vc" value="1.0" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
                         </div>
                         <div>
                             <label class="block text-slate-400 mb-1">fz-Faktor</label>
-                            <input type="number" step="0.05" id="adm-prof-fz" value="1.0" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
+                            <input type="number" step="0.05" id="adm-prof-fz" value="1.0" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
                         </div>
                         <div>
                             <label class="block text-slate-400 mb-1">ap (× Ø)</label>
-                            <input type="number" step="0.05" id="adm-prof-ap" value="0.5" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
+                            <input type="number" step="0.05" id="adm-prof-ap" value="0.5" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
                         </div>
                         <div>
                             <label class="block text-slate-400 mb-1">ae (× Ø)</label>
-                            <input type="number" step="0.05" id="adm-prof-ae" value="0.2" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
+                            <input type="number" step="0.05" id="adm-prof-ae" value="0.2" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
                         </div>
                     </div>
 
                     <div>
                         <label class="block text-slate-400 mb-1 text-xs">Beschreibung</label>
-                        <input type="text" id="adm-prof-desc" placeholder="Kurzbeschreibung" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                        <input type="text" id="adm-prof-desc" placeholder="Kurzbeschreibung" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm">
                     </div>
 
-                    <button onclick="addNewProfile()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-sm font-medium">Hinzufügen</button>
-                    <div class="flex gap-2 pt-2">
-                        <select id="del-profile-select" class="flex-1 bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm"></select>
+                    <button onclick="addNewProfile()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-sm font-medium mt-2">Hinzufügen</button>
+                    <div class="flex gap-2 pt-2 border-t border-slate-800 mt-2">
+                        <select id="del-profile-select" class="flex-1 bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm"></select>
                         <button onclick="deleteProfile()" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1 rounded text-sm">Löschen</button>
                     </div>
                 </div>
@@ -497,15 +499,15 @@
             container.innerHTML = '';
             for (const [matId, mat] of Object.entries(db.materials)) {
                 const div = document.createElement('div');
-                div.className = "flex items-center justify-between gap-2 bg-slate-900 p-1 rounded";
+                div.className = "flex items-center justify-between gap-2 bg-slate-950 p-1.5 rounded border border-slate-800";
                 div.innerHTML = `
                     <label class="flex items-center gap-1.5 truncate text-slate-300 cursor-pointer flex-1 text-[11px]">
-                        <input type="checkbox" id="tool-suit-${matId}" checked class="rounded bg-slate-950 border-slate-700 text-emerald-500">
+                        <input type="checkbox" id="tool-suit-${matId}" checked class="rounded bg-slate-900 border-slate-700 text-emerald-500">
                         <span class="truncate">${mat.name}</span>
                     </label>
                     <div class="flex items-center gap-1">
                         <span class="text-[9px] text-slate-400">vc:</span>
-                        <input type="number" id="tool-vc-${matId}" value="200" class="w-14 bg-slate-950 border border-slate-700 rounded p-0.5 text-white text-right text-xs">
+                        <input type="number" id="tool-vc-${matId}" value="200" class="w-14 bg-slate-900 border border-slate-700 rounded p-0.5 text-white text-right text-xs">
                     </div>
                 `;
                 container.appendChild(div);
