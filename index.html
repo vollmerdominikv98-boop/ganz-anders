@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CNC Open Tool Guide - Praxis-Favoriten</title>
+    <title>CNC Open Tool Guide - Praxis-Favoriten & RCT</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans p-6">
@@ -11,11 +11,16 @@
         <header class="border-b border-slate-800 pb-4 flex justify-between items-center">
             <div>
                 <h1 class="text-3xl font-bold tracking-tight text-emerald-400">CNC Open Tool Guide</h1>
-                <p class="text-slate-400">Herstellerunabhängiger Fräsrechner mit zentraler Praxis-Datenbank & Favoriten</p>
+                <p class="text-slate-400">Herstellerunabhängiger Fräsrechner mit zentraler Praxis-Datenbank & Radial Chip Thinning</p>
             </div>
-            <button onclick="toggleAdmin()" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 px-4 py-2 rounded-lg border border-slate-700 font-medium transition">
-                ⚙️ Admin-Konsole umschalten
-            </button>
+            <div class="flex gap-2">
+                <button onclick="exportDataReport()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg border border-slate-700 text-sm font-medium transition" title="Berechnete Werte kopieren">
+                    📋 Bericht kopieren
+                </button>
+                <button onclick="toggleAdmin()" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 px-4 py-2 rounded-lg border border-slate-700 font-medium transition">
+                    ⚙️ Admin-Konsole umschalten
+                </button>
+            </div>
         </header>
 
         <!-- PRAXIS-FAVORITEN SCHNELLWAHL -->
@@ -24,7 +29,7 @@
                 <h2 class="text-lg font-semibold text-emerald-400 flex items-center gap-2">
                     ⭐ Bewährte Praxis-Favoriten (Werkstatt-Erfahrungswerte)
                 </h2>
-                <span class="text-xs text-slate-400">Mit 1 Klick laden & direkt übernehmen</span>
+                <span class="text-xs text-slate-400">Mit 1 Klick laden & direkt übernehmen (persistent gespeichert)</span>
             </div>
             <div id="favorites-container" class="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <!-- Wird dynamisch gefüllt -->
@@ -153,6 +158,11 @@
                     </div>
                 </div>
             </div>
+            
+            <div class="pt-2 flex justify-between items-center">
+                <span class="text-xs text-slate-400">Daten-Wartung: Werkseinstellungen wiederherstellen falls nötig.</span>
+                <button onclick="resetToDefaultData()" class="bg-amber-600/25 hover:bg-amber-600/40 text-amber-400 border border-amber-500/30 text-xs px-3 py-1.5 rounded font-medium">🔄 Auf Werkseinstellungen zurücksetzen</button>
+            </div>
         </div>
 
         <!-- HAUPTRECHNER & ERGEBNISSE -->
@@ -176,6 +186,20 @@
                     <select id="profile-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" onchange="calculate()"></select>
                     <div id="profile-specs" class="text-xs text-slate-400 mt-2 bg-slate-950 p-2 rounded border border-slate-800"></div>
                 </div>
+
+                <!-- NEU: Radial Chip Thinning (RCT) Steuerungs-Box -->
+                <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-2">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="rct-toggle" checked onchange="calculate()" class="rounded bg-slate-900 border-slate-700 text-emerald-500 focus:ring-0">
+                        <span class="text-xs font-semibold text-emerald-400">Radial Chip Thinning (RCT) Korrektur aktiv</span>
+                    </label>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">
+                        Passt den Vorschub bei kleiner radialer Zustellung ($ae < 0.5 \times D$) automatisch an, um die kon్‌tinuierliche Spanungsdicke und Standzeit zu sichern.
+                    </p>
+                    <div id="rct-info" class="text-[11px] text-amber-300/90 font-mono hidden">
+                        <!-- Dynamischer RCT-Faktor -->
+                    </div>
+                </div>
             </div>
 
             <!-- ERGEBNISSE & BEWERTUNGS- / SPEICHERMASKE -->
@@ -188,7 +212,10 @@
                             <span id="res-rpm" class="text-xl font-bold text-emerald-400">-- U/min</span>
                         </div>
                         <div class="bg-slate-950 p-3 rounded border border-slate-800 flex justify-between items-center">
-                            <span class="text-sm text-slate-400">Tischvorschub (vf):</span>
+                            <div>
+                                <span class="text-sm text-slate-400 block">Tischvorschub (vf):</span>
+                                <span id="res-fz-eff" class="text-[10px] text-slate-500">fz(eff): -- mm</span>
+                            </div>
                             <span id="res-vf" class="text-xl font-bold text-emerald-400">-- mm/min</span>
                         </div>
                         <div class="bg-slate-950 p-3 rounded border border-slate-800 flex justify-between items-center">
@@ -210,7 +237,7 @@
                 <div class="bg-slate-950 p-4 rounded-xl border border-emerald-500/30 space-y-3">
                     <h3 class="text-sm font-semibold text-emerald-400">📝 Lauf erfolgreich in Praxis getestet? Als Favorit speichern</h3>
                     <div>
-                        <input type="text" id="fav-title" placeholder="Titel z.B. C45 Schruppen optimal" class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-white text-xs">
+                        <input type="text" id="fav-title" placeholder="Titel z.B. C45 HSC Schlichten optimal" class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-white text-xs">
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <div>
@@ -223,7 +250,7 @@
                         </div>
                         <div>
                             <label class="block text-[10px] text-slate-400 mb-1">Erfahrungsbericht / Notiz</label>
-                            <input type="text" id="fav-feedback" placeholder="z.B. Läuft ruhig, minimaler Verschleiß" class="w-full bg-slate-900 border border-slate-800 rounded p-1 text-white text-xs">
+                            <input type="text" id="fav-feedback" placeholder="z.B. Läuft ruhig mit RCT" class="w-full bg-slate-900 border border-slate-800 rounded p-1 text-white text-xs">
                         </div>
                     </div>
                     <button onclick="saveCurrentAsFavorite()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-xs font-medium transition">
@@ -235,8 +262,7 @@
     </div>
 
     <script>
-        // Vollständige lokale Datenbank für den reinen GitHub-Pages-Betrieb (Statik-Modus)
-        let db = {
+        const defaultDb = {
             materials: {
                 "stahl_c45": { "name": "Stahl (z.B. C45)", "kc11": 1800 },
                 "alu_wrought": { "name": "Aluminium (knetlegiert)", "kc11": 700 },
@@ -247,8 +273,8 @@
             profiles: {
                 "schruppen": { "name": "Schruppen (Roughing)", "vc_factor": 0.85, "fz_factor": 1.20, "ap_factor": 1.0, "ae_factor": 0.7, "description": "Hohes Spanvolumen, reduziertes vc, hoher Vorschub" },
                 "schlichten": { "name": "Schlichten (Finishing)", "vc_factor": 1.20, "fz_factor": 0.50, "ap_factor": 0.2, "ae_factor": 0.1, "description": "Hohe Oberflächengüte, hohes vc, feiner Vorschub" },
-                "planfraesen": { "name": "Planfräsen (Face Milling)", "vc_factor": 1.0, "fz_factor": 1.0, "ap_factor": 0.5, "ae_factor": 0.8, "description": "Standard-Flächenbearbeitung" },
-                "besaeumen": { "name": "Besäumen / Kantenfräsen", "vc_factor": 0.95, "fz_factor": 0.9, "ap_factor": 0.8, "ae_factor": 0.3, "description": "Kanten- und Konturbearbeitung" }
+                "hsc_trochoidal": { "name": "HSC / Trochoidal (kleines ae)", "vc_factor": 1.40, "fz_factor": 1.0, "ap_factor": 0.8, "ae_factor": 0.08, "description": "Geringe radiale Eintauchtiefe, ideal für RCT" },
+                "planfraesen": { "name": "Planfräsen (Face Milling)", "vc_factor": 1.0, "fz_factor": 1.0, "ap_factor": 0.5, "ae_factor": 0.8, "description": "Standard-Flächenbearbeitung" }
             },
             tools: {
                 "tool_vhm_12": {
@@ -291,7 +317,29 @@
             ]
         };
 
-        let currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0 };
+        let db = loadDatabase();
+        let currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0, q: 0, power: 0, fz_eff: 0 };
+
+        function loadDatabase() {
+            const saved = localStorage.getItem('cnc_tool_guide_db');
+            if (saved) {
+                try { return JSON.parse(saved); } catch (e) { console.error("Fehler beim Laden von localStorage", e); }
+            }
+            return JSON.parse(JSON.stringify(defaultDb));
+        }
+
+        function saveDatabase() {
+            localStorage.setItem('cnc_tool_guide_db', JSON.stringify(db));
+        }
+
+        function resetToDefaultData() {
+            if(confirm("Möchtest du die Datenbank auf die Werkseinstellungen zurücksetzen? Eigene Favoriten/Änderungen gehen dabei verloren.")) {
+                db = JSON.parse(JSON.stringify(defaultDb));
+                saveDatabase();
+                initApp();
+                alert("Erfolgreich zurückgesetzt!");
+            }
+        }
 
         function initApp() {
             populateDropdowns();
@@ -304,7 +352,6 @@
         }
 
         function populateDropdowns() {
-            // 1. Werkzeuge füllen
             const toolSel = document.getElementById('tool-select');
             const delToolSel = document.getElementById('del-tool-select');
             toolSel.innerHTML = ''; 
@@ -315,7 +362,6 @@
                 if(delToolSel) delToolSel.add(new Option(t.name, id));
             }
 
-            // 2. Profile füllen
             const profSel = document.getElementById('profile-select');
             const delProfSel = document.getElementById('del-profile-select');
             profSel.innerHTML = ''; 
@@ -326,7 +372,6 @@
                 if(delProfSel) delProfSel.add(new Option(p.name, id));
             }
 
-            // 3. Materialien für Admin löschen füllen
             const delMatSel = document.getElementById('del-material-select');
             if(delMatSel) {
                 delMatSel.innerHTML = '';
@@ -464,7 +509,7 @@
             if(!title) { alert('Bitte einen Titel für den Favoriten vergeben'); return; }
 
             const newFav = {
-                id: 'fav_' + (db.favorites.length + 1),
+                id: 'fav_' + Date.now(),
                 title, tool_id: toolId, material_id: materialId, profile_id: profileId,
                 rating, feedback,
                 rpm: currentCalculatedResults.rpm,
@@ -474,7 +519,8 @@
             };
 
             db.favorites.push(newFav);
-            alert('Erfolgreich als Praxis-Favorit gespeichert!');
+            saveDatabase();
+            alert('Erfolgreich als Praxis-Favorit gespeichert (lokal gesichert)!');
             document.getElementById('fav-title').value = '';
             document.getElementById('fav-feedback').value = '';
             renderFavorites();
@@ -482,6 +528,7 @@
 
         function deleteFavorite(favId) {
             db.favorites = db.favorites.filter(f => f.id !== favId);
+            saveDatabase();
             renderFavorites();
         }
 
@@ -492,6 +539,7 @@
             if(!id || !name) { alert('Bitte ID und Name ausfüllen'); return; }
             
             db.materials[id] = { name, kc11 };
+            saveDatabase();
             populateDropdowns();
             alert('Material hinzugefügt!');
         }
@@ -500,6 +548,7 @@
             const id = document.getElementById('del-material-select').value;
             if(db.materials[id]) {
                 delete db.materials[id];
+                saveDatabase();
                 populateDropdowns();
                 alert('Gelöscht!');
             }
@@ -530,6 +579,7 @@
                 suitable_materials: suitableList
             };
 
+            saveDatabase();
             populateDropdowns();
             alert('Werkzeug hinzugefügt!');
         }
@@ -538,6 +588,7 @@
             const id = document.getElementById('del-tool-select').value;
             if(db.tools[id]) {
                 delete db.tools[id];
+                saveDatabase();
                 populateDropdowns();
                 alert('Gelöscht!');
             }
@@ -557,6 +608,7 @@
                 description: document.getElementById('adm-prof-desc').value
             };
 
+            saveDatabase();
             populateDropdowns();
             alert('Profil hinzugefügt!');
         }
@@ -565,6 +617,7 @@
             const id = document.getElementById('del-profile-select').value;
             if(db.profiles[id]) {
                 delete db.profiles[id];
+                saveDatabase();
                 populateDropdowns();
                 alert('Gelöscht!');
             }
@@ -574,6 +627,7 @@
             const toolId = document.getElementById('tool-select').value;
             const matId = document.getElementById('material-select').value;
             const profId = document.getElementById('profile-select').value;
+            const rctActive = document.getElementById('rct-toggle').checked;
             
             const tool = db.tools[toolId];
             const mat = db.materials[matId];
@@ -585,30 +639,80 @@
             const baseVc = tool.vc_per_material ? (tool.vc_per_material[matId] || 200) : 200;
             const effectiveVc = baseVc * profile.vc_factor;
             
-            const baseFz = tool.diameter * 0.007;
-            const effectiveFz = baseFz * profile.fz_factor;
-
             const D = tool.diameter;
             const z = tool.z;
             
             const ap = D * profile.ap_factor;
             const ae = D * profile.ae_factor;
 
+            // Standard Vorschub pro Zahn
+            let baseFz = D * 0.007;
+            let effectiveFz = baseFz * profile.fz_factor;
+
+            const rctInfoBox = document.getElementById('rct-info');
+
+            // Radial Chip Thinning (RCT) Berechnung
+            // Formel Korrekturfaktor C = 1 / arcsin(1 - ae/R) oder nähherungsweise über radiale Eintauchtiefe
+            if (rctActive && ae < (D / 2)) {
+                const ratio = ae / D;
+                // RCT-Korrekturfaktor Formel: 1 / sqrt( 1 - (1 - 2*ae/D)^2 )
+                // Vereinfachte Formel für Spanungsdickenkorrektur: C_rct = 1 / sqrt(ae / D * (2 - ae / D)) -> standardmäßig für ae <= D/2
+                const radRatio = ae / D;
+                const rctFactor = 1 / Math.sqrt(radRatio * (2 - radRatio));
+                
+                // Begrenzen auf sinnvolle technische Maxima (z.B. Faktor max 3.0, um Überlastung zu verhindern)
+                const clampedRct = Math.min(rctFactor, 3.0);
+                effectiveFz *= clampedRct;
+
+                rctInfoBox.classList.remove('hidden');
+                rctInfoBox.innerText = `⚡ RCT aktiv: ae/D = ${(radRatio).toFixed(3)} | Korrektur-Faktor: +${((clampedRct - 1) * 100).toFixed(1)}%`;
+            } else {
+                rctInfoBox.classList.add('hidden');
+            }
+
             const n = (effectiveVc * 1000) / (Math.PI * D);
             const vf = effectiveFz * z * n;
             const Q = (ap * ae * vf) / 1000;
             const power_kw = (Q * mat.kc11) / (60 * 1000);
 
-            currentCalculatedResults = { rpm: n, vf: vf, ap: ap, ae: ae };
+            currentCalculatedResults = { rpm: n, vf: vf, ap: ap, ae: ae, q: Q, power: power_kw, fz_eff: effectiveFz };
 
             document.getElementById('res-rpm').innerText = n.toFixed(2) + " U/min";
             document.getElementById('res-vf').innerText = vf.toFixed(2) + " mm/min";
+            document.getElementById('res-fz-eff').innerText = `fz(eff): ${effectiveFz.toFixed(4)} mm`;
             document.getElementById('res-apae').innerText = ap.toFixed(1) + " / " + ae.toFixed(1) + " mm";
             document.getElementById('res-q').innerText = Q.toFixed(2) + " cm³/min";
             document.getElementById('res-power').innerText = power_kw.toFixed(2) + " kW";
         }
 
-        // Direkt beim Laden ausführen
+        function exportDataReport() {
+            const tool = db.tools[document.getElementById('tool-select'].value]?.name || 'Unbekannt';
+            const mat = db.materials[document.getElementById('material-select'].value]?.name || 'Unbekannt';
+            const prof = db.profiles[document.getElementById('profile-select'].value]?.name || 'Unbekannt';
+            const rctStatus = document.getElementById('rct-toggle').checked ? 'Aktiv' : 'Inaktiv';
+
+            const report = `--- CNC OPEN TOOL GUIDE BERICHT ---
+Werkzeug: ${tool}
+Werkstoff: ${mat}
+Profil: ${prof}
+Radial Chip Thinning (RCT): ${rctStatus}
+----------------------------------
+Drehzahl (n): ${currentCalculatedResults.rpm.toFixed(2)} U/min
+Tischvorschub (vf): ${currentCalculatedResults.vf.toFixed(2)} mm/min
+Eff. Vorschub pro Zahn (fz,eff): ${currentCalculatedResults.fz_eff.toFixed(4)} mm
+Schnitttiefe (ap): ${currentCalculatedResults.ap.toFixed(1)} mm
+Schnittbreite (ae): ${currentCalculatedResults.ae.toFixed(1)} mm
+Zeitspanvolumen (Q): ${currentCalculatedResults.q.toFixed(2)} cm³/min
+Leistungsbedarf (Pc): ${currentCalculatedResults.power.toFixed(2)} kW
+----------------------------------`;
+
+            navigator.clipboard.writeText(report).then(() => {
+                alert("Schnittdaten-Bericht inklusive RCT-Werten erfolgreich in die Zwischenablage kopiert!");
+            }).catch(err => {
+                console.error("Fehler beim Kopieren", err);
+            });
+        }
+
         initApp();
     </script>
 </body>
