@@ -3,9 +3,9 @@ from pydantic import BaseModel
 from typing import Dict, List, Optional
 import math
 
-app = FastAPI(title="CNC Open Tool Guide - Praxis-Favoriten & Backend-Store", version="7.0.0")
+app = FastAPI(title="CNC Open Tool Guide - Praxis-Favoriten & Backend-Store", version="7.0.1")
 
-# --- SERVER-SEITIGE DATENBANKEN (Zentral statt Browser) ---
+# --- SERVER-SEITIGE DATENBANKEN ---
 
 materials_db: Dict[str, dict] = {
     "stahl_c45": {"name": "Stahl (z.B. C45)", "kc11": 1800},
@@ -85,7 +85,6 @@ tools_db: Dict[str, dict] = {
     }
 }
 
-# Zentraler Speicher für bewährte Praxis-Favoriten (mit Rating / Feedback)
 favorites_db: List[dict] = [
     {
         "id": "fav_1",
@@ -168,10 +167,6 @@ def calculate_advanced_milling(data: CalculationRequest):
     
     if not tool or not mat or not profile:
         raise HTTPException(status_code=404, detail="Ungültige Parameter übergeben")
-
-    suitable_list = tool.get("suitable_materials", [])
-    if suitable_list and data.material_id not in suitable_list:
-        raise HTTPException(status_code=400, detail=f"Das Werkzeug '{tool['name']}' ist für das Material '{mat['name']}' nicht zugelassen!")
 
     base_vc = tool.get("vc_per_material", {}).get(data.material_id, 200)
     effective_vc = base_vc * profile["vc_factor"]
