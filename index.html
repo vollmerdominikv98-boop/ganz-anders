@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CNC Open Tool Guide - Praxis-Favoriten, Maschinen & RCT</title>
+    <title>CNC Open Tool Guide - Praxis-Favoriten, Maschinen, Steifigkeit & RCT</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans p-6">
@@ -11,7 +11,7 @@
         <header class="border-b border-slate-800 pb-4 flex justify-between items-center">
             <div>
                 <h1 class="text-3xl font-bold tracking-tight text-emerald-400">CNC Open Tool Guide</h1>
-                <p class="text-slate-400">Herstellerunabhängiger Fräsrechner mit zentraler Praxis-Datenbank, Maschinengrenzen & RCT</p>
+                <p class="text-slate-400">Herstellerunabhängiger Fräsrechner mit zentraler Praxis-Datenbank, Maschinengrenzen, Steifigkeit & RCT</p>
             </div>
             <div class="flex gap-2">
                 <button onclick="exportDataReport()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg border border-slate-700 text-sm font-medium transition" title="Berechnete Werte kopieren">
@@ -40,8 +40,8 @@
         <div id="admin-panel" class="hidden bg-slate-900 p-6 rounded-xl border border-emerald-500/30 space-y-6">
             <h2 class="text-xl font-semibold text-emerald-400">Admin-Konsole: Lokale Datenbank-Verwaltung</h2>
             
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 border-b border-slate-800 pb-6">
-                <!-- 0. Maschinen (NEU) -->
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 border-b border-slate-800 pb-6">
+                <!-- 0. Maschinen -->
                 <div class="space-y-3">
                     <h3 class="font-medium text-slate-200">Maschine</h3>
                     <div>
@@ -50,7 +50,7 @@
                     </div>
                     <div>
                         <label class="block text-slate-400 mb-1 text-xs">Bezeichnung</label>
-                        <input type="text" id="adm-mach-name" placeholder="z.B. DMG MORI 5-Achs" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                        <input type="text" id="adm-mach-name" placeholder="z.B. DMG MORI" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
                     </div>
                     <div class="grid grid-cols-3 gap-1 text-xs">
                         <div>
@@ -85,7 +85,7 @@
                         <input type="text" id="adm-mat-name" placeholder="z.B. Messing" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
                     </div>
                     <div>
-                        <label class="block text-slate-400 mb-1 text-xs">Spez. Schnittkraft kc1.1 (N/mm²)</label>
+                        <label class="block text-slate-400 mb-1 text-xs">Spez. kc1.1 (N/mm²)</label>
                         <input type="number" id="adm-mat-kc11" value="1400" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
                     </div>
                     <button onclick="addNewMaterial()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-sm font-medium">Hinzufügen</button>
@@ -95,9 +95,31 @@
                     </div>
                 </div>
 
-                <!-- 2. Werkzeuge -->
+                <!-- 2. Steifigkeit (Variabel im Admin-Menü) -->
                 <div class="space-y-3">
-                    <h3 class="font-medium text-slate-200">Werkzeug & Eignung</h3>
+                    <h3 class="font-medium text-slate-200">Steifigkeit</h3>
+                    <div>
+                        <label class="block text-slate-400 mb-1 text-xs">Steifigkeits-ID</label>
+                        <input type="text" id="adm-rigidity-id" placeholder="z.B. extrem" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1 text-xs">Bezeichnung</label>
+                        <input type="text" id="adm-rigidity-name" placeholder="z.B. Extrem stabil" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1 text-xs">Variabler Faktor (-)</label>
+                        <input type="number" step="0.05" id="adm-rigidity-factor" value="1.10" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                    </div>
+                    <button onclick="addNewRigidity()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-sm font-medium">Hinzufügen</button>
+                    <div class="flex gap-2 pt-2">
+                        <select id="del-rigidity-select" class="flex-1 bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm"></select>
+                        <button onclick="deleteRigidity()" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1 rounded text-sm">Löschen</button>
+                    </div>
+                </div>
+
+                <!-- 3. Werkzeuge -->
+                <div class="space-y-3">
+                    <h3 class="font-medium text-slate-200">Werkzeug</h3>
                     <div>
                         <label class="block text-slate-400 mb-1 text-xs">Werkzeug-ID</label>
                         <input type="text" id="adm-tool-id" placeholder="z.B. tool_torus" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
@@ -116,7 +138,7 @@
                             <input type="text" id="adm-tool-mat" value="VHM" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
                         </div>
                     </div>
-                    <div class="grid grid-cols-4 gap-1 text-xs">
+                    <div class="grid grid-cols-2 gap-2 text-xs">
                         <div>
                             <label class="block text-slate-400 mb-1">Ø (mm)</label>
                             <input type="number" id="adm-tool-d" value="10" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
@@ -125,19 +147,11 @@
                             <label class="block text-slate-400 mb-1">Zahn (Z)</label>
                             <input type="number" id="adm-tool-z" value="4" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
                         </div>
-                        <div>
-                            <label class="block text-slate-400 mb-1">Ausl. (mm)</label>
-                            <input type="number" id="adm-tool-overhang" value="30" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
-                        </div>
-                        <div>
-                            <label class="block text-slate-400 mb-1">Drall (°)</label>
-                            <input type="number" id="adm-tool-helix" value="30" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
-                        </div>
                     </div>
 
                     <div>
-                        <label class="block text-slate-400 mb-1 text-xs">Freigabe & vc (m/min) je Material:</label>
-                        <div id="adm-tool-matrix-container" class="space-y-1 bg-slate-950 p-2 rounded border border-slate-800 text-xs max-h-36 overflow-y-auto"></div>
+                        <label class="block text-slate-400 mb-1 text-xs">vc (m/min) je Material:</label>
+                        <div id="adm-tool-matrix-container" class="space-y-1 bg-slate-950 p-2 rounded border border-slate-800 text-xs max-h-24 overflow-y-auto"></div>
                     </div>
 
                     <button onclick="addNewTool()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-sm font-medium">Hinzufügen</button>
@@ -147,33 +161,33 @@
                     </div>
                 </div>
 
-                <!-- 3. Bearbeitungsprofile -->
+                <!-- 4. Bearbeitungsprofile -->
                 <div class="space-y-3">
-                    <h3 class="font-medium text-slate-200">Bearbeitungsprofil</h3>
+                    <h3 class="font-medium text-slate-200">Profil</h3>
                     <div>
                         <label class="block text-slate-400 mb-1 text-xs">Profil-ID</label>
                         <input type="text" id="adm-prof-id" placeholder="z.B. trochoidal" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
                     </div>
                     <div>
                         <label class="block text-slate-400 mb-1 text-xs">Profil-Name</label>
-                        <input type="text" id="adm-prof-name" placeholder="z.B. Trochoidalfräsen" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                        <input type="text" id="adm-prof-name" placeholder="z.B. Trochoidal" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
                     </div>
                     
                     <div class="grid grid-cols-2 gap-2 text-xs">
                         <div>
-                            <label class="block text-slate-400 mb-1">vc-Faktor (-)</label>
+                            <label class="block text-slate-400 mb-1">vc-Faktor</label>
                             <input type="number" step="0.05" id="adm-prof-vc" value="1.0" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
                         </div>
                         <div>
-                            <label class="block text-slate-400 mb-1">fz-Faktor (-)</label>
+                            <label class="block text-slate-400 mb-1">fz-Faktor</label>
                             <input type="number" step="0.05" id="adm-prof-fz" value="1.0" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
                         </div>
                         <div>
-                            <label class="block text-slate-400 mb-1">ap-Faktor (× Ø)</label>
+                            <label class="block text-slate-400 mb-1">ap (× Ø)</label>
                             <input type="number" step="0.05" id="adm-prof-ap" value="0.5" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
                         </div>
                         <div>
-                            <label class="block text-slate-400 mb-1">ae-Faktor (× Ø)</label>
+                            <label class="block text-slate-400 mb-1">ae (× Ø)</label>
                             <input type="number" step="0.05" id="adm-prof-ae" value="0.2" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
                         </div>
                     </div>
@@ -202,7 +216,6 @@
             <div class="bg-slate-900 p-6 rounded-xl border border-slate-800 space-y-4">
                 <h2 class="text-xl font-semibold text-slate-200">Konfiguration</h2>
                 
-                <!-- NEU: Maschinen-Auswahl -->
                 <div>
                     <label class="block text-sm text-slate-400 mb-1">Maschine wählen</label>
                     <select id="machine-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" onchange="calculate()"></select>
@@ -221,6 +234,11 @@
                 </div>
 
                 <div>
+                    <label class="block text-sm text-slate-400 mb-1">Steifigkeit / Stabilität (Spannmittel & Auskragung)</label>
+                    <select id="rigidity-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" onchange="calculate()"></select>
+                </div>
+
+                <div>
                     <label class="block text-sm text-slate-400 mb-1">Bearbeitungsprofil</label>
                     <select id="profile-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" onchange="calculate()"></select>
                     <div id="profile-specs" class="text-xs text-slate-400 mt-2 bg-slate-950 p-2 rounded border border-slate-800"></div>
@@ -233,15 +251,13 @@
                         <span class="text-xs font-semibold text-emerald-400">Radial Chip Thinning (RCT) Korrektur aktiv</span>
                     </label>
                     <p class="text-[11px] text-slate-400 leading-relaxed">
-                        Passt den Vorschub bei kleiner radialer Zustellung (ae &lt; 0.5 × D) automatisch an, um die kontinuierliche Spanungsdicke und Standzeit zu sichern.
+                        Passt den Vorschub bei kleiner radialer Zustellung (ae &lt; 0.5 × D) automatisch an, um die Spanungsdicke und Standzeit zu sichern.
                     </p>
-                    <div id="rct-info" class="text-[11px] text-amber-300/90 font-mono hidden">
-                        <!-- Dynamischer RCT-Faktor -->
-                    </div>
+                    <div id="rct-info" class="text-[11px] text-amber-300/90 font-mono hidden"></div>
                 </div>
             </div>
 
-            <!-- ERGEBNISSE & BEWERTUNGS- / SPEICHERMASKE -->
+            <!-- ERGEBNISSE & SPEICHERMASKE -->
             <div class="bg-slate-900 p-6 rounded-xl border border-slate-800 flex flex-col justify-between space-y-6">
                 <div>
                     <h2 class="text-xl font-semibold mb-4 text-slate-200">Berechnete Schnittdaten</h2>
@@ -274,9 +290,9 @@
 
                 <!-- PRAXIS-BEWERTUNGSBOX -->
                 <div class="bg-slate-950 p-4 rounded-xl border border-emerald-500/30 space-y-3">
-                    <h3 class="text-sm font-semibold text-emerald-400">📝 Lauf erfolgreich in Praxis getestet? Als Favorit speichern</h3>
+                    <h3 class="text-sm font-semibold text-emerald-400">📝 Lauf in Praxis getestet? Als Favorit speichern</h3>
                     <div>
-                        <input type="text" id="fav-title" placeholder="Titel z.B. C45 HSC Schlichten optimal" class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-white text-xs">
+                        <input type="text" id="fav-title" placeholder="Titel z.B. C45 Schruppen stabil" class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-white text-xs">
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <div>
@@ -284,12 +300,12 @@
                             <select id="fav-rating" class="w-full bg-slate-900 border border-slate-800 rounded p-1 text-white text-xs">
                                 <option value="5">⭐⭐⭐⭐⭐ (Perfekt)</option>
                                 <option value="4">⭐⭐⭐⭐ (Sehr gut)</option>
-                                <option value="3">⭐⭐⭐ (Gut / Stabil)</option>
+                                <option value="3">⭐⭐⭐ (Stabil)</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-[10px] text-slate-400 mb-1">Erfahrungsbericht / Notiz</label>
-                            <input type="text" id="fav-feedback" placeholder="z.B. Läuft ruhig mit RCT" class="w-full bg-slate-900 border border-slate-800 rounded p-1 text-white text-xs">
+                            <label class="block text-[10px] text-slate-400 mb-1">Notiz</label>
+                            <input type="text" id="fav-feedback" placeholder="z.B. Läuft super" class="w-full bg-slate-900 border border-slate-800 rounded p-1 text-white text-xs">
                         </div>
                     </div>
                     <button onclick="saveCurrentAsFavorite()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-xs font-medium transition">
@@ -314,6 +330,11 @@
                 "titan": { "name": "Titanlegierung", "kc11": 2800 },
                 "gehaertet_55hrc": { "name": "Gehärteter Stahl (55 HRC)", "kc11": 3200 }
             },
+            rigidity: {
+                "hoch": { "name": "Hoch (VHM / Kurze Auskragung)", "factor": 1.15 },
+                "mittel": { "name": "Mittel (Standard Setup)", "factor": 1.0 },
+                "gering": { "name": "Gering (Lange Auskragung / Vibrationsgefahr)", "factor": 0.70 }
+            },
             profiles: {
                 "schruppen": { "name": "Schruppen (Roughing)", "vc_factor": 0.85, "fz_factor": 1.20, "ap_factor": 1.0, "ae_factor": 0.7, "description": "Hohes Spanvolumen, reduziertes vc, hoher Vorschub" },
                 "schlichten": { "name": "Schlichten (Finishing)", "vc_factor": 1.20, "fz_factor": 0.50, "ap_factor": 0.2, "ae_factor": 0.1, "description": "Hohe Oberflächengüte, hohes vc, feiner Vorschub" },
@@ -322,24 +343,20 @@
             },
             tools: {
                 "tool_vhm_12": {
-                    "name": "VHM Schaftfräser D12 (Standard)",
+                    "name": "VHM Schaftfräser D12",
                     "type": "Schaftfräser",
                     "material_schneidstoff": "VHM",
                     "diameter": 12.0,
                     "z": 4,
-                    "max_overhang": 36.0,
-                    "helix_angle": 30.0,
                     "vc_per_material": { "stahl_c45": 220, "alu_wrought": 600, "rostfrei": 140, "titan": 60 },
                     "suitable_materials": ["stahl_c45", "alu_wrought", "rostfrei", "titan"]
                 },
                 "tool_schrupp_16": {
-                    "name": "Schruppfräser Schrupp-Pro D16",
+                    "name": "Schruppfräser D16",
                     "type": "Schruppfräser",
                     "material_schneidstoff": "VHM",
                     "diameter": 16.0,
                     "z": 3,
-                    "max_overhang": 48.0,
-                    "helix_angle": 45.0,
                     "vc_per_material": { "stahl_c45": 180, "alu_wrought": 500, "rostfrei": 110, "titan": 45 },
                     "suitable_materials": ["stahl_c45", "rostfrei"]
                 }
@@ -351,30 +368,26 @@
         let currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0, q: 0, power: 0, fz_eff: 0 };
 
         function loadDatabase() {
-            const saved = localStorage.getItem('cnc_tool_guide_db');
+            const saved = localStorage.getItem('cnc_tool_guide_db_rigidity_var');
             if (saved) {
                 try { 
                     const parsed = JSON.parse(saved);
-                    // Sicherstellen dass Maschinen-Objekt existiert (Abwärtskompatibilität)
                     if (parsed && parsed.tools && parsed.materials) {
-                        if (!parsed.machines) {
-                            parsed.machines = defaultDb.machines;
-                        }
+                        if (!parsed.machines) parsed.machines = defaultDb.machines;
+                        if (!parsed.rigidity) parsed.rigidity = defaultDb.rigidity;
                         return parsed;
                     }
-                } catch (e) { 
-                    console.error("Fehler beim Parsen von localStorage", e); 
-                }
+                } catch (e) { console.error(e); }
             }
             return JSON.parse(JSON.stringify(defaultDb));
         }
 
         function saveDatabase() {
-            localStorage.setItem('cnc_tool_guide_db', JSON.stringify(db));
+            localStorage.setItem('cnc_tool_guide_db_rigidity_var', JSON.stringify(db));
         }
 
         function resetToDefaultData() {
-            if(confirm("Möchtest du die Datenbank auf die Werkseinstellungen zurücksetzen? Eigene Favoriten/Änderungen gehen dabei verloren.")) {
+            if(confirm("Datenbank auf Werkseinstellungen zurücksetzen?")) {
                 db = JSON.parse(JSON.stringify(defaultDb));
                 saveDatabase();
                 initApp();
@@ -396,20 +409,26 @@
             // Maschinen
             const machSel = document.getElementById('machine-select');
             const delMachSel = document.getElementById('del-machine-select');
-            machSel.innerHTML = ''; 
-            if(delMachSel) delMachSel.innerHTML = '';
-            
+            machSel.innerHTML = ''; if(delMachSel) delMachSel.innerHTML = '';
             for (const [id, m] of Object.entries(db.machines)) {
                 machSel.add(new Option(m.name, id));
                 if(delMachSel) delMachSel.add(new Option(m.name, id));
             }
 
+            // Steifigkeit
+            const rigSel = document.getElementById('rigidity-select');
+            const delRigSel = document.getElementById('del-rigidity-select');
+            rigSel.innerHTML = ''; if(delRigSel) delRigSel.innerHTML = '';
+            for (const [id, r] of Object.entries(db.rigidity)) {
+                rigSel.add(new Option(`${r.name} (Faktor: ${r.factor})`, id));
+                if(delRigSel) delRigSel.add(new Option(`${r.name} (${r.factor})`, id));
+            }
+            if(db.rigidity["mittel"]) rigSel.value = "mittel";
+
             // Werkzeuge
             const toolSel = document.getElementById('tool-select');
             const delToolSel = document.getElementById('del-tool-select');
-            toolSel.innerHTML = ''; 
-            if(delToolSel) delToolSel.innerHTML = '';
-            
+            toolSel.innerHTML = ''; if(delToolSel) delToolSel.innerHTML = '';
             for (const [id, t] of Object.entries(db.tools)) {
                 toolSel.add(new Option(t.name, id));
                 if(delToolSel) delToolSel.add(new Option(t.name, id));
@@ -418,9 +437,7 @@
             // Profile
             const profSel = document.getElementById('profile-select');
             const delProfSel = document.getElementById('del-profile-select');
-            profSel.innerHTML = ''; 
-            if(delProfSel) delProfSel.innerHTML = '';
-            
+            profSel.innerHTML = ''; if(delProfSel) delProfSel.innerHTML = '';
             for (const [id, p] of Object.entries(db.profiles)) {
                 profSel.add(new Option(p.name, id));
                 if(delProfSel) delProfSel.add(new Option(p.name, id));
@@ -480,15 +497,15 @@
             container.innerHTML = '';
             for (const [matId, mat] of Object.entries(db.materials)) {
                 const div = document.createElement('div');
-                div.className = "flex items-center justify-between gap-2 bg-slate-900 p-1.5 rounded";
+                div.className = "flex items-center justify-between gap-2 bg-slate-900 p-1 rounded";
                 div.innerHTML = `
-                    <label class="flex items-center gap-2 truncate text-slate-300 cursor-pointer flex-1">
-                        <input type="checkbox" id="tool-suit-${matId}" checked class="rounded bg-slate-950 border-slate-700 text-emerald-500 focus:ring-0">
-                        <span class="truncate" title="${mat.name}">${mat.name}</span>
+                    <label class="flex items-center gap-1.5 truncate text-slate-300 cursor-pointer flex-1 text-[11px]">
+                        <input type="checkbox" id="tool-suit-${matId}" checked class="rounded bg-slate-950 border-slate-700 text-emerald-500">
+                        <span class="truncate">${mat.name}</span>
                     </label>
                     <div class="flex items-center gap-1">
-                        <span class="text-[10px] text-slate-400">vc:</span>
-                        <input type="number" id="tool-vc-${matId}" value="200" class="w-16 bg-slate-950 border border-slate-700 rounded p-1 text-white text-right text-xs">
+                        <span class="text-[9px] text-slate-400">vc:</span>
+                        <input type="number" id="tool-vc-${matId}" value="200" class="w-14 bg-slate-950 border border-slate-700 rounded p-0.5 text-white text-right text-xs">
                     </div>
                 `;
                 container.appendChild(div);
@@ -512,11 +529,11 @@
             if(tool) {
                 const baseVc = tool.vc_per_material ? (tool.vc_per_material[matId] || 200) : 200;
                 document.getElementById('tool-specs').innerHTML = 
-                    `<strong>Typ:</strong> ${tool.type} | <strong>Schneidstoff:</strong> ${tool.material_schneidstoff} | <strong>Ø:</strong> ${tool.diameter}mm | <strong>Z:</strong> ${tool.z} | <strong>vc:</strong> ${baseVc} m/min`;
+                    `<strong>Typ:</strong> ${tool.type} | <strong>Ø:</strong> ${tool.diameter}mm | <strong>Z:</strong> ${tool.z} | <strong>vc:</strong> ${baseVc} m/min`;
             }
             if(prof) {
                 document.getElementById('profile-specs').innerHTML = 
-                    `<strong>Info:</strong> ${prof.description} | <strong>Faktoren:</strong> vc ${prof.vc_factor} / fz ${prof.fz_factor}`;
+                    `<strong>Info:</strong> ${prof.description}`;
             }
         }
 
@@ -540,11 +557,10 @@
                         <p class="text-[11px] text-slate-300 mt-1 italic">"${fav.feedback || 'Keine Notiz'}"</p>
                         <div class="text-[10px] text-slate-400 mt-2 space-y-0.5">
                             <div>Drehzahl: <strong class="text-white">${fav.rpm} U/min</strong> | Vorschub: <strong class="text-white">${fav.feed_rate_vf} mm/min</strong></div>
-                            <div>ap: ${fav.ap} mm | ae: ${fav.ae} mm</div>
                         </div>
                     </div>
                     <div class="flex gap-2 pt-1">
-                        <button onclick="loadFavorite('${fav.tool_id}', '${fav.material_id}', '${fav.profile_id}')" class="flex-1 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 text-xs py-1 rounded border border-emerald-500/30 font-medium">Laden</button>
+                        <button onclick="loadFavorite('${fav.tool_id}', '${fav.material_id}', '${fav.profile_id}', '${fav.rigidity_id || ''}')" class="flex-1 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 text-xs py-1 rounded border border-emerald-500/30 font-medium">Laden</button>
                         <button onclick="deleteFavorite('${fav.id}')" class="bg-rose-600/20 hover:bg-rose-600/40 text-rose-400 text-xs px-2 rounded border border-rose-500/30">🗑️</button>
                     </div>
                 `;
@@ -552,10 +568,12 @@
             });
         }
 
-        function loadFavorite(toolId, materialId, profileId) {
+        function loadFavorite(toolId, materialId, profileId, rigidityId) {
             if(db.tools[toolId]) document.getElementById('tool-select').value = toolId;
             updateMaterialDropdownForTool();
             if(db.materials[materialId]) document.getElementById('material-select').value = materialId;
+            if(rigidityId && db.rigidity[rigidityId]) document.getElementById('rigidity-select').value = rigidityId;
+            if(db.profiles[profileId]) document.getElementById('profile-select').value = profileId;
             calculate();
         }
 
@@ -566,22 +584,21 @@
             const toolId = document.getElementById('tool-select').value;
             const materialId = document.getElementById('material-select').value;
             const profileId = document.getElementById('profile-select').value;
+            const rigidityId = document.getElementById('rigidity-select').value;
 
-            if(!title) { alert('Bitte einen Titel für den Favoriten vergeben'); return; }
+            if(!title) { alert('Bitte einen Titel vergeben'); return; }
 
             const newFav = {
                 id: 'fav_' + Date.now(),
-                title, tool_id: toolId, material_id: materialId, profile_id: profileId,
+                title, tool_id: toolId, material_id: materialId, profile_id: profileId, rigidity_id: rigidityId,
                 rating, feedback,
                 rpm: currentCalculatedResults.rpm,
-                feed_rate_vf: currentCalculatedResults.vf,
-                ap: currentCalculatedResults.ap,
-                ae: currentCalculatedResults.ae
+                feed_rate_vf: currentCalculatedResults.vf
             };
 
             db.favorites.push(newFav);
             saveDatabase();
-            alert('Erfolgreich als Praxis-Favorit gespeichert!');
+            alert('Als Favorit gespeichert!');
             document.getElementById('fav-title').value = '';
             document.getElementById('fav-feedback').value = '';
             renderFavorites();
@@ -596,12 +613,13 @@
         function addNewMachine() {
             const id = document.getElementById('adm-mach-id').value;
             const name = document.getElementById('adm-mach-name').value;
-            const max_rpm = parseFloat(document.getElementById('adm-mach-rpm').value);
-            const max_vf = parseFloat(document.getElementById('adm-mach-vf').value);
-            const max_kw = parseFloat(document.getElementById('adm-mach-kw').value);
-            if(!id || !name) { alert('Bitte Maschinen-ID und Name ausfüllen'); return; }
-
-            db.machines[id] = { name, max_rpm, max_vf, max_kw };
+            if(!id || !name) { alert('Bitte ausfüllen'); return; }
+            db.machines[id] = {
+                name,
+                max_rpm: parseFloat(document.getElementById('adm-mach-rpm').value),
+                max_vf: parseFloat(document.getElementById('adm-mach-vf').value),
+                max_kw: parseFloat(document.getElementById('adm-mach-kw').value)
+            };
             saveDatabase();
             populateDropdowns();
             alert('Maschine hinzugefügt!');
@@ -609,22 +627,18 @@
 
         function deleteMachine() {
             const id = document.getElementById('del-machine-select').value;
-            if(Object.keys(db.machines).length <= 1) { alert('Es muss mindestens eine Maschine erhalten bleiben.'); return; }
-            if(db.machines[id]) {
-                delete db.machines[id];
-                saveDatabase();
-                populateDropdowns();
-                alert('Gelöscht!');
-            }
+            if(Object.keys(db.machines).length <= 1) { alert('Mindestens eine Maschine nötig.'); return; }
+            delete db.machines[id];
+            saveDatabase();
+            populateDropdowns();
+            alert('Gelöscht!');
         }
 
         function addNewMaterial() {
             const id = document.getElementById('adm-mat-id').value;
             const name = document.getElementById('adm-mat-name').value;
-            const kc11 = parseFloat(document.getElementById('adm-mat-kc11').value);
-            if(!id || !name) { alert('Bitte ID und Name ausfüllen'); return; }
-            
-            db.materials[id] = { name, kc11 };
+            if(!id || !name) { alert('Bitte ausfüllen'); return; }
+            db.materials[id] = { name, kc11: parseFloat(document.getElementById('adm-mat-kc11').value) };
             saveDatabase();
             populateDropdowns();
             alert('Material hinzugefügt!');
@@ -632,18 +646,36 @@
 
         function deleteMaterial() {
             const id = document.getElementById('del-material-select').value;
-            if(db.materials[id]) {
-                delete db.materials[id];
-                saveDatabase();
-                populateDropdowns();
-                alert('Gelöscht!');
-            }
+            delete db.materials[id];
+            saveDatabase();
+            populateDropdowns();
+            alert('Gelöscht!');
+        }
+
+        function addNewRigidity() {
+            const id = document.getElementById('adm-rigidity-id').value;
+            const name = document.getElementById('adm-rigidity-name').value;
+            const factor = parseFloat(document.getElementById('adm-rigidity-factor').value);
+            if(!id || !name || isNaN(factor)) { alert('Bitte alle Felder korrekt ausfüllen'); return; }
+            db.rigidity[id] = { name, factor };
+            saveDatabase();
+            populateDropdowns();
+            alert('Steifigkeitsprofil hinzugefügt/aktualisiert!');
+        }
+
+        function deleteRigidity() {
+            const id = document.getElementById('del-rigidity-select').value;
+            if(Object.keys(db.rigidity).length <= 1) { alert('Mindestens ein Steifigkeitsprofil muss erhalten bleiben.'); return; }
+            delete db.rigidity[id];
+            saveDatabase();
+            populateDropdowns();
+            alert('Gelöscht!');
         }
 
         function addNewTool() {
             const id = document.getElementById('adm-tool-id').value;
             const name = document.getElementById('adm-tool-name').value;
-            if(!id || !name) { alert('Bitte Tool-ID und Name ausfüllen'); return; }
+            if(!id || !name) { alert('Bitte ausfüllen'); return; }
             
             let vcMap = {}; let suitableList = [];
             for (const matId of Object.keys(db.materials)) {
@@ -659,8 +691,6 @@
                 material_schneidstoff: document.getElementById('adm-tool-mat').value,
                 diameter: parseFloat(document.getElementById('adm-tool-d').value),
                 z: parseInt(document.getElementById('adm-tool-z').value),
-                max_overhang: parseFloat(document.getElementById('adm-tool-overhang').value),
-                helix_angle: parseFloat(document.getElementById('adm-tool-helix').value),
                 vc_per_material: vcMap,
                 suitable_materials: suitableList
             };
@@ -672,18 +702,16 @@
 
         function deleteTool() {
             const id = document.getElementById('del-tool-select').value;
-            if(db.tools[id]) {
-                delete db.tools[id];
-                saveDatabase();
-                populateDropdowns();
-                alert('Gelöscht!');
-            }
+            delete db.tools[id];
+            saveDatabase();
+            populateDropdowns();
+            alert('Gelöscht!');
         }
 
         function addNewProfile() {
             const id = document.getElementById('adm-prof-id').value;
             const name = document.getElementById('adm-prof-name').value;
-            if(!id || !name) { alert('Bitte Profil-ID und Name ausfüllen'); return; }
+            if(!id || !name) { alert('Bitte ausfüllen'); return; }
             
             db.profiles[id] = {
                 name,
@@ -701,12 +729,10 @@
 
         function deleteProfile() {
             const id = document.getElementById('del-profile-select').value;
-            if(db.profiles[id]) {
-                delete db.profiles[id];
-                saveDatabase();
-                populateDropdowns();
-                alert('Gelöscht!');
-            }
+            delete db.profiles[id];
+            saveDatabase();
+            populateDropdowns();
+            alert('Gelöscht!');
         }
 
         function calculate() {
@@ -714,18 +740,21 @@
             const toolId = document.getElementById('tool-select').value;
             const matId = document.getElementById('material-select').value;
             const profId = document.getElementById('profile-select').value;
+            const rigId = document.getElementById('rigidity-select').value;
             const rctActive = document.getElementById('rct-toggle').checked;
             
             const mach = db.machines[machId];
             const tool = db.tools[toolId];
             const mat = db.materials[matId];
             const profile = db.profiles[profId];
+            const rigidity = db.rigidity[rigId];
             
-            if(!mach || !tool || !mat || !profile) return;
+            if(!mach || !tool || !mat || !profile || !rigidity) return;
             updateSpecs();
 
             const baseVc = tool.vc_per_material ? (tool.vc_per_material[matId] || 200) : 200;
-            const effectiveVc = baseVc * profile.vc_factor;
+            // Der variable Steifigkeits-Faktor wirkt direkt multiplikativ ein
+            const effectiveVc = baseVc * profile.vc_factor * rigidity.factor;
             
             const D = tool.diameter;
             const z = tool.z;
@@ -734,7 +763,7 @@
             const ae = D * profile.ae_factor;
 
             let baseFz = D * 0.007;
-            let effectiveFz = baseFz * profile.fz_factor;
+            let effectiveFz = baseFz * profile.fz_factor * rigidity.factor;
 
             const rctInfoBox = document.getElementById('rct-info');
 
@@ -757,43 +786,33 @@
 
             currentCalculatedResults = { rpm: n, vf: vf, ap: ap, ae: ae, q: Q, power: power_kw, fz_eff: effectiveFz };
 
-            // DOM Elemente für Ausgabe holen
             const rpmEl = document.getElementById('res-rpm');
             const vfEl = document.getElementById('res-vf');
             const powerEl = document.getElementById('res-power');
 
-            // Drehzahl-Grenzwert-Prüfung
             rpmEl.innerText = n.toFixed(2) + " U/min";
             if (n > mach.max_rpm) {
                 rpmEl.className = "text-xl font-bold text-rose-500 animate-pulse";
-                rpmEl.title = `Überschreitet Maschinenlimit (${mach.max_rpm} U/min)!`;
             } else {
                 rpmEl.className = "text-xl font-bold text-emerald-400";
-                rpmEl.title = "";
             }
 
-            // Vorschub-Grenzwert-Prüfung
             vfEl.innerText = vf.toFixed(2) + " mm/min";
             if (vf > mach.max_vf) {
                 vfEl.className = "text-xl font-bold text-rose-500 animate-pulse";
-                vfEl.title = `Überschreitet Maschinenlimit (${mach.max_vf} mm/min)!`;
             } else {
                 vfEl.className = "text-xl font-bold text-emerald-400";
-                vfEl.title = "";
             }
 
             document.getElementById('res-fz-eff').innerText = `fz(eff): ${effectiveFz.toFixed(4)} mm`;
             document.getElementById('res-apae').innerText = ap.toFixed(1) + " / " + ae.toFixed(1) + " mm";
             document.getElementById('res-q').innerText = Q.toFixed(2) + " cm³/min";
 
-            // Leistungs-Grenzwert-Prüfung
             powerEl.innerText = power_kw.toFixed(2) + " kW";
             if (power_kw > mach.max_kw) {
                 powerEl.className = "text-xl font-bold text-rose-500 animate-pulse";
-                powerEl.title = `Überschreitet Maschinenlimit (${mach.max_kw} kW)!`;
             } else {
                 powerEl.className = "text-xl font-bold text-amber-400";
-                powerEl.title = "";
             }
         }
 
@@ -801,29 +820,24 @@
             const mach = db.machines[document.getElementById('machine-select').value]?.name || 'Unbekannt';
             const tool = db.tools[document.getElementById('tool-select').value]?.name || 'Unbekannt';
             const mat = db.materials[document.getElementById('material-select').value]?.name || 'Unbekannt';
+            const rig = db.rigidity[document.getElementById('rigidity-select').value]?.name || 'Unbekannt';
             const prof = db.profiles[document.getElementById('profile-select').value]?.name || 'Unbekannt';
-            const rctStatus = document.getElementById('rct-toggle').checked ? 'Aktiv' : 'Inaktiv';
 
             const report = `--- CNC OPEN TOOL GUIDE BERICHT ---
 Maschine: ${mach}
 Werkzeug: ${tool}
 Werkstoff: ${mat}
+Steifigkeit: ${rig}
 Profil: ${prof}
-Radial Chip Thinning (RCT): ${rctStatus}
 ----------------------------------
 Drehzahl (n): ${currentCalculatedResults.rpm.toFixed(2)} U/min
 Tischvorschub (vf): ${currentCalculatedResults.vf.toFixed(2)} mm/min
-Eff. Vorschub pro Zahn (fz,eff): ${currentCalculatedResults.fz_eff.toFixed(4)} mm
-Schnitttiefe (ap): ${currentCalculatedResults.ap.toFixed(1)} mm
-Schnittbreite (ae): ${currentCalculatedResults.ae.toFixed(1)} mm
 Zeitspanvolumen (Q): ${currentCalculatedResults.q.toFixed(2)} cm³/min
 Leistungsbedarf (Pc): ${currentCalculatedResults.power.toFixed(2)} kW
 ----------------------------------`;
 
             navigator.clipboard.writeText(report).then(() => {
-                alert("Schnittdaten-Bericht erfolgreich in die Zwischenablage kopiert!");
-            }).catch(err => {
-                console.error("Fehler beim Kopieren", err);
+                alert("Bericht in Zwischenablage kopiert!");
             });
         }
 
