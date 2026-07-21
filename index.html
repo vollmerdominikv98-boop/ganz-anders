@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CNC Open Tool Guide - Vollständige Admin & Rechner</title>
+    <title>CNC Open Tool Guide - Werkzeug-spezifische vc</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans p-6">
@@ -18,12 +18,12 @@
             </button>
         </header>
 
-        <!-- ADMIN BEREICH (DREiteilig: Material, Werkzeug, Profile - alle mit Beschriftungen & Einheiten) -->
+        <!-- ADMIN BEREICH -->
         <div id="admin-panel" class="hidden mb-8 bg-slate-900 p-6 rounded-xl border border-emerald-500/30 space-y-6">
             <h2 class="text-xl font-semibold text-emerald-400">Admin-Konsole: Verwalten von Daten & Profilen</h2>
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 border-b border-slate-800 pb-6">
-                <!-- 1. Materialien (Mit Beschriftungen & Einheiten) -->
+                <!-- 1. Materialien (Nur noch Name und Spezifische Schnittkraft kc1.1) -->
                 <div class="space-y-3">
                     <h3 class="font-medium text-slate-200">Material</h3>
                     <div>
@@ -32,17 +32,11 @@
                     </div>
                     <div>
                         <label class="block text-slate-400 mb-1 text-xs">Bezeichnung</label>
-                        <input type="text" id="adm-mat-name" placeholder="z.B. Messing CuZn39Pb3" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                        <input type="text" id="adm-mat-name" placeholder="z.B. Messing" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
                     </div>
-                    <div class="grid grid-cols-2 gap-2 text-xs">
-                        <div>
-                            <label class="block text-slate-400 mb-1">Schnittgeschwindigkeit vc (m/min)</label>
-                            <input type="number" id="adm-mat-vc" value="300" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
-                        </div>
-                        <div>
-                            <label class="block text-slate-400 mb-1">Spez. Schnittkraft kc1.1 (N/mm²)</label>
-                            <input type="number" id="adm-mat-kc11" value="1400" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
-                        </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1 text-xs">Spez. Schnittkraft kc1.1 (N/mm²)</label>
+                        <input type="number" id="adm-mat-kc11" value="1400" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
                     </div>
                     <button onclick="addNewMaterial()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-sm font-medium">Hinzufügen</button>
                     <div class="flex gap-2 pt-2">
@@ -51,7 +45,7 @@
                     </div>
                 </div>
 
-                <!-- 2. Werkzeuge (Mit Beschriftungen & Einheiten) -->
+                <!-- 2. Werkzeuge (Mit materialabhängigen vc-Werten) -->
                 <div class="space-y-3">
                     <h3 class="font-medium text-slate-200">Werkzeug</h3>
                     <div>
@@ -60,11 +54,11 @@
                     </div>
                     <div>
                         <label class="block text-slate-400 mb-1 text-xs">Bezeichnung</label>
-                        <input type="text" id="adm-tool-name" placeholder="z.B. Torusfräser R1.0" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                        <input type="text" id="adm-tool-name" placeholder="z.B. Torusfräser" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
                     </div>
                     <div class="grid grid-cols-2 gap-2 text-xs">
                         <div>
-                            <label class="block text-slate-400 mb-1">Werkzeug-Typ</label>
+                            <label class="block text-slate-400 mb-1">Typ</label>
                             <input type="text" id="adm-tool-type" value="Schaftfräser" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
                         </div>
                         <div>
@@ -90,6 +84,15 @@
                             <input type="number" id="adm-tool-helix" value="30" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
                         </div>
                     </div>
+
+                    <!-- Dynamische Eingabe für vc pro Material -->
+                    <div>
+                        <label class="block text-slate-400 mb-1 text-xs">vc (m/min) je Material:</label>
+                        <div id="adm-tool-vc-container" class="space-y-1 bg-slate-950 p-2 rounded border border-slate-800 text-xs max-h-28 overflow-y-auto">
+                            <!-- Wird per JS dynamisch gefüllt -->
+                        </div>
+                    </div>
+
                     <button onclick="addNewTool()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-sm font-medium">Hinzufügen</button>
                     <div class="flex gap-2 pt-2">
                         <select id="del-tool-select" class="flex-1 bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm"></select>
@@ -97,7 +100,7 @@
                     </div>
                 </div>
 
-                <!-- 3. Bearbeitungsprofile (Mit Beschriftungen & Einheiten) -->
+                <!-- 3. Bearbeitungsprofile -->
                 <div class="space-y-3">
                     <h3 class="font-medium text-slate-200">Bearbeitungsprofil</h3>
                     <div>
@@ -130,7 +133,7 @@
 
                     <div>
                         <label class="block text-slate-400 mb-1 text-xs">Beschreibung</label>
-                        <input type="text" id="adm-prof-desc" placeholder="Kurzbeschreibung der Anwendung" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                        <input type="text" id="adm-prof-desc" placeholder="Kurzbeschreibung" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
                     </div>
 
                     <button onclick="addNewProfile()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-sm font-medium">Hinzufügen</button>
@@ -193,7 +196,7 @@
                     </div>
                 </div>
                 <div class="text-xs text-slate-500 mt-6 text-center">
-                    Vollständige Profil- und Werkzeugverwaltung aktiv
+                    Werkzeug-spezifische vc-Zuweisung aktiv
                 </div>
             </div>
         </div>
@@ -202,10 +205,10 @@
     <script>
         let db = {
             materials: {
-                "stahl_c45": { name: "Stahl (z.B. C45)", base_vc: 220, kc11: 1800 },
-                "alu_wrought": { name: "Aluminium (knetlegiert)", base_vc: 600, kc11: 700 },
-                "rostfrei": { name: "Rostfreier Stahl (Inox)", base_vc: 140, kc11: 2400 },
-                "titan": { name: "Titanlegierung", base_vc: 60, kc11: 2800 }
+                "stahl_c45": { name: "Stahl (z.B. C45)", kc11: 1800 },
+                "alu_wrought": { name: "Aluminium (knetlegiert)", kc11: 700 },
+                "rostfrei": { name: "Rostfreier Stahl (Inox)", kc11: 2400 },
+                "titan": { name: "Titanlegierung", kc11: 2800 }
             },
             profiles: {
                 "schruppen": { name: "Schruppen (Roughing)", vc_factor: 0.85, fz_factor: 1.20, ap_factor: 1.0, ae_factor: 0.7, description: "Hohes Spanvolumen, reduziertes vc, hoher Vorschub" },
@@ -214,13 +217,33 @@
                 "besaeumen": { name: "Besäumen / Kantenfräsen", vc_factor: 0.95, fz_factor: 0.9, ap_factor: 0.8, ae_factor: 0.3, description: "Kanten- und Konturbearbeitung" }
             },
             tools: {
-                "tool_vhm_12": { name: "VHM Schaftfräser D12 (Standard)", type: "Schaftfräser", material_schneidstoff: "VHM", diameter: 12.0, z: 4, max_overhang: 36.0, helix_angle: 30.0 },
-                "tool_schrupp_16": { name: "Schruppfräser Schrupp-Pro D16", type: "Schruppfräser", material_schneidstoff: "VHM", diameter: 16.0, z: 3, max_overhang: 48.0, helix_angle: 45.0 }
+                "tool_vhm_12": { 
+                    name: "VHM Schaftfräser D12 (Standard)", type: "Schaftfräser", material_schneidstoff: "VHM", diameter: 12.0, z: 4, max_overhang: 36.0, helix_angle: 30.0,
+                    vc_per_material: { "stahl_c45": 220, "alu_wrought": 600, "rostfrei": 140, "titan": 60 }
+                },
+                "tool_schrupp_16": { 
+                    name: "Schruppfräser Schrupp-Pro D16", type: "Schruppfräser", material_schneidstoff: "VHM", diameter: 16.0, z: 3, max_overhang: 48.0, helix_angle: 45.0,
+                    vc_per_material: { "stahl_c45": 180, "alu_wrought": 500, "rostfrei": 110, "titan": 45 }
+                }
             }
         };
 
         function toggleAdmin() {
             document.getElementById('admin-panel').classList.toggle('hidden');
+        }
+
+        function renderToolVcInputs() {
+            const container = document.getElementById('adm-tool-vc-container');
+            container.innerHTML = '';
+            for (const [matId, mat] of Object.entries(db.materials)) {
+                const div = document.createElement('div');
+                div.className = "flex items-center justify-between gap-2";
+                div.innerHTML = `
+                    <span class="truncate text-slate-300" title="${mat.name}">${mat.name}:</span>
+                    <input type="number" id="tool-vc-val-${matId}" value="200" class="w-20 bg-slate-900 border border-slate-700 rounded p-1 text-white text-right">
+                `;
+                container.appendChild(div);
+            }
         }
 
         function updateDropdowns() {
@@ -245,19 +268,22 @@
                 profSel.add(new Option(p.name, id)); delProfSel.add(new Option(p.name, id));
             }
 
+            renderToolVcInputs();
             updateSpecs();
             calculate();
         }
 
         function updateSpecs() {
             const toolId = document.getElementById('tool-select').value;
+            const matId = document.getElementById('material-select').value;
             const profId = document.getElementById('profile-select').value;
             const tool = db.tools[toolId];
             const prof = db.profiles[profId];
 
             if(tool) {
+                const baseVc = tool.vc_per_material ? (tool.vc_per_material[matId] || 200) : 200;
                 document.getElementById('tool-specs').innerHTML = 
-                    `<strong>Typ:</strong> ${tool.type} | <strong>Schneidstoff:</strong> ${tool.material_schneidstoff} | <strong>Ø:</strong> ${tool.diameter}mm | <strong>Z:</strong> ${tool.z}`;
+                    `<strong>Typ:</strong> ${tool.type} | <strong>Schneidstoff:</strong> ${tool.material_schneidstoff} | <strong>Ø:</strong> ${tool.diameter}mm | <strong>Z:</strong> ${tool.z} | <strong>Basis-vc:</strong> ${baseVc} m/min`;
             }
             if(prof) {
                 document.getElementById('profile-specs').innerHTML = 
@@ -269,27 +295,46 @@
             const id = document.getElementById('adm-mat-id').value;
             const name = document.getElementById('adm-mat-name').value;
             if(!id || !name) { alert('Bitte Material-ID und Bezeichnung ausfüllen'); return; }
-            db.materials[id] = { name: name, base_vc: parseFloat(document.getElementById('adm-mat-vc').value), kc11: parseFloat(document.getElementById('adm-mat-kc11').value) };
+            db.materials[id] = { name: name, kc11: parseFloat(document.getElementById('adm-mat-kc11').value) };
+            
+            // Füge das neue Material standardmäßig auch bestehenden Werkzeugen hinzu
+            for (const toolId in db.tools) {
+                if (!db.tools[toolId].vc_per_material) db.tools[toolId].vc_per_material = {};
+                db.tools[toolId].vc_per_material[id] = 200;
+            }
+
             updateDropdowns(); alert('Material hinzugefügt!');
         }
 
         function deleteMaterial() {
             const id = document.getElementById('del-material-select').value;
             if(Object.keys(db.materials).length <= 1) { alert('Mindestens 1 Material muss bleiben!'); return; }
-            delete db.materials[id]; updateDropdowns(); alert('Gelöscht!');
+            delete db.materials[id]; 
+            for (const toolId in db.tools) {
+                if (db.tools[toolId].vc_per_material) delete db.tools[toolId].vc_per_material[id];
+            }
+            updateDropdowns(); alert('Gelöscht!');
         }
 
         function addNewTool() {
             const id = document.getElementById('adm-tool-id').value;
             const name = document.getElementById('adm-tool-name').value;
             if(!id || !name) { alert('Bitte Werkzeug-ID und Bezeichnung ausfüllen'); return; }
+            
+            let vcMap = {};
+            for (const matId of Object.keys(db.materials)) {
+                const input = document.getElementById(`tool-vc-val-${matId}`);
+                vcMap[matId] = input ? parseFloat(input.value) : 200;
+            }
+
             db.tools[id] = {
                 name: name, type: document.getElementById('adm-tool-type').value,
                 material_schneidstoff: document.getElementById('adm-tool-mat').value,
                 diameter: parseFloat(document.getElementById('adm-tool-d').value),
                 z: parseInt(document.getElementById('adm-tool-z').value),
                 max_overhang: parseFloat(document.getElementById('adm-tool-overhang').value),
-                helix_angle: parseFloat(document.getElementById('adm-tool-helix').value)
+                helix_angle: parseFloat(document.getElementById('adm-tool-helix').value),
+                vc_per_material: vcMap
             };
             updateDropdowns(); alert('Werkzeug hinzugefügt!');
         }
@@ -322,14 +367,18 @@
         }
 
         function calculate() {
-            const tool = db.tools[document.getElementById('tool-select').value];
-            const mat = db.materials[document.getElementById('material-select').value];
-            const profile = db.profiles[document.getElementById('profile-select').value];
+            const toolId = document.getElementById('tool-select').value;
+            const matId = document.getElementById('material-select').value;
+            const profId = document.getElementById('profile-select').value;
+            const tool = db.tools[toolId];
+            const mat = db.materials[matId];
+            const profile = db.profiles[profId];
 
             if(!tool || !mat || !profile) return;
             updateSpecs();
 
-            const effectiveVc = mat.base_vc * profile.vc_factor;
+            const baseVc = tool.vc_per_material && tool.vc_per_material[matId] !== undefined ? tool.vc_per_material[matId] : 200;
+            const effectiveVc = baseVc * profile.vc_factor;
             const effectiveFz = (tool.diameter * 0.007) * profile.fz_factor;
             const ap = tool.diameter * profile.ap_factor;
             const ae = tool.diameter * profile.ae_factor;
