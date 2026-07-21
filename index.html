@@ -7,69 +7,93 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans p-6">
-    <div class="max-w-5xl mx-auto">
+    <div class="max-w-6xl mx-auto">
         <header class="mb-8 border-b border-slate-800 pb-4 flex justify-between items-center">
             <div>
                 <h1 class="text-3xl font-bold tracking-tight text-emerald-400">CNC Open Tool Guide</h1>
-                <p class="text-slate-400">Herstellerunabhängiger Fräsrechner & Admin-Konsole</p>
+                <p class="text-slate-400">Herstellerunabhängiger Fräsrechner & Vollwertige Admin-Konsole</p>
             </div>
             <button onclick="toggleAdmin()" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 px-4 py-2 rounded-lg border border-slate-700 font-medium transition">
                 ⚙️ Admin-Konsole umschalten
             </button>
         </header>
 
-        <!-- ADMIN BEREICH (Standardmäßig ausgeblendet) -->
-        <div id="admin-panel" class="hidden mb-8 bg-slate-900 p-6 rounded-xl border border-emerald-500/30">
-            <h2 class="text-xl font-semibold mb-4 text-emerald-400">Admin-Konsole: Neues Material anlegen</h2>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                    <label class="block text-sm text-slate-400 mb-1">ID (z.B. kupfer)</label>
-                    <input type="text" id="adm-id" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white">
+        <!-- ADMIN BEREICH -->
+        <div id="admin-panel" class="hidden mb-8 bg-slate-900 p-6 rounded-xl border border-emerald-500/30 space-y-6">
+            <h2 class="text-xl font-semibold text-emerald-400">Admin-Konsole: Hinzufügen & Löschen</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 border-b border-slate-800 pb-6">
+                <!-- Material verwalten -->
+                <div class="space-y-4">
+                    <h3 class="font-medium text-slate-200">Neues Material anlegen</h3>
+                    <input type="text" id="adm-mat-id" placeholder="ID (z.B. messing)" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white">
+                    <input type="text" id="adm-mat-name" placeholder="Name" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white">
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="number" id="adm-mat-vc" placeholder="Grund-vc" value="300" class="bg-slate-950 border border-slate-800 rounded p-2 text-white">
+                        <input type="number" id="adm-mat-kc11" placeholder="kc1.1" value="1400" class="bg-slate-950 border border-slate-800 rounded p-2 text-white">
+                    </div>
+                    <button onclick="addNewMaterial()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded font-medium transition">Material speichern</button>
+                    
+                    <div class="pt-2">
+                        <label class="block text-sm text-slate-400 mb-1">Material löschen:</label>
+                        <div class="flex gap-2">
+                            <select id="del-material-select" class="flex-1 bg-slate-950 border border-slate-800 rounded p-2 text-white"></select>
+                            <button onclick="deleteMaterial()" class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded font-medium transition">Löschen</button>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-sm text-slate-400 mb-1">Materialbezeichnung</label>
-                    <input type="text" id="adm-name" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white">
-                </div>
-                <div>
-                    <label class="block text-sm text-slate-400 mb-1">Grund-vc (m/min)</label>
-                    <input type="number" id="adm-vc" value="180" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white">
-                </div>
-                <div>
-                    <label class="block text-sm text-slate-400 mb-1">Spez. Schnittkraft kc1.1</label>
-                    <input type="number" id="adm-kc11" value="1500" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white">
+
+                <!-- Werkzeug verwalten -->
+                <div class="space-y-4">
+                    <h3 class="font-medium text-slate-200">Neues Werkzeug (mit Kennwerten) anlegen</h3>
+                    <input type="text" id="adm-tool-id" placeholder="ID (z.B. tool_schrupp_20)" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white">
+                    <input type="text" id="adm-tool-name" placeholder="Bezeichnung" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white">
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" id="adm-tool-type" placeholder="Typ (z.B. Schaftfräser)" class="bg-slate-950 border border-slate-800 rounded p-2 text-white">
+                        <input type="text" id="adm-tool-mat" placeholder="Schneidstoff (z.B. VHM)" class="bg-slate-950 border border-slate-800 rounded p-2 text-white">
+                    </div>
+                    <div class="grid grid-cols-4 gap-2">
+                        <input type="number" id="adm-tool-d" placeholder="Ø mm" value="10" class="bg-slate-950 border border-slate-800 rounded p-2 text-white">
+                        <input type="number" id="adm-tool-z" placeholder="Zähne" value="4" class="bg-slate-950 border border-slate-800 rounded p-2 text-white">
+                        <input type="number" id="adm-tool-overhang" placeholder="Auskrag" value="35" class="bg-slate-950 border border-slate-800 rounded p-2 text-white">
+                        <input type="number" id="adm-tool-helix" placeholder="Drall°" value="30" class="bg-slate-950 border border-slate-800 rounded p-2 text-white">
+                    </div>
+                    <button onclick="addNewTool()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded font-medium transition">Werkzeug speichern</button>
+
+                    <div class="pt-2">
+                        <label class="block text-sm text-slate-400 mb-1">Werkzeug löschen:</label>
+                        <div class="flex gap-2">
+                            <select id="del-tool-select" class="flex-1 bg-slate-950 border border-slate-800 rounded p-2 text-white"></select>
+                            <button onclick="deleteTool()" class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded font-medium transition">Löschen</button>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <button onclick="addNewMaterial()" class="mt-4 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded font-medium transition">
-                Material in Datenbank speichern
-            </button>
         </div>
 
         <!-- HAUPTRECHNER -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="bg-slate-900 p-6 rounded-xl border border-slate-800 space-y-4">
-                <h2 class="text-xl font-semibold text-slate-200">Konfiguration</h2>
+                <h2 class="text-xl font-semibold text-slate-200">Konfiguration & Bibliothek</h2>
                 
                 <div>
                     <label class="block text-sm text-slate-400 mb-1">Werkzeug wählen</label>
                     <select id="tool-select" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white" onchange="calculate()">
-                        <option value="tool_1">Vollhartmetall Schaftfräser D12 (4 Zähne)</option>
-                        <option value="tool_2">Schruppfräser Schrupp-Pro D16 (3 Zähne)</option>
-                        <option value="tool_3">Mini-Fräser D6 (2 Zähne)</option>
+                        <!-- Wird dynamisch gefüllt -->
                     </select>
+                    <!-- Detailanzeige der Werkzeug-Kennwerte -->
+                    <div id="tool-specs" class="text-xs text-slate-400 mt-2 bg-slate-950 p-2 rounded border border-slate-800"></div>
                 </div>
 
                 <div>
                     <label class="block text-sm text-slate-400 mb-1">Werkstoff wählen</label>
                     <select id="material-select" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white" onchange="calculate()">
-                        <option value="stahl_c45">Stahl (z.B. C45)</option>
-                        <option value="alu_wrought">Aluminium (knetlegiert)</option>
-                        <option value="rostfrei">Rostfreier Stahl (Inox)</option>
-                        <option value="titan">Titanlegierung</option>
+                        <!-- Wird dynamisch gefüllt -->
                     </select>
                 </div>
 
                 <div>
-                    <label class="block text-sm text-slate-400 mb-1">Bearbeitungsprofil (mit Faktoren)</label>
+                    <label class="block text-sm text-slate-400 mb-1">Bearbeitungsprofil</label>
                     <select id="profile-select" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white" onchange="calculate()">
                         <option value="schruppen">Schruppen (Roughing) [vc x0.85, fz x1.2]</option>
                         <option value="schlichten">Schlichten (Finishing) [vc x1.2, fz x0.5]</option>
@@ -107,20 +131,19 @@
                     </div>
                 </div>
                 <div class="text-xs text-slate-500 mt-6 text-center">
-                    Offene CNC Architektur • Dynamische Profilfaktoren aktiv
+                    Vollwertige Werkzeugbibliothek • Löschfunktion aktiv
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Simulierte Datenbank im Frontend für den Sofort-Test im Browser
-        const db = {
+        let db = {
             materials: {
-                "stahl_c45": { base_vc: 220, kc11: 1800 },
-                "alu_wrought": { base_vc: 600, kc11: 700 },
-                "rostfrei": { base_vc: 140, kc11: 2400 },
-                "titan": { base_vc: 60, kc11: 2800 }
+                "stahl_c45": { name: "Stahl (z.B. C45)", base_vc: 220, kc11: 1800 },
+                "alu_wrought": { name: "Aluminium (knetlegiert)", base_vc: 600, kc11: 700 },
+                "rostfrei": { name: "Rostfreier Stahl (Inox)", base_vc: 140, kc11: 2400 },
+                "titan": { name: "Titanlegierung", base_vc: 60, kc11: 2800 }
             },
             profiles: {
                 "schruppen": { vc_factor: 0.85, fz_factor: 1.20, ap_factor: 1.0, ae_factor: 0.7 },
@@ -129,40 +152,96 @@
                 "besaeumen": { vc_factor: 0.95, fz_factor: 0.9, ap_factor: 0.8, ae_factor: 0.3 }
             },
             tools: {
-                "tool_1": { diameter: 12, z: 4 },
-                "tool_2": { diameter: 16, z: 3 },
-                "tool_3": { diameter: 6, z: 2 }
+                "tool_vhm_12": { name: "VHM Schaftfräser D12 (Standard)", type: "Schaftfräser", material_schneidstoff: "VHM", diameter: 12.0, z: 4, max_overhang: 36.0, helix_angle: 30.0 },
+                "tool_schrupp_16": { name: "Schruppfräser Schrupp-Pro D16", type: "Schruppfräser", material_schneidstoff: "VHM", diameter: 16.0, z: 3, max_overhang: 48.0, helix_angle: 45.0 },
+                "tool_torus_10": { name: "Torusfräser Eckenradius D10 R1.0", type: "Torusfräser", material_schneidstoff: "VHM", diameter: 10.0, z: 2, max_overhang: 30.0, helix_angle: 25.0 }
             }
         };
 
         function toggleAdmin() {
-            const panel = document.getElementById('admin-panel');
-            panel.classList.toggle('hidden');
+            document.getElementById('admin-panel').classList.toggle('hidden');
+        }
+
+        function updateDropdowns() {
+            // Material Dropdowns
+            const matSelect = document.getElementById('material-select');
+            const delMatSelect = document.getElementById('del-material-select');
+            matSelect.innerHTML = '';
+            delMatSelect.innerHTML = '';
+
+            for (const [id, mat] of Object.entries(db.materials)) {
+                matSelect.add(new Option(mat.name, id));
+                delMatSelect.add(new Option(mat.name, id));
+            }
+
+            // Werkzeug Dropdowns
+            const toolSelect = document.getElementById('tool-select');
+            const delToolSelect = document.getElementById('del-tool-select');
+            toolSelect.innerHTML = '';
+            delToolSelect.innerHTML = '';
+
+            for (const [id, tool] of Object.entries(db.tools)) {
+                toolSelect.add(new Option(tool.name, id));
+                delToolSelect.add(new Option(tool.name, id));
+            }
+
+            updateToolSpecs();
+            calculate();
+        }
+
+        function updateToolSpecs() {
+            const toolId = document.getElementById('tool-select').value;
+            const tool = db.tools[toolId];
+            if(!tool) return;
+
+            document.getElementById('tool-specs').innerHTML = 
+                `<strong>Typ:</strong> ${tool.type} | <strong>Schneidstoff:</strong> ${tool.material_schneidstoff} | <strong>Ø:</strong> ${tool.diameter}mm | <strong>Zähne:</strong> ${tool.z} | <strong>Auskragung:</strong> ${tool.max_overhang}mm | <strong>Drall:</strong> ${tool.helix_angle}°`;
         }
 
         function addNewMaterial() {
-            const id = document.getElementById('adm-id').value;
-            const name = document.getElementById('adm-name').value;
-            const vc = parseFloat(document.getElementById('adm-vc').value);
-            const kc11 = parseFloat(document.getElementById('adm-kc11').value);
+            const id = document.getElementById('adm-mat-id').value;
+            const name = document.getElementById('adm-mat-name').value;
+            const vc = parseFloat(document.getElementById('adm-mat-vc').value);
+            const kc11 = parseFloat(document.getElementById('adm-mat-kc11').value);
 
-            if(!id || !name) {
-                alert('Bitte ID und Name angeben!');
-                return;
-            }
+            if(!id || !name) { alert('Bitte ID und Name eingeben'); return; }
 
-            db.materials[id] = { base_vc: vc, kc11: kc11 };
-            
-            // Dropdown aktualisieren
-            const select = document.getElementById('material-select');
-            const opt = document.createElement('option');
-            opt.value = id;
-            opt.innerHTML = name;
-            select.appendChild(opt);
-            select.value = id;
+            db.materials[id] = { name: name, base_vc: vc, kc11: kc11 };
+            updateDropdowns();
+            alert('Material hinzugefügt!');
+        }
 
-            alert('Material erfolgreich hinzugefügt!');
-            calculate();
+        function deleteMaterial() {
+            const id = document.getElementById('del-material-select').value;
+            if(Object.keys(db.materials).length <= 1) { alert('Es muss mindestens ein Material erhalten bleiben!'); return; }
+            delete db.materials[id];
+            updateDropdowns();
+            alert('Material gelöscht!');
+        }
+
+        function addNewTool() {
+            const id = document.getElementById('adm-tool-id').value;
+            const name = document.getElementById('adm-tool-name').value;
+            const type = document.getElementById('adm-tool-type').value;
+            const mat = document.getElementById('adm-tool-mat').value;
+            const d = parseFloat(document.getElementById('adm-tool-d').value);
+            const z = parseInt(document.getElementById('adm-tool-z').value);
+            const overhang = parseFloat(document.getElementById('adm-tool-overhang').value);
+            const helix = parseFloat(document.getElementById('adm-tool-helix').value);
+
+            if(!id || !name) { alert('Bitte ID und Name eingeben'); return; }
+
+            db.tools[id] = { name: name, type: type, material_schneidstoff: mat, diameter: d, z: z, max_overhang: overhang, helix_angle: helix };
+            updateDropdowns();
+            alert('Werkzeug zur Bibliothek hinzugefügt!');
+        }
+
+        function deleteTool() {
+            const id = document.getElementById('del-tool-select').value;
+            if(Object.keys(db.tools).length <= 1) { alert('Es muss mindestens ein Werkzeug erhalten bleiben!'); return; }
+            delete db.tools[id];
+            updateDropdowns();
+            alert('Werkzeug gelöscht!');
         }
 
         function calculate() {
@@ -175,6 +254,8 @@
             const profile = db.profiles[profileId];
 
             if(!tool || !mat || !profile) return;
+
+            updateToolSpecs();
 
             const effectiveVc = mat.base_vc * profile.vc_factor;
             const baseFz = tool.diameter * 0.007;
@@ -197,8 +278,8 @@
             document.getElementById('res-power').innerText = powerKw.toFixed(2) + " kW";
         }
 
-        // Initiale Berechnung beim Laden
-        calculate();
+        // Init beim Laden
+        updateDropdowns();
     </script>
 </body>
 </html>
