@@ -18,19 +18,31 @@
             </button>
         </header>
 
-        <!-- ADMIN BEREICH (DREiteilig: Material, Werkzeug, Profile) -->
+        <!-- ADMIN BEREICH (DREiteilig: Material, Werkzeug, Profile - alle mit Beschriftungen & Einheiten) -->
         <div id="admin-panel" class="hidden mb-8 bg-slate-900 p-6 rounded-xl border border-emerald-500/30 space-y-6">
             <h2 class="text-xl font-semibold text-emerald-400">Admin-Konsole: Verwalten von Daten & Profilen</h2>
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 border-b border-slate-800 pb-6">
-                <!-- 1. Materialien -->
+                <!-- 1. Materialien (Mit Beschriftungen & Einheiten) -->
                 <div class="space-y-3">
                     <h3 class="font-medium text-slate-200">Material</h3>
-                    <input type="text" id="adm-mat-id" placeholder="ID (z.B. messing)" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
-                    <input type="text" id="adm-mat-name" placeholder="Name" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
-                    <div class="grid grid-cols-2 gap-2">
-                        <input type="number" id="adm-mat-vc" placeholder="vc" value="300" class="bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
-                        <input type="number" id="adm-mat-kc11" placeholder="kc1.1" value="1400" class="bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                    <div>
+                        <label class="block text-slate-400 mb-1 text-xs">Material-ID</label>
+                        <input type="text" id="adm-mat-id" placeholder="z.B. messing" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1 text-xs">Bezeichnung</label>
+                        <input type="text" id="adm-mat-name" placeholder="z.B. Messing CuZn39Pb3" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                            <label class="block text-slate-400 mb-1">Schnittgeschwindigkeit vc (m/min)</label>
+                            <input type="number" id="adm-mat-vc" value="300" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1">Spez. Schnittkraft kc1.1 (N/mm²)</label>
+                            <input type="number" id="adm-mat-kc11" value="1400" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
+                        </div>
                     </div>
                     <button onclick="addNewMaterial()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-sm font-medium">Hinzufügen</button>
                     <div class="flex gap-2 pt-2">
@@ -39,20 +51,44 @@
                     </div>
                 </div>
 
-                <!-- 2. Werkzeuge -->
+                <!-- 2. Werkzeuge (Mit Beschriftungen & Einheiten) -->
                 <div class="space-y-3">
                     <h3 class="font-medium text-slate-200">Werkzeug</h3>
-                    <input type="text" id="adm-tool-id" placeholder="ID (z.B. tool_torus)" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
-                    <input type="text" id="adm-tool-name" placeholder="Bezeichnung" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
-                    <div class="grid grid-cols-2 gap-2">
-                        <input type="text" id="adm-tool-type" placeholder="Typ" value="Schaftfräser" class="bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
-                        <input type="text" id="adm-tool-mat" placeholder="Schneidstoff" value="VHM" class="bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                    <div>
+                        <label class="block text-slate-400 mb-1 text-xs">Werkzeug-ID</label>
+                        <input type="text" id="adm-tool-id" placeholder="z.B. tool_torus" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
                     </div>
-                    <div class="grid grid-cols-4 gap-1">
-                        <input type="number" id="adm-tool-d" placeholder="Ø" value="10" class="bg-slate-950 border border-slate-800 rounded p-1 text-white text-xs">
-                        <input type="number" id="adm-tool-z" placeholder="Z" value="4" class="bg-slate-950 border border-slate-800 rounded p-1 text-white text-xs">
-                        <input type="number" id="adm-tool-overhang" placeholder="Aus." value="30" class="bg-slate-950 border border-slate-800 rounded p-1 text-white text-xs">
-                        <input type="number" id="adm-tool-helix" placeholder="Drall" value="30" class="bg-slate-950 border border-slate-800 rounded p-1 text-white text-xs">
+                    <div>
+                        <label class="block text-slate-400 mb-1 text-xs">Bezeichnung</label>
+                        <input type="text" id="adm-tool-name" placeholder="z.B. Torusfräser R1.0" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                            <label class="block text-slate-400 mb-1">Werkzeug-Typ</label>
+                            <input type="text" id="adm-tool-type" value="Schaftfräser" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1">Schneidstoff</label>
+                            <input type="text" id="adm-tool-mat" value="VHM" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-4 gap-1 text-xs">
+                        <div>
+                            <label class="block text-slate-400 mb-1">Ø (mm)</label>
+                            <input type="number" id="adm-tool-d" value="10" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1">Zahn (Z)</label>
+                            <input type="number" id="adm-tool-z" value="4" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1">Ausl. (mm)</label>
+                            <input type="number" id="adm-tool-overhang" value="30" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1">Drall (°)</label>
+                            <input type="number" id="adm-tool-helix" value="30" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
+                        </div>
                     </div>
                     <button onclick="addNewTool()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-sm font-medium">Hinzufügen</button>
                     <div class="flex gap-2 pt-2">
@@ -64,8 +100,14 @@
                 <!-- 3. Bearbeitungsprofile (Mit Beschriftungen & Einheiten) -->
                 <div class="space-y-3">
                     <h3 class="font-medium text-slate-200">Bearbeitungsprofil</h3>
-                    <input type="text" id="adm-prof-id" placeholder="ID (z.B. trochoidal)" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
-                    <input type="text" id="adm-prof-name" placeholder="Profil-Name (z.B. Trochoidalfräsen)" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                    <div>
+                        <label class="block text-slate-400 mb-1 text-xs">Profil-ID</label>
+                        <input type="text" id="adm-prof-id" placeholder="z.B. trochoidal" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1 text-xs">Profil-Name</label>
+                        <input type="text" id="adm-prof-name" placeholder="z.B. Trochoidalfräsen" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                    </div>
                     
                     <div class="grid grid-cols-2 gap-2 text-xs">
                         <div>
@@ -226,7 +268,7 @@
         function addNewMaterial() {
             const id = document.getElementById('adm-mat-id').value;
             const name = document.getElementById('adm-mat-name').value;
-            if(!id || !name) { alert('Bitte Felder ausfüllen'); return; }
+            if(!id || !name) { alert('Bitte Material-ID und Bezeichnung ausfüllen'); return; }
             db.materials[id] = { name: name, base_vc: parseFloat(document.getElementById('adm-mat-vc').value), kc11: parseFloat(document.getElementById('adm-mat-kc11').value) };
             updateDropdowns(); alert('Material hinzugefügt!');
         }
@@ -240,7 +282,7 @@
         function addNewTool() {
             const id = document.getElementById('adm-tool-id').value;
             const name = document.getElementById('adm-tool-name').value;
-            if(!id || !name) { alert('Bitte Felder ausfüllen'); return; }
+            if(!id || !name) { alert('Bitte Werkzeug-ID und Bezeichnung ausfüllen'); return; }
             db.tools[id] = {
                 name: name, type: document.getElementById('adm-tool-type').value,
                 material_schneidstoff: document.getElementById('adm-tool-mat').value,
@@ -261,7 +303,7 @@
         function addNewProfile() {
             const id = document.getElementById('adm-prof-id').value;
             const name = document.getElementById('adm-prof-name').value;
-            if(!id || !name) { alert('Bitte ID und Profil-Name ausfüllen'); return; }
+            if(!id || !name) { alert('Bitte Profil-ID und Name ausfüllen'); return; }
             db.profiles[id] = {
                 name: name,
                 vc_factor: parseFloat(document.getElementById('adm-prof-vc').value),
