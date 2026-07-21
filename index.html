@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CNC Open Tool Guide - Praxis-Favoriten & RCT</title>
+    <title>CNC Open Tool Guide - Praxis-Favoriten, Maschinen & RCT</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans p-6">
@@ -11,7 +11,7 @@
         <header class="border-b border-slate-800 pb-4 flex justify-between items-center">
             <div>
                 <h1 class="text-3xl font-bold tracking-tight text-emerald-400">CNC Open Tool Guide</h1>
-                <p class="text-slate-400">Herstellerunabhängiger Fräsrechner mit zentraler Praxis-Datenbank & Radial Chip Thinning</p>
+                <p class="text-slate-400">Herstellerunabhängiger Fräsrechner mit zentraler Praxis-Datenbank, Maschinengrenzen & RCT</p>
             </div>
             <div class="flex gap-2">
                 <button onclick="exportDataReport()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg border border-slate-700 text-sm font-medium transition" title="Berechnete Werte kopieren">
@@ -40,7 +40,39 @@
         <div id="admin-panel" class="hidden bg-slate-900 p-6 rounded-xl border border-emerald-500/30 space-y-6">
             <h2 class="text-xl font-semibold text-emerald-400">Admin-Konsole: Lokale Datenbank-Verwaltung</h2>
             
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 border-b border-slate-800 pb-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 border-b border-slate-800 pb-6">
+                <!-- 0. Maschinen (NEU) -->
+                <div class="space-y-3">
+                    <h3 class="font-medium text-slate-200">Maschine</h3>
+                    <div>
+                        <label class="block text-slate-400 mb-1 text-xs">Maschinen-ID</label>
+                        <input type="text" id="adm-mach-id" placeholder="z.B. dmg_dmc" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1 text-xs">Bezeichnung</label>
+                        <input type="text" id="adm-mach-name" placeholder="z.B. DMG MORI 5-Achs" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                    </div>
+                    <div class="grid grid-cols-3 gap-1 text-xs">
+                        <div>
+                            <label class="block text-slate-400 mb-1">Max U/min</label>
+                            <input type="number" id="adm-mach-rpm" value="12000" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1">Max vf</label>
+                            <input type="number" id="adm-mach-vf" value="15000" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1">Max kW</label>
+                            <input type="number" step="0.5" id="adm-mach-kw" value="25" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
+                        </div>
+                    </div>
+                    <button onclick="addNewMachine()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-sm font-medium">Hinzufügen</button>
+                    <div class="flex gap-2 pt-2">
+                        <select id="del-machine-select" class="flex-1 bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm"></select>
+                        <button onclick="deleteMachine()" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1 rounded text-sm">Löschen</button>
+                    </div>
+                </div>
+
                 <!-- 1. Materialien -->
                 <div class="space-y-3">
                     <h3 class="font-medium text-slate-200">Material</h3>
@@ -170,6 +202,13 @@
             <div class="bg-slate-900 p-6 rounded-xl border border-slate-800 space-y-4">
                 <h2 class="text-xl font-semibold text-slate-200">Konfiguration</h2>
                 
+                <!-- NEU: Maschinen-Auswahl -->
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Maschine wählen</label>
+                    <select id="machine-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" onchange="calculate()"></select>
+                    <div id="machine-specs" class="text-xs text-slate-400 mt-2 bg-slate-950 p-2 rounded border border-slate-800"></div>
+                </div>
+
                 <div>
                     <label class="block text-sm text-slate-400 mb-1">Werkzeug wählen</label>
                     <select id="tool-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" onchange="onToolChange()"></select>
@@ -187,7 +226,7 @@
                     <div id="profile-specs" class="text-xs text-slate-400 mt-2 bg-slate-950 p-2 rounded border border-slate-800"></div>
                 </div>
 
-                <!-- NEU: Radial Chip Thinning (RCT) Steuerungs-Box -->
+                <!-- Radial Chip Thinning (RCT) Steuerungs-Box -->
                 <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-2">
                     <label class="flex items-center gap-2 cursor-pointer">
                         <input type="checkbox" id="rct-toggle" checked onchange="calculate()" class="rounded bg-slate-900 border-slate-700 text-emerald-500 focus:ring-0">
@@ -263,6 +302,11 @@
 
     <script>
         const defaultDb = {
+            machines: {
+                "std_cnc": { "name": "Standard CNC Fräse", "max_rpm": 12000, "max_vf": 12000, "max_kw": 20 },
+                "heavy_cnc": { "name": "Schweres Bearbeitungszentrum", "max_rpm": 8000, "max_vf": 15000, "max_kw": 45 },
+                "hsc_micro": { "name": "HSC Micro-Fräse", "max_rpm": 30000, "max_vf": 20000, "max_kw": 12 }
+            },
             materials: {
                 "stahl_c45": { "name": "Stahl (z.B. C45)", "kc11": 1800 },
                 "alu_wrought": { "name": "Aluminium (knetlegiert)", "kc11": 700 },
@@ -300,21 +344,7 @@
                     "suitable_materials": ["stahl_c45", "rostfrei"]
                 }
             },
-            favorites: [
-                {
-                    "id": "fav_1",
-                    "title": "Bewährtes C45 Schruppen mit D12",
-                    "tool_id": "tool_vhm_12",
-                    "material_id": "stahl_c45",
-                    "profile_id": "schruppen",
-                    "rating": 5,
-                    "feedback": "Läuft extrem stabil, leiser Lauf, Standzeit top.",
-                    "rpm": 5836.62,
-                    "feed_rate_vf": 1391.14,
-                    "ap": 12.0,
-                    "ae": 8.4
-                }
-            ]
+            favorites: []
         };
 
         let db = loadDatabase();
@@ -325,7 +355,11 @@
             if (saved) {
                 try { 
                     const parsed = JSON.parse(saved);
-                    if (parsed && parsed.tools && Object.keys(parsed.tools).length > 0 && parsed.materials && Object.keys(parsed.materials).length > 0) {
+                    // Sicherstellen dass Maschinen-Objekt existiert (Abwärtskompatibilität)
+                    if (parsed && parsed.tools && parsed.materials) {
+                        if (!parsed.machines) {
+                            parsed.machines = defaultDb.machines;
+                        }
                         return parsed;
                     }
                 } catch (e) { 
@@ -359,6 +393,18 @@
         }
 
         function populateDropdowns() {
+            // Maschinen
+            const machSel = document.getElementById('machine-select');
+            const delMachSel = document.getElementById('del-machine-select');
+            machSel.innerHTML = ''; 
+            if(delMachSel) delMachSel.innerHTML = '';
+            
+            for (const [id, m] of Object.entries(db.machines)) {
+                machSel.add(new Option(m.name, id));
+                if(delMachSel) delMachSel.add(new Option(m.name, id));
+            }
+
+            // Werkzeuge
             const toolSel = document.getElementById('tool-select');
             const delToolSel = document.getElementById('del-tool-select');
             toolSel.innerHTML = ''; 
@@ -369,6 +415,7 @@
                 if(delToolSel) delToolSel.add(new Option(t.name, id));
             }
 
+            // Profile
             const profSel = document.getElementById('profile-select');
             const delProfSel = document.getElementById('del-profile-select');
             profSel.innerHTML = ''; 
@@ -379,6 +426,7 @@
                 if(delProfSel) delProfSel.add(new Option(p.name, id));
             }
 
+            // Materialien
             const delMatSel = document.getElementById('del-material-select');
             if(delMatSel) {
                 delMatSel.innerHTML = '';
@@ -448,12 +496,19 @@
         }
 
         function updateSpecs() {
+            const machId = document.getElementById('machine-select').value;
             const toolId = document.getElementById('tool-select').value;
             const matId = document.getElementById('material-select').value;
             const profId = document.getElementById('profile-select').value;
+            
+            const mach = db.machines[machId];
             const tool = db.tools[toolId];
             const prof = db.profiles[profId];
 
+            if(mach) {
+                document.getElementById('machine-specs').innerHTML = 
+                    `<strong>Limits:</strong> max. ${mach.max_rpm} U/min | max. ${mach.max_vf} mm/min | max. ${mach.max_kw} kW`;
+            }
             if(tool) {
                 const baseVc = tool.vc_per_material ? (tool.vc_per_material[matId] || 200) : 200;
                 document.getElementById('tool-specs').innerHTML = 
@@ -501,7 +556,6 @@
             if(db.tools[toolId]) document.getElementById('tool-select').value = toolId;
             updateMaterialDropdownForTool();
             if(db.materials[materialId]) document.getElementById('material-select').value = materialId;
-            if(db.profiles[profileId]) document.getElementById('profile-select').value = profileId;
             calculate();
         }
 
@@ -527,7 +581,7 @@
 
             db.favorites.push(newFav);
             saveDatabase();
-            alert('Erfolgreich als Praxis-Favorit gespeichert (lokal gesichert)!');
+            alert('Erfolgreich als Praxis-Favorit gespeichert!');
             document.getElementById('fav-title').value = '';
             document.getElementById('fav-feedback').value = '';
             renderFavorites();
@@ -537,6 +591,31 @@
             db.favorites = db.favorites.filter(f => f.id !== favId);
             saveDatabase();
             renderFavorites();
+        }
+
+        function addNewMachine() {
+            const id = document.getElementById('adm-mach-id').value;
+            const name = document.getElementById('adm-mach-name').value;
+            const max_rpm = parseFloat(document.getElementById('adm-mach-rpm').value);
+            const max_vf = parseFloat(document.getElementById('adm-mach-vf').value);
+            const max_kw = parseFloat(document.getElementById('adm-mach-kw').value);
+            if(!id || !name) { alert('Bitte Maschinen-ID und Name ausfüllen'); return; }
+
+            db.machines[id] = { name, max_rpm, max_vf, max_kw };
+            saveDatabase();
+            populateDropdowns();
+            alert('Maschine hinzugefügt!');
+        }
+
+        function deleteMachine() {
+            const id = document.getElementById('del-machine-select').value;
+            if(Object.keys(db.machines).length <= 1) { alert('Es muss mindestens eine Maschine erhalten bleiben.'); return; }
+            if(db.machines[id]) {
+                delete db.machines[id];
+                saveDatabase();
+                populateDropdowns();
+                alert('Gelöscht!');
+            }
         }
 
         function addNewMaterial() {
@@ -631,16 +710,18 @@
         }
 
         function calculate() {
+            const machId = document.getElementById('machine-select').value;
             const toolId = document.getElementById('tool-select').value;
             const matId = document.getElementById('material-select').value;
             const profId = document.getElementById('profile-select').value;
             const rctActive = document.getElementById('rct-toggle').checked;
             
+            const mach = db.machines[machId];
             const tool = db.tools[toolId];
             const mat = db.materials[matId];
             const profile = db.profiles[profId];
             
-            if(!tool || !mat || !profile) return;
+            if(!mach || !tool || !mat || !profile) return;
             updateSpecs();
 
             const baseVc = tool.vc_per_material ? (tool.vc_per_material[matId] || 200) : 200;
@@ -676,21 +757,55 @@
 
             currentCalculatedResults = { rpm: n, vf: vf, ap: ap, ae: ae, q: Q, power: power_kw, fz_eff: effectiveFz };
 
-            document.getElementById('res-rpm').innerText = n.toFixed(2) + " U/min";
-            document.getElementById('res-vf').innerText = vf.toFixed(2) + " mm/min";
+            // DOM Elemente für Ausgabe holen
+            const rpmEl = document.getElementById('res-rpm');
+            const vfEl = document.getElementById('res-vf');
+            const powerEl = document.getElementById('res-power');
+
+            // Drehzahl-Grenzwert-Prüfung
+            rpmEl.innerText = n.toFixed(2) + " U/min";
+            if (n > mach.max_rpm) {
+                rpmEl.className = "text-xl font-bold text-rose-500 animate-pulse";
+                rpmEl.title = `Überschreitet Maschinenlimit (${mach.max_rpm} U/min)!`;
+            } else {
+                rpmEl.className = "text-xl font-bold text-emerald-400";
+                rpmEl.title = "";
+            }
+
+            // Vorschub-Grenzwert-Prüfung
+            vfEl.innerText = vf.toFixed(2) + " mm/min";
+            if (vf > mach.max_vf) {
+                vfEl.className = "text-xl font-bold text-rose-500 animate-pulse";
+                vfEl.title = `Überschreitet Maschinenlimit (${mach.max_vf} mm/min)!`;
+            } else {
+                vfEl.className = "text-xl font-bold text-emerald-400";
+                vfEl.title = "";
+            }
+
             document.getElementById('res-fz-eff').innerText = `fz(eff): ${effectiveFz.toFixed(4)} mm`;
             document.getElementById('res-apae').innerText = ap.toFixed(1) + " / " + ae.toFixed(1) + " mm";
             document.getElementById('res-q').innerText = Q.toFixed(2) + " cm³/min";
-            document.getElementById('res-power').innerText = power_kw.toFixed(2) + " kW";
+
+            // Leistungs-Grenzwert-Prüfung
+            powerEl.innerText = power_kw.toFixed(2) + " kW";
+            if (power_kw > mach.max_kw) {
+                powerEl.className = "text-xl font-bold text-rose-500 animate-pulse";
+                powerEl.title = `Überschreitet Maschinenlimit (${mach.max_kw} kW)!`;
+            } else {
+                powerEl.className = "text-xl font-bold text-amber-400";
+                powerEl.title = "";
+            }
         }
 
         function exportDataReport() {
+            const mach = db.machines[document.getElementById('machine-select').value]?.name || 'Unbekannt';
             const tool = db.tools[document.getElementById('tool-select').value]?.name || 'Unbekannt';
             const mat = db.materials[document.getElementById('material-select').value]?.name || 'Unbekannt';
             const prof = db.profiles[document.getElementById('profile-select').value]?.name || 'Unbekannt';
             const rctStatus = document.getElementById('rct-toggle').checked ? 'Aktiv' : 'Inaktiv';
 
             const report = `--- CNC OPEN TOOL GUIDE BERICHT ---
+Maschine: ${mach}
 Werkzeug: ${tool}
 Werkstoff: ${mat}
 Profil: ${prof}
@@ -706,7 +821,7 @@ Leistungsbedarf (Pc): ${currentCalculatedResults.power.toFixed(2)} kW
 ----------------------------------`;
 
             navigator.clipboard.writeText(report).then(() => {
-                alert("Schnittdaten-Bericht inklusive RCT-Werten erfolgreich in die Zwischenablage kopiert!");
+                alert("Schnittdaten-Bericht erfolgreich in die Zwischenablage kopiert!");
             }).catch(err => {
                 console.error("Fehler beim Kopieren", err);
             });
