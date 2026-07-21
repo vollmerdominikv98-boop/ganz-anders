@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CNC Open Tool Guide - Dynamische Physik & RCT</title>
+    <title>CNC Open Tool Guide - Kugel-/Torusfräser & Deff</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans p-6">
@@ -11,7 +11,7 @@
         <header class="border-b border-slate-800 pb-4 flex justify-between items-center">
             <div>
                 <h1 class="text-3xl font-bold tracking-tight text-emerald-400">CNC Open Tool Guide</h1>
-                <p class="text-slate-400">Fräsrechner mit dynamischer Schnittphysik (ap/ae-Korrektur) & Maschinengrenzen</p>
+                <p class="text-slate-400">Fräsrechner mit Deff-Kompensation für Kugelfräser, Torusfräser & Schaftfräser</p>
             </div>
             <div class="flex gap-2">
                 <button onclick="exportDataReport()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg border border-slate-700 text-sm font-medium transition" title="Berechnete Werte kopieren">
@@ -117,45 +117,49 @@
                     </div>
                 </div>
 
-                <!-- 3. Werkzeuge -->
+                <!-- 3. Werkzeuge (Inkl. Fräsertyp & Radius) -->
                 <div class="space-y-3 bg-slate-950/50 p-4 rounded-lg border border-slate-800">
-                    <h3 class="font-medium text-slate-200">Werkzeug</h3>
+                    <h3 class="font-medium text-slate-200">Werkzeug (Schaft/Kugel/Torus)</h3>
                     <div>
                         <label class="block text-slate-400 mb-1 text-xs">Werkzeug-ID</label>
-                        <input type="text" id="adm-tool-id" placeholder="z.B. tool_torus" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm">
+                        <input type="text" id="adm-tool-id" placeholder="z.B. tool_kugel_10" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm">
                     </div>
                     <div>
                         <label class="block text-slate-400 mb-1 text-xs">Bezeichnung</label>
-                        <input type="text" id="adm-tool-name" placeholder="z.B. Torusfräser" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm">
+                        <input type="text" id="adm-tool-name" placeholder="z.B. Kugelfräser D10" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm">
                     </div>
                     <div class="grid grid-cols-2 gap-2 text-xs">
                         <div>
-                            <label class="block text-slate-400 mb-1">Typ</label>
-                            <input type="text" id="adm-tool-type" value="Schaftfräser" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
+                            <label class="block text-slate-400 mb-1">Fräsertyp</label>
+                            <select id="adm-tool-geotype" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-white">
+                                <option value="shaft">Schaftfräser</option>
+                                <option value="ball">Kugelfräser</option>
+                                <option value="torus">Torusfräser</option>
+                            </select>
                         </div>
                         <div>
-                            <label class="block text-slate-400 mb-1">Schneidstoff</label>
-                            <input type="text" id="adm-tool-mat" value="VHM" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
+                            <label class="block text-slate-400 mb-1">Eckenradius r (mm)</label>
+                            <input type="number" step="0.1" id="adm-tool-radius" value="0" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-white" placeholder="Nur Torus">
                         </div>
                     </div>
                     <div class="grid grid-cols-3 gap-2 text-xs">
                         <div>
                             <label class="block text-slate-400 mb-1">Ø (mm)</label>
-                            <input type="number" id="adm-tool-d" value="10" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
+                            <input type="number" id="adm-tool-d" value="10" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-white">
                         </div>
                         <div>
                             <label class="block text-slate-400 mb-1">Zahn (Z)</label>
-                            <input type="number" id="adm-tool-z" value="4" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
+                            <input type="number" id="adm-tool-z" value="2" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-white">
                         </div>
                         <div>
-                            <label class="block text-slate-400 mb-1" title="Auskraglänge">L Max (mm)</label>
-                            <input type="number" id="adm-tool-overhang" value="30" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
+                            <label class="block text-slate-400 mb-1">L Max (mm)</label>
+                            <input type="number" id="adm-tool-overhang" value="30" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-white">
                         </div>
                     </div>
 
                     <div>
                         <label class="block text-slate-400 mb-1 text-xs">vc (m/min) je Material:</label>
-                        <div id="adm-tool-matrix-container" class="space-y-1 bg-slate-900 p-2 rounded border border-slate-700 text-xs max-h-32 overflow-y-auto"></div>
+                        <div id="adm-tool-matrix-container" class="space-y-1 bg-slate-900 p-2 rounded border border-slate-700 text-xs max-h-24 overflow-y-auto"></div>
                     </div>
 
                     <button onclick="addNewTool()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-sm font-medium mt-2">Hinzufügen</button>
@@ -261,7 +265,7 @@
                             <label>Schnitttiefe (ap): <span id="val-ap-factor" class="text-white font-mono ml-1">1.00</span> × D</label>
                             <span id="val-ap-mm" class="text-emerald-400 font-bold">-- mm</span>
                         </div>
-                        <input type="range" id="slider-ap" min="0.05" max="5.0" step="0.05" value="1.0" oninput="calculate()" class="w-full accent-emerald-500 bg-slate-800 rounded-lg appearance-none h-2 cursor-pointer">
+                        <input type="range" id="slider-ap" min="0.01" max="5.0" step="0.01" value="1.0" oninput="calculate()" class="w-full accent-emerald-500 bg-slate-800 rounded-lg appearance-none h-2 cursor-pointer">
                     </div>
 
                     <!-- ae Slider -->
@@ -379,6 +383,8 @@
                 "tool_vhm_12": {
                     "name": "VHM Schaftfräser D12",
                     "type": "Schaftfräser",
+                    "geo_type": "shaft",
+                    "radius": 0,
                     "material_schneidstoff": "VHM",
                     "diameter": 12.0,
                     "z": 4,
@@ -386,15 +392,17 @@
                     "vc_per_material": { "stahl_c45": 220, "alu_wrought": 600, "rostfrei": 140, "titan": 60 },
                     "suitable_materials": ["stahl_c45", "alu_wrought", "rostfrei", "titan"]
                 },
-                "tool_schrupp_16": {
-                    "name": "Schruppfräser D16",
-                    "type": "Schruppfräser",
+                "tool_kugel_10": {
+                    "name": "Kugelfräser D10 (Formenbau)",
+                    "type": "Kugelfräser",
+                    "geo_type": "ball",
+                    "radius": 5.0,
                     "material_schneidstoff": "VHM",
-                    "diameter": 16.0,
-                    "z": 3,
-                    "max_overhang": 48.0,
-                    "vc_per_material": { "stahl_c45": 180, "alu_wrought": 500, "rostfrei": 110, "titan": 45 },
-                    "suitable_materials": ["stahl_c45", "rostfrei"]
+                    "diameter": 10.0,
+                    "z": 2,
+                    "max_overhang": 30.0,
+                    "vc_per_material": { "stahl_c45": 200, "alu_wrought": 550, "rostfrei": 120, "titan": 50 },
+                    "suitable_materials": ["stahl_c45", "alu_wrought", "rostfrei", "titan"]
                 }
             },
             favorites: []
@@ -404,7 +412,7 @@
         let currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0, q: 0, power: 0, fz_eff: 0 };
 
         function loadDatabase() {
-            const saved = localStorage.getItem('cnc_tool_guide_db_physics_v1');
+            const saved = localStorage.getItem('cnc_tool_guide_db_deff_v1');
             if (saved) {
                 try { 
                     const parsed = JSON.parse(saved);
@@ -415,15 +423,11 @@
                     }
                 } catch (e) { console.error(e); }
             }
-            const initial = JSON.parse(JSON.stringify(defaultDb));
-            for(let tId in initial.tools) {
-                if(!initial.tools[tId].max_overhang) initial.tools[tId].max_overhang = initial.tools[tId].diameter * 3;
-            }
-            return initial;
+            return JSON.parse(JSON.stringify(defaultDb));
         }
 
         function saveDatabase() {
-            localStorage.setItem('cnc_tool_guide_db_physics_v1', JSON.stringify(db));
+            localStorage.setItem('cnc_tool_guide_db_deff_v1', JSON.stringify(db));
         }
 
         function resetToDefaultData() {
@@ -573,8 +577,12 @@
             }
             if(tool) {
                 const baseVc = tool.vc_per_material ? (tool.vc_per_material[matId] || 200) : 200;
+                let typeName = "Schaftfräser";
+                if(tool.geo_type === "ball") typeName = "Kugelfräser";
+                if(tool.geo_type === "torus") typeName = `Torusfräser (r=${tool.radius}mm)`;
+
                 document.getElementById('tool-specs').innerHTML = 
-                    `<strong>Typ:</strong> ${tool.type} | <strong>Ø:</strong> ${tool.diameter}mm | <strong>Z:</strong> ${tool.z} | <strong>L Max:</strong> ${tool.max_overhang || (tool.diameter*3)}mm | <strong>vc:</strong> ${baseVc} m/min`;
+                    `<strong>Typ:</strong> ${typeName} | <strong>Ø:</strong> ${tool.diameter}mm | <strong>Z:</strong> ${tool.z} | <strong>vc:</strong> ${baseVc} m/min`;
             }
             if(prof) {
                 document.getElementById('profile-specs').innerHTML = 
@@ -629,12 +637,6 @@
             if (fav.ap_factor !== undefined && fav.ae_factor !== undefined) {
                 document.getElementById('slider-ap').value = fav.ap_factor;
                 document.getElementById('slider-ae').value = fav.ae_factor;
-            } else {
-                const prof = db.profiles[fav.profile_id];
-                if(prof) {
-                    document.getElementById('slider-ap').value = prof.ap_factor;
-                    document.getElementById('slider-ae').value = prof.ae_factor;
-                }
             }
 
             calculate();
@@ -726,6 +728,8 @@
         function addNewTool() {
             const id = document.getElementById('adm-tool-id').value;
             const name = document.getElementById('adm-tool-name').value;
+            const geoType = document.getElementById('adm-tool-geotype').value;
+            const radius = parseFloat(document.getElementById('adm-tool-radius').value) || 0;
             if(!id || !name) return alert('Bitte ausfüllen');
             
             let vcMap = {}; let suitableList = [];
@@ -738,8 +742,10 @@
 
             db.tools[id] = {
                 name,
-                type: document.getElementById('adm-tool-type').value,
-                material_schneidstoff: document.getElementById('adm-tool-mat').value,
+                type: geoType === 'ball' ? 'Kugelfräser' : (geoType === 'torus' ? 'Torusfräser' : 'Schaftfräser'),
+                geo_type: geoType,
+                radius: radius,
+                material_schneidstoff: "VHM",
                 diameter: parseFloat(document.getElementById('adm-tool-d').value),
                 z: parseInt(document.getElementById('adm-tool-z').value),
                 max_overhang: parseFloat(document.getElementById('adm-tool-overhang').value) || 30.0,
@@ -798,20 +804,17 @@
             const z = tool.z;
             const Lmax = tool.max_overhang || (D * 3);
 
-            // Regler-Werte auslesen
             const ap_factor = parseFloat(document.getElementById('slider-ap').value);
             const ae_factor = parseFloat(document.getElementById('slider-ae').value);
 
             const ap = D * ap_factor;
             const ae = D * ae_factor;
 
-            // UI Label für Regler aktualisieren
             document.getElementById('val-ap-factor').innerText = ap_factor.toFixed(2);
             document.getElementById('val-ap-mm').innerText = ap.toFixed(1) + " mm";
             document.getElementById('val-ae-factor').innerText = ae_factor.toFixed(2);
             document.getElementById('val-ae-mm').innerText = ae.toFixed(1) + " mm";
 
-            // Kollisionswarnung Lmax
             const warningBox = document.getElementById('depth-warning');
             if (ap > Lmax) {
                 warningBox.classList.remove('hidden');
@@ -820,57 +823,71 @@
                 warningBox.classList.add('hidden');
             }
 
+            // --- DEFF BERECHNUNG (KUGEL- & TORUSFRÄSER KOMPENSATION) ---
+            let Deff = D;
+            let geoInfoText = "";
+
+            if (tool.geo_type === "ball") {
+                // Kugelfräser: Deff = 2 * sqrt(ap * (D - ap)) [gilt für ap <= R bzw ap <= D/2]
+                let effectiveAp = Math.min(ap, D / 2);
+                Deff = 2 * Math.sqrt(effectiveAp * (D - effectiveAp));
+                if (Deff < 0.1) Deff = 0.1; // Division durch 0 verhindern
+                geoInfoText = `<div class="text-[10px] text-cyan-400">⚽ Kugelfräser Deff: ${Deff.toFixed(2)} mm (bei ap=${ap.toFixed(1)}mm)</div>`;
+            } else if (tool.geo_type === "torus") {
+                // Vereinfachte Annäherung für Torusfräser mit Eckenradius r
+                let r = tool.radius || 0;
+                if (ap <= r) {
+                    Deff = 2 * Math.sqrt(ap * (2 * r - ap));
+                    if (Deff < 0.1) Deff = 0.1;
+                } else {
+                    Deff = D - (2 * r) + (2 * Math.sqrt(r * r - Math.pow(r - (ap - r), 2))); // Fallback annäherung
+                    if(isNaN(Deff) || Deff <= 0) Deff = D - (2*r);
+                }
+                geoInfoText = `<div class="text-[10px] text-cyan-400">🍩 Torusfräser Deff: ${Deff.toFixed(2)} mm (r=${r}mm)</div>`;
+            } else {
+                geoInfoText = `<div class="text-[10px] text-slate-500">cylindrischer Schaftfräser (Deff = D)</div>`;
+            }
+
             // --- PHYSIKALISCHE KORREKTUREN ---
-            
-            // 1. Base Values (aus Profil und Material)
             const baseVc = tool.vc_per_material ? (tool.vc_per_material[matId] || 200) : 200;
             let effectiveVc = baseVc * profile.vc_factor * rigidity.factor;
             
             let baseFz = D * 0.007;
             let effectiveFzBase = baseFz * profile.fz_factor * rigidity.factor;
 
-            let physicsInfoHtml = "";
+            let physicsInfoHtml = geoInfoText;
 
             if (physicsActive) {
-                // Faktor A: Thermische Entlastung bei kleinem ae (Erhöht vc)
                 let kv_ae = 1.0;
                 if (ae_factor < 0.5) {
-                    kv_ae = Math.min(Math.pow(0.5 / ae_factor, 0.3), 2.5); // Max 2.5x
+                    kv_ae = Math.min(Math.pow(0.5 / ae_factor, 0.3), 2.5);
                     physicsInfoHtml += `<div class="text-[10px] text-emerald-400">🌡️ Kühlungseffekt (ae < 0.5D): vc +${((kv_ae - 1) * 100).toFixed(0)}%</div>`;
                 }
 
-                // Faktor B: Mechanische Last bei großem ap (Reduziert vc und fz)
                 let k_ap = 1.0;
-                if (ap_factor > 1.0) {
-                    k_ap = Math.max(Math.pow(1.0 / ap_factor, 0.25), 0.4); // Min 40%
+                if (ap_factor > 1.0 && tool.geo_type === "shaft") {
+                    k_ap = Math.max(Math.pow(1.0 / ap_factor, 0.25), 0.4);
                     physicsInfoHtml += `<div class="text-[10px] text-amber-400">⚖️ Schnittdruck (ap > 1.0D): vc/fz -${((1 - k_ap) * 100).toFixed(0)}%</div>`;
                 }
 
-                // Faktor C: Radial Chip Thinning RCT (Erhöht fz)
                 let rctFactor = 1.0;
                 if (ae_factor < 0.5) {
                     rctFactor = 1 / Math.sqrt(ae_factor * (2 - ae_factor));
-                    rctFactor = Math.min(rctFactor, 3.0); // Max 3x
+                    rctFactor = Math.min(rctFactor, 3.0);
                     physicsInfoHtml += `<div class="text-[10px] text-emerald-400">⚡ RCT Spanmittendicke (ae < 0.5D): fz +${((rctFactor - 1) * 100).toFixed(0)}%</div>`;
                 }
 
-                if (physicsInfoHtml === "") {
-                    physicsInfoHtml = `<div class="text-[10px] text-slate-500">Standard-Bereich (Keine Korrekturen nötig)</div>`;
-                }
-
-                // Anwenden der Faktoren
                 effectiveVc = effectiveVc * kv_ae * k_ap;
                 effectiveFzBase = effectiveFzBase * k_ap * rctFactor;
-
-            } else {
-                physicsInfoHtml = `<div class="text-[10px] text-slate-500 italic">Dynamische Physik deaktiviert. Berechnet starr nach Profil-Faktoren.</div>`;
             }
 
             document.getElementById('physics-info').innerHTML = physicsInfoHtml;
 
-            // Final Calculation
             const effectiveFz = effectiveFzBase;
-            const n = (effectiveVc * 1000) / (Math.PI * D);
+            
+            // WICHTIG: Drehzahl berechnet sich nun über Deff (statt D), falls Kugel-/Torusfräser aktiv!
+            const n = (effectiveVc * 1000) / (Math.PI * Deff);
+            
             const vf = effectiveFz * z * n;
             const Q = (ap * ae * vf) / 1000;
             const power_kw = (Q * mat.kc11) / (60 * 1000);
@@ -935,7 +952,6 @@ Leistungsbedarf (Pc): ${currentCalculatedResults.power.toFixed(2)} kW
             });
         }
 
-        // Start
         initApp();
     </script>
 </body>
