@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CNC Open Tool Guide - Bearbeitungstiefe, Steifigkeit & RCT</title>
+    <title>CNC Open Tool Guide - Dynamische Zustellung, Steifigkeit & RCT</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans p-6">
@@ -11,7 +11,7 @@
         <header class="border-b border-slate-800 pb-4 flex justify-between items-center">
             <div>
                 <h1 class="text-3xl font-bold tracking-tight text-emerald-400">CNC Open Tool Guide</h1>
-                <p class="text-slate-400">Herstellerunabhängiger Fräsrechner mit Schnittaufteilung, Maschinengrenzen & RCT</p>
+                <p class="text-slate-400">Herstellerunabhängiger Fräsrechner mit dynamischen Schiebereglern, Maschinengrenzen & RCT</p>
             </div>
             <div class="flex gap-2">
                 <button onclick="exportDataReport()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg border border-slate-700 text-sm font-medium transition" title="Berechnete Werte kopieren">
@@ -238,34 +238,41 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm text-slate-400 mb-1">Steifigkeit / Stabilität</label>
+                    <label class="block text-sm text-slate-400 mb-1">Steifigkeit / Stabilität (Spannmittel & Auskragung)</label>
                     <select id="rigidity-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" onchange="calculate()"></select>
                 </div>
 
                 <div>
                     <label class="block text-sm text-slate-400 mb-1">Bearbeitungsprofil</label>
-                    <select id="profile-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" onchange="calculate()"></select>
+                    <select id="profile-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" onchange="resetSliders()"></select>
                     <div id="profile-specs" class="text-xs text-slate-400 mt-2 bg-slate-950 p-2 rounded border border-slate-800"></div>
                 </div>
 
-                <!-- NEU: Schnittaufteilung & Manuelle Parameter -->
-                <div class="bg-slate-950 p-3 rounded-lg border border-slate-800">
-                    <h3 class="text-sm font-semibold text-emerald-400 mb-2">Schnittaufteilung (Optional)</h3>
-                    <div class="grid grid-cols-3 gap-2">
-                        <div>
-                            <label class="block text-[10px] text-slate-400 mb-1">Gesamttiefe (mm)</label>
-                            <input type="number" id="input-total-depth" placeholder="z.B. 25" step="0.1" oninput="calculate()" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white text-xs">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] text-slate-400 mb-1">Zustellung ap (mm)</label>
-                            <input type="number" id="input-custom-ap" placeholder="Auto" step="0.1" oninput="calculate()" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white text-xs">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] text-slate-400 mb-1">Zustellung ae (mm)</label>
-                            <input type="number" id="input-custom-ae" placeholder="Auto" step="0.1" oninput="calculate()" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white text-xs">
-                        </div>
+                <!-- NEU: Dynamische Zustellung (Schieberegler) -->
+                <div class="bg-slate-950 p-4 rounded-lg border border-slate-800 space-y-4">
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                        <h3 class="text-sm font-semibold text-emerald-400">Zustellung (Faktoren vom Ø)</h3>
+                        <button onclick="resetSliders()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded transition">Profil-Werte laden</button>
                     </div>
-                    <div id="depth-info" class="text-[10px] text-slate-500 mt-2">Gibt die Gesamttiefe ein, um die benötigten Schnitte zu berechnen.</div>
+                    
+                    <!-- ap Slider -->
+                    <div>
+                        <div class="flex justify-between text-xs text-slate-400 mb-1">
+                            <label>Schnitttiefe (ap): <span id="val-ap-factor" class="text-white font-mono ml-1">1.00</span> × D</label>
+                            <span id="val-ap-mm" class="text-emerald-400 font-bold">12.0 mm</span>
+                        </div>
+                        <input type="range" id="slider-ap" min="0.05" max="5.0" step="0.05" value="1.0" oninput="calculate()" class="w-full accent-emerald-500 bg-slate-800 rounded-lg appearance-none h-2 cursor-pointer">
+                    </div>
+
+                    <!-- ae Slider -->
+                    <div>
+                        <div class="flex justify-between text-xs text-slate-400 mb-1">
+                            <label>Schnittbreite (ae): <span id="val-ae-factor" class="text-white font-mono ml-1">0.50</span> × D</label>
+                            <span id="val-ae-mm" class="text-emerald-400 font-bold">6.0 mm</span>
+                        </div>
+                        <input type="range" id="slider-ae" min="0.01" max="1.0" step="0.01" value="0.5" oninput="calculate()" class="w-full accent-emerald-500 bg-slate-800 rounded-lg appearance-none h-2 cursor-pointer">
+                    </div>
+
                     <div id="depth-warning" class="text-[10px] font-bold text-rose-500 mt-1 hidden"></div>
                 </div>
 
@@ -273,7 +280,7 @@
                 <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-2">
                     <label class="flex items-center gap-2 cursor-pointer">
                         <input type="checkbox" id="rct-toggle" checked onchange="calculate()" class="rounded bg-slate-900 border-slate-700 text-emerald-500 focus:ring-0">
-                        <span class="text-xs font-semibold text-emerald-400">Radial Chip Thinning (RCT) Korrektur aktiv</span>
+                        <span class="text-xs font-semibold text-emerald-400">Radial Chip Thinning (RCT) aktiv</span>
                     </label>
                     <p class="text-[11px] text-slate-400 leading-relaxed">
                         Passt den Vorschub bei kleiner radialer Zustellung (ae &lt; 0.5 × D) automatisch an, um die Spanungsdicke und Standzeit zu sichern.
@@ -302,13 +309,6 @@
                             <span class="text-sm text-slate-400">Zustellung (ap / ae):</span>
                             <span id="res-apae" class="text-lg font-semibold text-white">-- / -- mm</span>
                         </div>
-                        
-                        <!-- NEU: Ausgabe der Schnitte -->
-                        <div id="res-passes-container" class="bg-slate-950 p-3 rounded border border-slate-800 flex justify-between items-center hidden">
-                            <span class="text-sm text-slate-400">Anzahl Z-Zustellungen (Schnitte):</span>
-                            <span id="res-passes" class="text-xl font-bold text-amber-400">--</span>
-                        </div>
-
                         <div class="bg-slate-950 p-3 rounded border border-slate-800 flex justify-between items-center">
                             <span class="text-sm text-slate-400">Zeitspanvolumen (Q):</span>
                             <span id="res-q" class="text-xl font-bold text-emerald-400">-- cm³/min</span>
@@ -324,7 +324,7 @@
                 <div class="bg-slate-950 p-4 rounded-xl border border-emerald-500/30 space-y-3">
                     <h3 class="text-sm font-semibold text-emerald-400">📝 Lauf in Praxis getestet? Als Favorit speichern</h3>
                     <div>
-                        <input type="text" id="fav-title" placeholder="Titel z.B. C45 Tiefe Tasche perfekt" class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-white text-xs">
+                        <input type="text" id="fav-title" placeholder="Titel z.B. C45 Schruppen stabil" class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-white text-xs">
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <div>
@@ -337,7 +337,7 @@
                         </div>
                         <div>
                             <label class="block text-[10px] text-slate-400 mb-1">Notiz</label>
-                            <input type="text" id="fav-feedback" placeholder="z.B. Läuft super in 4 Schnitten" class="w-full bg-slate-900 border border-slate-800 rounded p-1 text-white text-xs">
+                            <input type="text" id="fav-feedback" placeholder="z.B. Läuft super" class="w-full bg-slate-900 border border-slate-800 rounded p-1 text-white text-xs">
                         </div>
                     </div>
                     <button onclick="saveCurrentAsFavorite()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-xs font-medium transition">
@@ -399,10 +399,10 @@
         };
 
         let db = loadDatabase();
-        let currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0, q: 0, power: 0, fz_eff: 0, passes: 0 };
+        let currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0, q: 0, power: 0, fz_eff: 0 };
 
         function loadDatabase() {
-            const saved = localStorage.getItem('cnc_tool_guide_db_depth_var');
+            const saved = localStorage.getItem('cnc_tool_guide_db_sliders_var');
             if (saved) {
                 try { 
                     const parsed = JSON.parse(saved);
@@ -413,7 +413,6 @@
                     }
                 } catch (e) { console.error(e); }
             }
-            // Falls alte Versionen geladen wurden, max_overhang sicherstellen
             const initial = JSON.parse(JSON.stringify(defaultDb));
             for(let tId in initial.tools) {
                 if(!initial.tools[tId].max_overhang) initial.tools[tId].max_overhang = initial.tools[tId].diameter * 3;
@@ -422,7 +421,7 @@
         }
 
         function saveDatabase() {
-            localStorage.setItem('cnc_tool_guide_db_depth_var', JSON.stringify(db));
+            localStorage.setItem('cnc_tool_guide_db_sliders_var', JSON.stringify(db));
         }
 
         function resetToDefaultData() {
@@ -436,8 +435,8 @@
 
         function initApp() {
             populateDropdowns();
+            resetSliders(); // Überschreibt Sliders mit dem aktuell gewählten Profil
             renderFavorites();
-            calculate();
         }
 
         function toggleAdmin() {
@@ -525,6 +524,17 @@
             updateMaterialDropdownForTool();
         }
 
+        // Setzt die Schieberegler auf die Werte des aktuellen Profils zurück
+        function resetSliders() {
+            const profId = document.getElementById('profile-select').value;
+            const prof = db.profiles[profId];
+            if(prof) {
+                document.getElementById('slider-ap').value = prof.ap_factor;
+                document.getElementById('slider-ae').value = prof.ae_factor;
+                calculate();
+            }
+        }
+
         function renderToolMatrixInputs() {
             const container = document.getElementById('adm-tool-matrix-container');
             if(!container) return;
@@ -610,11 +620,22 @@
             updateMaterialDropdownForTool();
             if(db.materials[fav.material_id]) document.getElementById('material-select').value = fav.material_id;
             if(fav.rigidity_id && db.rigidity[fav.rigidity_id]) document.getElementById('rigidity-select').value = fav.rigidity_id;
-            if(db.profiles[fav.profile_id]) document.getElementById('profile-select').value = fav.profile_id;
             
-            document.getElementById('input-total-depth').value = fav.total_depth || '';
-            document.getElementById('input-custom-ap').value = fav.custom_ap || '';
-            document.getElementById('input-custom-ae').value = fav.custom_ae || '';
+            if(db.profiles[fav.profile_id]) {
+                document.getElementById('profile-select').value = fav.profile_id;
+            }
+            
+            if (fav.ap_factor !== undefined && fav.ae_factor !== undefined) {
+                document.getElementById('slider-ap').value = fav.ap_factor;
+                document.getElementById('slider-ae').value = fav.ae_factor;
+            } else {
+                // Fallback für alte Favoriten
+                const prof = db.profiles[fav.profile_id];
+                if(prof) {
+                    document.getElementById('slider-ap').value = prof.ap_factor;
+                    document.getElementById('slider-ae').value = prof.ae_factor;
+                }
+            }
 
             calculate();
         }
@@ -633,9 +654,8 @@
                 material_id: document.getElementById('material-select').value, 
                 profile_id: document.getElementById('profile-select').value, 
                 rigidity_id: document.getElementById('rigidity-select').value,
-                total_depth: document.getElementById('input-total-depth').value,
-                custom_ap: document.getElementById('input-custom-ap').value,
-                custom_ae: document.getElementById('input-custom-ae').value,
+                ap_factor: parseFloat(document.getElementById('slider-ap').value),
+                ae_factor: parseFloat(document.getElementById('slider-ae').value),
                 rating, feedback,
                 rpm: currentCalculatedResults.rpm,
                 feed_rate_vf: currentCalculatedResults.vf
@@ -778,49 +798,24 @@
             const z = tool.z;
             const Lmax = tool.max_overhang || (D * 3);
 
-            // AUTO Werte aus Profil
-            const autoAp = D * profile.ap_factor;
-            const autoAe = D * profile.ae_factor;
-            
-            // Manuelle Werte auslesen
-            document.getElementById('input-custom-ap').placeholder = `Auto: ${autoAp.toFixed(1)}`;
-            document.getElementById('input-custom-ae').placeholder = `Auto: ${autoAe.toFixed(1)}`;
-            
-            const customAp = parseFloat(document.getElementById('input-custom-ap').value);
-            const customAe = parseFloat(document.getElementById('input-custom-ae').value);
-            const totalDepth = parseFloat(document.getElementById('input-total-depth').value);
+            // Regler-Werte auslesen
+            const ap_factor = parseFloat(document.getElementById('slider-ap').value);
+            const ae_factor = parseFloat(document.getElementById('slider-ae').value);
 
-            const ap = !isNaN(customAp) ? customAp : autoAp;
-            const ae = !isNaN(customAe) ? customAe : autoAe;
+            const ap = D * ap_factor;
+            const ae = D * ae_factor;
 
-            // Schnittaufteilung (Passes)
-            const passesContainer = document.getElementById('res-passes-container');
-            let passes = 0;
-            if (!isNaN(totalDepth) && totalDepth > 0) {
-                passes = Math.ceil(totalDepth / ap);
-                const lastPassAp = totalDepth - ((passes - 1) * ap);
-                
-                document.getElementById('res-passes').innerText = passes;
-                passesContainer.classList.remove('hidden');
+            // UI Label für Regler aktualisieren
+            document.getElementById('val-ap-factor').innerText = ap_factor.toFixed(2);
+            document.getElementById('val-ap-mm').innerText = ap.toFixed(1) + " mm";
+            document.getElementById('val-ae-factor').innerText = ae_factor.toFixed(2);
+            document.getElementById('val-ae-mm').innerText = ae.toFixed(1) + " mm";
 
-                let infoText = `${passes} Durchgänge erforderlich.`;
-                if (passes > 1 && Math.abs(lastPassAp - ap) > 0.01) {
-                    infoText += ` Letzter Schnitt: ${lastPassAp.toFixed(2)} mm.`;
-                }
-                document.getElementById('depth-info').innerText = infoText;
-            } else {
-                passesContainer.classList.add('hidden');
-                document.getElementById('depth-info').innerText = "Gibt die Gesamttiefe ein, um die benötigten Schnitte zu berechnen.";
-            }
-
-            // Kollisionswarnung
+            // Kollisionswarnung Lmax
             const warningBox = document.getElementById('depth-warning');
-            if (!isNaN(totalDepth) && totalDepth > Lmax) {
+            if (ap > Lmax) {
                 warningBox.classList.remove('hidden');
-                warningBox.innerText = `⚠️ WARNUNG: Gesamttiefe (${totalDepth}mm) überschreitet max. Werkzeug-Auskragung (${Lmax}mm)! Kollisionsgefahr.`;
-            } else if (ap > Lmax) {
-                warningBox.classList.remove('hidden');
-                warningBox.innerText = `⚠️ WARNUNG: Zustellung ap (${ap}mm) überschreitet max. Werkzeug-Auskragung (${Lmax}mm)!`;
+                warningBox.innerText = `⚠️ WARNUNG: Schnitttiefe ap (${ap.toFixed(1)}mm) überschreitet max. Werkzeug-Auskragung (${Lmax}mm)!`;
             } else {
                 warningBox.classList.add('hidden');
             }
@@ -850,7 +845,7 @@
             const Q = (ap * ae * vf) / 1000;
             const power_kw = (Q * mat.kc11) / (60 * 1000);
 
-            currentCalculatedResults = { rpm: n, vf: vf, ap: ap, ae: ae, q: Q, power: power_kw, fz_eff: effectiveFz, passes: passes };
+            currentCalculatedResults = { rpm: n, vf: vf, ap: ap, ae: ae, q: Q, power: power_kw, fz_eff: effectiveFz };
 
             const rpmEl = document.getElementById('res-rpm');
             const vfEl = document.getElementById('res-vf');
@@ -903,14 +898,14 @@ Schnitttiefe (ap): ${currentCalculatedResults.ap.toFixed(1)} mm
 Schnittbreite (ae): ${currentCalculatedResults.ae.toFixed(1)} mm
 Zeitspanvolumen (Q): ${currentCalculatedResults.q.toFixed(2)} cm³/min
 Leistungsbedarf (Pc): ${currentCalculatedResults.power.toFixed(2)} kW
-----------------------------------
-Schnittaufteilung: ${currentCalculatedResults.passes > 0 ? currentCalculatedResults.passes + ' Durchgänge' : 'Nicht angegeben'}`;
+----------------------------------`;
 
             navigator.clipboard.writeText(report).then(() => {
                 alert("Bericht in Zwischenablage kopiert!");
             });
         }
 
+        // Start
         initApp();
     </script>
 </body>
