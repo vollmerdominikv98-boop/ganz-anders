@@ -194,7 +194,7 @@
                         <span class="text-xs font-semibold text-emerald-400">Radial Chip Thinning (RCT) Korrektur aktiv</span>
                     </label>
                     <p class="text-[11px] text-slate-400 leading-relaxed">
-                        Passt den Vorschub bei kleiner radialer Zustellung ($ae < 0.5 \times D$) automatisch an, um die kon్‌tinuierliche Spanungsdicke und Standzeit zu sichern.
+                        Passt den Vorschub bei kleiner radialer Zustellung (ae &lt; 0.5 × D) automatisch an, um die kontinuierliche Spanungsdicke und Standzeit zu sichern.
                     </p>
                     <div id="rct-info" class="text-[11px] text-amber-300/90 font-mono hidden">
                         <!-- Dynamischer RCT-Faktor -->
@@ -323,7 +323,14 @@
         function loadDatabase() {
             const saved = localStorage.getItem('cnc_tool_guide_db');
             if (saved) {
-                try { return JSON.parse(saved); } catch (e) { console.error("Fehler beim Laden von localStorage", e); }
+                try { 
+                    const parsed = JSON.parse(saved);
+                    if (parsed && parsed.tools && Object.keys(parsed.tools).length > 0 && parsed.materials && Object.keys(parsed.materials).length > 0) {
+                        return parsed;
+                    }
+                } catch (e) { 
+                    console.error("Fehler beim Parsen von localStorage", e); 
+                }
             }
             return JSON.parse(JSON.stringify(defaultDb));
         }
@@ -645,22 +652,14 @@
             const ap = D * profile.ap_factor;
             const ae = D * profile.ae_factor;
 
-            // Standard Vorschub pro Zahn
             let baseFz = D * 0.007;
             let effectiveFz = baseFz * profile.fz_factor;
 
             const rctInfoBox = document.getElementById('rct-info');
 
-            // Radial Chip Thinning (RCT) Berechnung
-            // Formel Korrekturfaktor C = 1 / arcsin(1 - ae/R) oder nähherungsweise über radiale Eintauchtiefe
             if (rctActive && ae < (D / 2)) {
-                const ratio = ae / D;
-                // RCT-Korrekturfaktor Formel: 1 / sqrt( 1 - (1 - 2*ae/D)^2 )
-                // Vereinfachte Formel für Spanungsdickenkorrektur: C_rct = 1 / sqrt(ae / D * (2 - ae / D)) -> standardmäßig für ae <= D/2
                 const radRatio = ae / D;
                 const rctFactor = 1 / Math.sqrt(radRatio * (2 - radRatio));
-                
-                // Begrenzen auf sinnvolle technische Maxima (z.B. Faktor max 3.0, um Überlastung zu verhindern)
                 const clampedRct = Math.min(rctFactor, 3.0);
                 effectiveFz *= clampedRct;
 
@@ -686,9 +685,9 @@
         }
 
         function exportDataReport() {
-            const tool = db.tools[document.getElementById('tool-select'].value]?.name || 'Unbekannt';
-            const mat = db.materials[document.getElementById('material-select'].value]?.name || 'Unbekannt';
-            const prof = db.profiles[document.getElementById('profile-select'].value]?.name || 'Unbekannt';
+            const tool = db.tools[document.getElementById('tool-select').value]?.name || 'Unbekannt';
+            const mat = db.materials[document.getElementById('material-select').value]?.name || 'Unbekannt';
+            const prof = db.profiles[document.getElementById('profile-select').value]?.name || 'Unbekannt';
             const rctStatus = document.getElementById('rct-toggle').checked ? 'Aktiv' : 'Inaktiv';
 
             const report = `--- CNC OPEN TOOL GUIDE BERICHT ---
