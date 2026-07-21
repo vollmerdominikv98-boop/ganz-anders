@@ -3,98 +3,201 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CNC Open Tool Guide</title>
+    <title>CNC Open Tool Guide - Admin & Calculator</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans min-p-6">
-    <div class="max-w-4xl mx-auto p-6">
-        <header class="mb-8 border-b border-slate-800 pb-4">
-            <h1 class="text-3xl font-bold tracking-tight text-emerald-400">CNC Open Tool Guide</h1>
-            <p class="text-slate-400">Herstellerunabhängiger Rechner für das CNC-Fräsen</p>
+<body class="bg-slate-950 text-slate-100 font-sans p-6">
+    <div class="max-w-5xl mx-auto">
+        <header class="mb-8 border-b border-slate-800 pb-4 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight text-emerald-400">CNC Open Tool Guide</h1>
+                <p class="text-slate-400">Herstellerunabhängiger Fräsrechner & Admin-Konsole</p>
+            </div>
+            <button onclick="toggleAdmin()" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 px-4 py-2 rounded-lg border border-slate-700 font-medium transition">
+                ⚙️ Admin-Konsole umschalten
+            </button>
         </header>
 
+        <!-- ADMIN BEREICH (Standardmäßig ausgeblendet) -->
+        <div id="admin-panel" class="hidden mb-8 bg-slate-900 p-6 rounded-xl border border-emerald-500/30">
+            <h2 class="text-xl font-semibold mb-4 text-emerald-400">Admin-Konsole: Neues Material anlegen</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">ID (z.B. kupfer)</label>
+                    <input type="text" id="adm-id" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white">
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Materialbezeichnung</label>
+                    <input type="text" id="adm-name" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white">
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Grund-vc (m/min)</label>
+                    <input type="number" id="adm-vc" value="180" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white">
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Spez. Schnittkraft kc1.1</label>
+                    <input type="number" id="adm-kc11" value="1500" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white">
+                </div>
+            </div>
+            <button onclick="addNewMaterial()" class="mt-4 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded font-medium transition">
+                Material in Datenbank speichern
+            </button>
+        </div>
+
+        <!-- HAUPTRECHNER -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Eingabefelder -->
-            <div class="bg-slate-900 p-6 rounded-xl border border-slate-800">
-                <h2 class="text-xl font-semibold mb-4 text-slate-200">Parameter</h2>
+            <div class="bg-slate-900 p-6 rounded-xl border border-slate-800 space-y-4">
+                <h2 class="text-xl font-semibold text-slate-200">Konfiguration</h2>
                 
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm text-slate-400 mb-1">Schnittgeschwindigkeit vc (m/min)</label>
-                        <input type="number" id="vc" value="200" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white">
-                    </div>
-                    <div>
-                        <label class="block text-sm text-slate-400 mb-1">Fräserdurchmesser D (mm)</label>
-                        <input type="number" id="diameter" value="12" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white">
-                    </div>
-                    <div>
-                        <label class="block text-sm text-slate-400 mb-1">Vorschub pro Zahn fz (mm)</label>
-                        <input type="number" step="0.01" id="fz" value="0.08" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white">
-                    </div>
-                    <div>
-                        <label class="block text-sm text-slate-400 mb-1">Anzahl Zähne z</label>
-                        <input type="number" id="z" value="4" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white">
-                    </div>
-                    <div>
-                        <label class="block text-sm text-slate-400 mb-1">Schnitttiefe ap (mm)</label>
-                        <input type="number" id="ap" value="5" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white">
-                    </div>
-                    <div>
-                        <label class="block text-sm text-slate-400 mb-1">Schnittbreite ae (mm)</label>
-                        <input type="number" id="ae" value="4" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white">
-                    </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Werkzeug wählen</label>
+                    <select id="tool-select" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white" onchange="calculate()">
+                        <option value="tool_1">Vollhartmetall Schaftfräser D12 (4 Zähne)</option>
+                        <option value="tool_2">Schruppfräser Schrupp-Pro D16 (3 Zähne)</option>
+                        <option value="tool_3">Mini-Fräser D6 (2 Zähne)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Werkstoff wählen</label>
+                    <select id="material-select" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white" onchange="calculate()">
+                        <option value="stahl_c45">Stahl (z.B. C45)</option>
+                        <option value="alu_wrought">Aluminium (knetlegiert)</option>
+                        <option value="rostfrei">Rostfreier Stahl (Inox)</option>
+                        <option value="titan">Titanlegierung</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Bearbeitungsprofil (mit Faktoren)</label>
+                    <select id="profile-select" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white" onchange="calculate()">
+                        <option value="schruppen">Schruppen (Roughing) [vc x0.85, fz x1.2]</option>
+                        <option value="schlichten">Schlichten (Finishing) [vc x1.2, fz x0.5]</option>
+                        <option value="planfraesen">Planfräsen (Face Milling) [Standard]</option>
+                        <option value="besaeumen">Besäumen / Kantenfräsen [Optimiert]</option>
+                    </select>
                 </div>
             </div>
 
-            <!-- Ergebnisse -->
+            <!-- ERGEBNISSE -->
             <div class="bg-slate-900 p-6 rounded-xl border border-slate-800 flex flex-col justify-between">
                 <div>
-                    <h2 class="text-xl font-semibold mb-4 text-slate-200">Berechnete Werte</h2>
-                    <div class="space-y-4">
-                        <div class="bg-slate-950 p-4 rounded border border-slate-800">
+                    <h2 class="text-xl font-semibold mb-4 text-slate-200">Berechnete Schnittdaten</h2>
+                    <div class="space-y-3">
+                        <div class="bg-slate-950 p-3 rounded border border-slate-800 flex justify-between items-center">
                             <span class="text-sm text-slate-400">Drehzahl (n):</span>
-                            <div id="res-rpm" class="text-2xl font-bold text-emerald-400">-- U/min</div>
+                            <span id="res-rpm" class="text-xl font-bold text-emerald-400">-- U/min</span>
                         </div>
-                        <div class="bg-slate-950 p-4 rounded border border-slate-800">
+                        <div class="bg-slate-950 p-3 rounded border border-slate-800 flex justify-between items-center">
                             <span class="text-sm text-slate-400">Tischvorschub (vf):</span>
-                            <div id="res-vf" class="text-2xl font-bold text-emerald-400">-- mm/min</div>
+                            <span id="res-vf" class="text-xl font-bold text-emerald-400">-- mm/min</span>
                         </div>
-                        <div class="bg-slate-950 p-4 rounded border border-slate-800">
+                        <div class="bg-slate-950 p-3 rounded border border-slate-800 flex justify-between items-center">
+                            <span class="text-sm text-slate-400">Schnitttiefe / -breite (ap/ae):</span>
+                            <span id="res-apae" class="text-lg font-semibold text-white">-- / -- mm</span>
+                        </div>
+                        <div class="bg-slate-950 p-3 rounded border border-slate-800 flex justify-between items-center">
                             <span class="text-sm text-slate-400">Zeitspanvolumen (Q):</span>
-                            <div id="res-q" class="text-2xl font-bold text-emerald-400">-- cm³/min</div>
+                            <span id="res-q" class="text-xl font-bold text-emerald-400">-- cm³/min</span>
+                        </div>
+                        <div class="bg-slate-950 p-3 rounded border border-slate-800 flex justify-between items-center">
+                            <span class="text-sm text-slate-400">Antriebsleistung (Pc):</span>
+                            <span id="res-power" class="text-xl font-bold text-amber-400">-- kW</span>
                         </div>
                     </div>
                 </div>
                 <div class="text-xs text-slate-500 mt-6 text-center">
-                    Basiert auf mathematischen Formeln für das Fräsen
+                    Offene CNC Architektur • Dynamische Profilfaktoren aktiv
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Einfache lokale Testberechnung im Browser zur Ansicht
-        function calculate() {
-            const vc = parseFloat(document.getElementById('vc').value) || 0;
-            const D = parseFloat(document.getElementById('diameter').value) || 1;
-            const fz = parseFloat(document.getElementById('fz').value) || 0;
-            const z = parseInt(document.getElementById('z').value) || 1;
-            const ap = parseFloat(document.getElementById('ap').value) || 0;
-            const ae = parseFloat(document.getElementById('ae').value) || 0;
+        // Simulierte Datenbank im Frontend für den Sofort-Test im Browser
+        const db = {
+            materials: {
+                "stahl_c45": { base_vc: 220, kc11: 1800 },
+                "alu_wrought": { base_vc: 600, kc11: 700 },
+                "rostfrei": { base_vc: 140, kc11: 2400 },
+                "titan": { base_vc: 60, kc11: 2800 }
+            },
+            profiles: {
+                "schruppen": { vc_factor: 0.85, fz_factor: 1.20, ap_factor: 1.0, ae_factor: 0.7 },
+                "schlichten": { vc_factor: 1.20, fz_factor: 0.50, ap_factor: 0.2, ae_factor: 0.1 },
+                "planfraesen": { vc_factor: 1.0, fz_factor: 1.0, ap_factor: 0.5, ae_factor: 0.8 },
+                "besaeumen": { vc_factor: 0.95, fz_factor: 0.9, ap_factor: 0.8, ae_factor: 0.3 }
+            },
+            tools: {
+                "tool_1": { diameter: 12, z: 4 },
+                "tool_2": { diameter: 16, z: 3 },
+                "tool_3": { diameter: 6, z: 2 }
+            }
+        };
 
-            const n = (vc * 1000) / (Math.PI * D);
-            const vf = fz * z * n;
+        function toggleAdmin() {
+            const panel = document.getElementById('admin-panel');
+            panel.classList.toggle('hidden');
+        }
+
+        function addNewMaterial() {
+            const id = document.getElementById('adm-id').value;
+            const name = document.getElementById('adm-name').value;
+            const vc = parseFloat(document.getElementById('adm-vc').value);
+            const kc11 = parseFloat(document.getElementById('adm-kc11').value);
+
+            if(!id || !name) {
+                alert('Bitte ID und Name angeben!');
+                return;
+            }
+
+            db.materials[id] = { base_vc: vc, kc11: kc11 };
+            
+            // Dropdown aktualisieren
+            const select = document.getElementById('material-select');
+            const opt = document.createElement('option');
+            opt.value = id;
+            opt.innerHTML = name;
+            select.appendChild(opt);
+            select.value = id;
+
+            alert('Material erfolgreich hinzugefügt!');
+            calculate();
+        }
+
+        function calculate() {
+            const toolId = document.getElementById('tool-select').value;
+            const matId = document.getElementById('material-select').value;
+            const profileId = document.getElementById('profile-select').value;
+
+            const tool = db.tools[toolId];
+            const mat = db.materials[matId];
+            const profile = db.profiles[profileId];
+
+            if(!tool || !mat || !profile) return;
+
+            const effectiveVc = mat.base_vc * profile.vc_factor;
+            const baseFz = tool.diameter * 0.007;
+            const effectiveFz = baseFz * profile.fz_factor;
+
+            const D = tool.diameter;
+            const z = tool.z;
+            const ap = D * profile.ap_factor;
+            const ae = D * profile.ae_factor;
+
+            const n = (effectiveVc * 1000) / (Math.PI * D);
+            const vf = effectiveFz * z * n;
             const Q = (ap * ae * vf) / 1000;
+            const powerKw = (Q * mat.kc11) / (60 * 1000);
 
             document.getElementById('res-rpm').innerText = n.toFixed(2) + " U/min";
             document.getElementById('res-vf').innerText = vf.toFixed(2) + " mm/min";
+            document.getElementById('res-apae').innerText = ap.toFixed(1) + " / " + ae.toFixed(1) + " mm";
             document.getElementById('res-q').innerText = Q.toFixed(2) + " cm³/min";
+            document.getElementById('res-power').innerText = powerKw.toFixed(2) + " kW";
         }
 
-        document.querySelectorAll('input').forEach(input => {
-            input.addEventListener('input', calculate);
-        });
-
+        // Initiale Berechnung beim Laden
         calculate();
     </script>
 </body>
