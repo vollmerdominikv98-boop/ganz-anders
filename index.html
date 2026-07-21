@@ -3,24 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CNC Open Tool Guide - Materialeignung</title>
+    <title>CNC Open Tool Guide - Praxis-Favoriten</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans p-6">
-    <div class="max-w-6xl mx-auto">
-        <header class="mb-8 border-b border-slate-800 pb-4 flex justify-between items-center">
+    <div class="max-w-6xl mx-auto space-y-6">
+        <header class="border-b border-slate-800 pb-4 flex justify-between items-center">
             <div>
                 <h1 class="text-3xl font-bold tracking-tight text-emerald-400">CNC Open Tool Guide</h1>
-                <p class="text-slate-400">Herstellerunabhängiger Fräsrechner mit Werkzeug-Material-Filter</p>
+                <p class="text-slate-400">Herstellerunabhängiger Fräsrechner mit zentraler Praxis-Datenbank & Favoriten</p>
             </div>
             <button onclick="toggleAdmin()" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 px-4 py-2 rounded-lg border border-slate-700 font-medium transition">
                 ⚙️ Admin-Konsole umschalten
             </button>
         </header>
 
+        <!-- PRAXIS-FAVORITEN SCHNELLWAHL -->
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800">
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="text-lg font-semibold text-emerald-400 flex items-center gap-2">
+                    ⭐ Bewährte Praxis-Favoriten (Werkstatt-Erfahrungswerte)
+                </h2>
+                <span class="text-xs text-slate-400">Mit 1 Klick laden & direkt übernehmen</span>
+            </div>
+            <div id="favorites-container" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <!-- Wird dynamisch gefüllt -->
+            </div>
+        </div>
+
         <!-- ADMIN BEREICH -->
-        <div id="admin-panel" class="hidden mb-8 bg-slate-900 p-6 rounded-xl border border-emerald-500/30 space-y-6">
-            <h2 class="text-xl font-semibold text-emerald-400">Admin-Konsole: Verwalten von Daten & Eignungen</h2>
+        <div id="admin-panel" class="hidden bg-slate-900 p-6 rounded-xl border border-emerald-500/30 space-y-6">
+            <h2 class="text-xl font-semibold text-emerald-400">Admin-Konsole: Zentrale Server-Daten</h2>
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 border-b border-slate-800 pb-6">
                 <!-- 1. Materialien -->
@@ -28,15 +41,15 @@
                     <h3 class="font-medium text-slate-200">Material</h3>
                     <div>
                         <label class="block text-slate-400 mb-1 text-xs">Material-ID</label>
-                        <input type="text" id="adm-mat-id" placeholder="z.B. gehaertet" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                        <input type="text" id="adm-mat-id" placeholder="z.B. messing" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
                     </div>
                     <div>
                         <label class="block text-slate-400 mb-1 text-xs">Bezeichnung</label>
-                        <input type="text" id="adm-mat-name" placeholder="z.B. Gehärteter Stahl" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                        <input type="text" id="adm-mat-name" placeholder="z.B. Messing" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
                     </div>
                     <div>
                         <label class="block text-slate-400 mb-1 text-xs">Spez. Schnittkraft kc1.1 (N/mm²)</label>
-                        <input type="number" id="adm-mat-kc11" value="3000" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                        <input type="number" id="adm-mat-kc11" value="1400" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
                     </div>
                     <button onclick="addNewMaterial()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-sm font-medium">Hinzufügen</button>
                     <div class="flex gap-2 pt-2">
@@ -45,7 +58,7 @@
                     </div>
                 </div>
 
-                <!-- 2. Werkzeuge (Mit Eignungs-Checkboxes & vc) -->
+                <!-- 2. Werkzeuge -->
                 <div class="space-y-3">
                     <h3 class="font-medium text-slate-200">Werkzeug & Eignung</h3>
                     <div>
@@ -85,12 +98,9 @@
                         </div>
                     </div>
 
-                    <!-- Geeignete Materialien (Checkboxes) & vc-Werte -->
                     <div>
                         <label class="block text-slate-400 mb-1 text-xs">Freigabe & vc (m/min) je Material:</label>
-                        <div id="adm-tool-matrix-container" class="space-y-1 bg-slate-950 p-2 rounded border border-slate-800 text-xs max-h-36 overflow-y-auto">
-                            <!-- Dynamisch generiert -->
-                        </div>
+                        <div id="adm-tool-matrix-container" class="space-y-1 bg-slate-950 p-2 rounded border border-slate-800 text-xs max-h-36 overflow-y-auto"></div>
                     </div>
 
                     <button onclick="addNewTool()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-sm font-medium">Hinzufügen</button>
@@ -145,7 +155,7 @@
             </div>
         </div>
 
-        <!-- HAUPTRECHNER -->
+        <!-- HAUPTRECHNER & ERGEBNISSE -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="bg-slate-900 p-6 rounded-xl border border-slate-800 space-y-4">
                 <h2 class="text-xl font-semibold text-slate-200">Konfiguration</h2>
@@ -157,7 +167,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm text-slate-400 mb-1">Werkstoff wählen <span id="mat-filter-hint" class="text-xs text-amber-400/80"></span></label>
+                    <label class="block text-sm text-slate-400 mb-1">Werkstoff wählen</label>
                     <select id="material-select" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white" onchange="calculate()"></select>
                 </div>
 
@@ -168,8 +178,8 @@
                 </div>
             </div>
 
-            <!-- ERGEBNISSE -->
-            <div class="bg-slate-900 p-6 rounded-xl border border-slate-800 flex flex-col justify-between">
+            <!-- ERGEBNISSE & BEWERTUNGS- / SPEICHERMASKE -->
+            <div class="bg-slate-900 p-6 rounded-xl border border-slate-800 flex flex-col justify-between space-y-6">
                 <div>
                     <h2 class="text-xl font-semibold mb-4 text-slate-200">Berechnete Schnittdaten</h2>
                     <div class="space-y-3">
@@ -195,41 +205,49 @@
                         </div>
                     </div>
                 </div>
-                <div class="text-xs text-slate-500 mt-6 text-center">
-                    Werkzeug-Eignungsfilter & vc-Zuweisung aktiv
+
+                <!-- PRAXIS-BEWERTUNGSBOX -->
+                <div class="bg-slate-950 p-4 rounded-xl border border-emerald-500/30 space-y-3">
+                    <h3 class="text-sm font-semibold text-emerald-400">📝 Lauf erfolgreich in Praxis getestet? Als Favorit speichern</h3>
+                    <div>
+                        <input type="text" id="fav-title" placeholder="Titel z.B. C45 Schruppen optimal" class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-white text-xs">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] text-slate-400 mb-1">Bewertung (Sterne)</label>
+                            <select id="fav-rating" class="w-full bg-slate-900 border border-slate-800 rounded p-1 text-white text-xs">
+                                <option value="5">⭐⭐⭐⭐⭐ (Perfekt)</option>
+                                <option value="4">⭐⭐⭐⭐ (Sehr gut)</option>
+                                <option value="3">⭐⭐⭐ (Gut / Stabil)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-400 mb-1">Erfahrungsbericht / Notiz</label>
+                            <input type="text" id="fav-feedback" placeholder="z.B. Läuft ruhig, minimaler Verschleiß" class="w-full bg-slate-900 border border-slate-800 rounded p-1 text-white text-xs">
+                        </div>
+                    </div>
+                    <button onclick="saveCurrentAsFavorite()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-xs font-medium transition">
+                        💾 In die zentrale Praxis-Liste übernehmen
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        let db = {
-            materials: {
-                "stahl_c45": { name: "Stahl (z.B. C45)", kc11: 1800 },
-                "alu_wrought": { name: "Aluminium (knetlegiert)", kc11: 700 },
-                "rostfrei": { name: "Rostfreier Stahl (Inox)", kc11: 2400 },
-                "titan": { name: "Titanlegierung", kc11: 2800 },
-                "gehaertet_55hrc": { name: "Gehärteter Stahl (55 HRC)", kc11: 3200 }
-            },
-            profiles: {
-                "schruppen": { name: "Schruppen (Roughing)", vc_factor: 0.85, fz_factor: 1.20, ap_factor: 1.0, ae_factor: 0.7, description: "Hohes Spanvolumen, reduziertes vc, hoher Vorschub" },
-                "schlichten": { name: "Schlichten (Finishing)", vc_factor: 1.20, fz_factor: 0.50, ap_factor: 0.2, ae_factor: 0.1, description: "Hohe Oberflächengüte, hohes vc, feiner Vorschub" },
-                "planfraesen": { name: "Planfräsen (Face Milling)", vc_factor: 1.0, fz_factor: 1.0, ap_factor: 0.5, ae_factor: 0.8, description: "Standard-Flächenbearbeitung" },
-                "besaeumen": { name: "Besäumen / Kantenfräsen", vc_factor: 0.95, fz_factor: 0.9, ap_factor: 0.8, ae_factor: 0.3, description: "Kanten- und Konturbearbeitung" }
-            },
-            tools: {
-                "tool_vhm_12": { 
-                    name: "VHM Schaftfräser D12 (Standard)", type: "Schaftfräser", material_schneidstoff: "VHM", diameter: 12.0, z: 4, max_overhang: 36.0, helix_angle: 30.0,
-                    vc_per_material: { "stahl_c45": 220, "alu_wrought": 600, "rostfrei": 140, "titan": 60 },
-                    suitable_materials: ["stahl_c45", "alu_wrought", "rostfrei", "titan"] // Gehärtet bewusst ausgeschlossen!
-                },
-                "tool_schrupp_16": { 
-                    name: "Schruppfräser Schrupp-Pro D16", type: "Schruppfräser", material_schneidstoff: "VHM", diameter: 16.0, z: 3, max_overhang: 48.0, helix_angle: 45.0,
-                    vc_per_material: { "stahl_c45": 180, "alu_wrought": 500, "rostfrei": 110, "titan": 45 },
-                    suitable_materials: ["stahl_c45", "rostfrei"]
-                }
+        let db = { materials: {}, profiles: {}, tools: {}, favorites: [] };
+        let currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0 };
+
+        async function loadServerData() {
+            try {
+                const response = await fetch('/api/data');
+                db = await response.json();
+                updateDropdowns();
+                renderFavorites();
+            } catch (e) {
+                console.error("Fehler beim Laden vom Server:", e);
             }
-        };
+        }
 
         function toggleAdmin() {
             document.getElementById('admin-panel').classList.toggle('hidden');
@@ -280,7 +298,6 @@
             updateMaterialDropdownForTool();
         }
 
-        // Passt die Material-Auswahl im Hauptrechner so an, dass nur geeignete Materialien wählbar sind
         function updateMaterialDropdownForTool() {
             const toolId = document.getElementById('tool-select').value;
             const matSel = document.getElementById('material-select');
@@ -294,7 +311,6 @@
             let validSelectionExists = false;
 
             for (const [id, m] of Object.entries(db.materials)) {
-                // Nur anzeigen, wenn das Material in der Eignungsliste des Werkzeugs ist
                 if (suitableList.includes(id)) {
                     const opt = new Option(m.name, id);
                     matSel.add(opt);
@@ -302,7 +318,6 @@
                 }
             }
 
-            // Falls das vorher gewählte Material für dieses Werkzeug unzulässig ist, wähle das erste verfügbare
             if (!validSelectionExists && matSel.options.length > 0) {
                 matSel.selectedIndex = 0;
             } else if (validSelectionExists) {
@@ -331,129 +346,192 @@
             }
             if(prof) {
                 document.getElementById('profile-specs').innerHTML = 
-                    `<strong>Info:</strong> ${prof.description} | <strong>Faktoren (vc/fz/ap/ae):</strong> ${prof.vc_factor} / ${prof.fz_factor} / ${prof.ap_factor} / ${prof.ae_factor}`;
+                    `<strong>Info:</strong> ${prof.description} | <strong>Faktoren:</strong> vc ${prof.vc_factor} / fz ${prof.fz_factor}`;
             }
         }
 
-        function addNewMaterial() {
+        function renderFavorites() {
+            const container = document.getElementById('favorites-container');
+            container.innerHTML = '';
+            if (!db.favorites || db.favorites.length === 0) {
+                container.innerHTML = `<div class="text-xs text-slate-500 italic col-span-3">Noch keine Praxis-Favoriten gespeichert. Berechne Daten und speichere erfolgreiche Läufe ab!</div>`;
+                return;
+            }
+
+            db.favorites.forEach(fav => {
+                const card = document.createElement('div');
+                card.className = "bg-slate-950 p-3 rounded-lg border border-slate-800 hover:border-emerald-500/50 transition flex flex-col justify-between space-y-2";
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start">
+                            <span class="font-semibold text-emerald-400 text-xs">${fav.title}</span>
+                            <span class="text-amber-400 text-xs">${'⭐'.repeat(fav.rating)}</span>
+                        </div>
+                        <p class="text-[11px] text-slate-300 mt-1 italic">"${fav.feedback || 'Keine Notiz'}"</p>
+                        <div class="text-[10px] text-slate-400 mt-2 space-y-0.5">
+                            <div>Drehzahl: <strong class="text-white">${fav.rpm} U/min</strong> | Vorschub: <strong class="text-white">${fav.feed_rate_vf} mm/min</strong></div>
+                            <div>ap: ${fav.ap} mm | ae: ${fav.ae} mm</div>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 pt-1">
+                        <button onclick="loadFavorite('${fav.tool_id}', '${fav.material_id}', '${fav.profile_id}')" class="flex-1 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 text-xs py-1 rounded border border-emerald-500/30 font-medium">Laden</button>
+                        <button onclick="deleteFavorite('${fav.id}')" class="bg-rose-600/20 hover:bg-rose-600/40 text-rose-400 text-xs px-2 rounded border border-rose-500/30">🗑️</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function loadFavorite(toolId, materialId, profileId) {
+            if(db.tools[toolId]) document.getElementById('tool-select').value = toolId;
+            updateMaterialDropdownForTool();
+            if(db.materials[materialId]) document.getElementById('material-select').value = materialId;
+            if(db.profiles[profileId]) document.getElementById('profile-select').value = profileId;
+            calculate();
+        }
+
+        async function saveCurrentAsFavorite() {
+            const title = document.getElementById('fav-title').value;
+            const rating = parseInt(document.getElementById('fav-rating').value);
+            const feedback = document.getElementById('fav-feedback').value;
+            const toolId = document.getElementById('tool-select').value;
+            const materialId = document.getElementById('material-select').value;
+            const profileId = document.getElementById('profile-select').value;
+
+            if(!title) { alert('Bitte einen Titel für den Favoriten vergeben'); return; }
+
+            const payload = {
+                title, tool_id: toolId, material_id: materialId, profile_id: profileId,
+                rating, feedback,
+                rpm: currentCalculatedResults.rpm,
+                feed_rate_vf: currentCalculatedResults.vf,
+                ap: currentCalculatedResults.ap,
+                ae: currentCalculatedResults.ae
+            };
+
+            const response = await fetch('/api/favorites', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const resData = await response.json();
+            alert(resData.message);
+            document.getElementById('fav-title').value = '';
+            document.getElementById('fav-feedback').value = '';
+            loadServerData();
+        }
+
+        async function deleteFavorite(favId) {
+            await fetch(`/api/favorites/${favId}`, { method: 'DELETE' });
+            loadServerData();
+        }
+
+        async function addNewMaterial() {
             const id = document.getElementById('adm-mat-id').value;
             const name = document.getElementById('adm-mat-name').value;
-            if(!id || !name) { alert('Bitte Material-ID und Bezeichnung ausfüllen'); return; }
-            db.materials[id] = { name: name, kc11: parseFloat(document.getElementById('adm-mat-kc11').value) };
-            
-            // Neues Material standardmäßig bei allen Werkzeugen aktivieren mit Default vc
-            for (const toolId in db.tools) {
-                if (!db.tools[toolId].vc_per_material) db.tools[toolId].vc_per_material = {};
-                db.tools[toolId].vc_per_material[id] = 200;
-                if (!db.tools[toolId].suitable_materials) db.tools[toolId].suitable_materials = [];
-                db.tools[toolId].suitable_materials.push(id);
-            }
-
-            updateDropdowns(); alert('Material hinzugefügt!');
+            if(!id || !name) { alert('Bitte ID und Name ausfüllen'); return; }
+            await fetch('/api/admin/material', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ material_id: id, name: name, kc11: parseFloat(document.getElementById('adm-mat-kc11').value) })
+            });
+            loadServerData(); alert('Material hinzugefügt!');
         }
 
-        function deleteMaterial() {
+        async function deleteMaterial() {
             const id = document.getElementById('del-material-select').value;
-            if(Object.keys(db.materials).length <= 1) { alert('Mindestens 1 Material muss bleiben!'); return; }
-            delete db.materials[id]; 
-            for (const toolId in db.tools) {
-                if (db.tools[toolId].vc_per_material) delete db.tools[toolId].vc_per_material[id];
-                if (db.tools[toolId].suitable_materials) {
-                    db.tools[toolId].suitable_materials = db.tools[toolId].suitable_materials.filter(mId => mId !== id);
-                }
-            }
-            updateDropdowns(); alert('Gelöscht!');
+            await fetch(`/api/admin/material/${id}`, { method: 'DELETE' });
+            loadServerData(); alert('Gelöscht!');
         }
 
-        function addNewTool() {
+        async function addNewTool() {
             const id = document.getElementById('adm-tool-id').value;
             const name = document.getElementById('adm-tool-name').value;
-            if(!id || !name) { alert('Bitte Werkzeug-ID und Bezeichnung ausfüllen'); return; }
+            if(!id || !name) { alert('Bitte Tool-ID und Name ausfüllen'); return; }
             
-            let vcMap = {};
-            let suitableList = [];
-
+            let vcMap = {}; let suitableList = [];
             for (const matId of Object.keys(db.materials)) {
                 const chk = document.getElementById(`tool-suit-${matId}`);
                 const vcInput = document.getElementById(`tool-vc-${matId}`);
-                
-                if (chk && chk.checked) {
-                    suitableList.push(matId);
-                }
+                if (chk && chk.checked) suitableList.push(matId);
                 vcMap[matId] = vcInput ? parseFloat(vcInput.value) : 200;
             }
 
-            db.tools[id] = {
-                name: name, 
-                type: document.getElementById('adm-tool-type').value,
-                material_schneidstoff: document.getElementById('adm-tool-mat').value,
-                diameter: parseFloat(document.getElementById('adm-tool-d').value),
-                z: parseInt(document.getElementById('adm-tool-z').value),
-                max_overhang: parseFloat(document.getElementById('adm-tool-overhang').value),
-                helix_angle: parseFloat(document.getElementById('adm-tool-helix').value),
-                vc_per_material: vcMap,
-                suitable_materials: suitableList
-            };
-            updateDropdowns(); alert('Werkzeug mit Eignungsprofil hinzugefügt!');
+            await fetch('/api/admin/tool', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    tool_id: id, name, type: document.getElementById('adm-tool-type').value,
+                    material_schneidstoff: document.getElementById('adm-tool-mat').value,
+                    diameter: parseFloat(document.getElementById('adm-tool-d').value),
+                    z: parseInt(document.getElementById('adm-tool-z').value),
+                    max_overhang: parseFloat(document.getElementById('adm-tool-overhang').value),
+                    helix_angle: parseFloat(document.getElementById('adm-tool-helix').value),
+                    vc_per_material: vcMap, suitable_materials: suitableList
+                })
+            });
+            loadServerData(); alert('Werkzeug hinzugefügt!');
         }
 
-        function deleteTool() {
+        async function deleteTool() {
             const id = document.getElementById('del-tool-select').value;
-            if(Object.keys(db.tools).length <= 1) { alert('Mindestens 1 Werkzeug muss bleiben!'); return; }
-            delete db.tools[id]; updateDropdowns(); alert('Gelöscht!');
+            await fetch(`/api/admin/tool/${id}`, { method: 'DELETE' });
+            loadServerData(); alert('Gelöscht!');
         }
 
-        function addNewProfile() {
+        async function addNewProfile() {
             const id = document.getElementById('adm-prof-id').value;
             const name = document.getElementById('adm-prof-name').value;
             if(!id || !name) { alert('Bitte Profil-ID und Name ausfüllen'); return; }
-            db.profiles[id] = {
-                name: name,
-                vc_factor: parseFloat(document.getElementById('adm-prof-vc').value),
-                fz_factor: parseFloat(document.getElementById('adm-prof-fz').value),
-                ap_factor: parseFloat(document.getElementById('adm-prof-ap').value),
-                ae_factor: parseFloat(document.getElementById('adm-prof-ae').value),
-                description: document.getElementById('adm-prof-desc').value
-            };
-            updateDropdowns(); alert('Bearbeitungsprofil hinzugefügt!');
+            await fetch('/api/admin/profile', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    profile_id: id, name,
+                    vc_factor: parseFloat(document.getElementById('adm-prof-vc').value),
+                    fz_factor: parseFloat(document.getElementById('adm-prof-fz').value),
+                    ap_factor: parseFloat(document.getElementById('adm-prof-ap').value),
+                    ae_factor: parseFloat(document.getElementById('adm-prof-ae').value),
+                    description: document.getElementById('adm-prof-desc').value
+                })
+            });
+            loadServerData(); alert('Profil hinzugefügt!');
         }
 
-        function deleteProfile() {
+        async function deleteProfile() {
             const id = document.getElementById('del-profile-select').value;
-            if(Object.keys(db.profiles).length <= 1) { alert('Mindestens 1 Profil muss bleiben!'); return; }
-            delete db.profiles[id]; updateDropdowns(); alert('Gelöscht!');
+            await fetch(`/api/admin/profile/${id}`, { method: 'DELETE' });
+            loadServerData(); alert('Gelöscht!');
         }
 
-        function calculate() {
+        async function calculate() {
             const toolId = document.getElementById('tool-select').value;
             const matId = document.getElementById('material-select').value;
             const profId = document.getElementById('profile-select').value;
-            const tool = db.tools[toolId];
-            const mat = db.materials[matId];
-            const profile = db.profiles[profId];
-
-            if(!tool || !mat || !profile) return;
+            
+            if(!toolId || !matId || !profId) return;
             updateSpecs();
 
-            const baseVc = tool.vc_per_material && tool.vc_per_material[matId] !== undefined ? tool.vc_per_material[matId] : 200;
-            const effectiveVc = baseVc * profile.vc_factor;
-            const effectiveFz = (tool.diameter * 0.007) * profile.fz_factor;
-            const ap = tool.diameter * profile.ap_factor;
-            const ae = tool.diameter * profile.ae_factor;
+            try {
+                const response = await fetch('/api/calculate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tool_id: toolId, material_id: matId, profile_id: profId })
+                });
+                if(!response.ok) return;
+                const res = await response.json();
 
-            const n = (effectiveVc * 1000) / (Math.PI * tool.diameter);
-            const vf = effectiveFz * tool.z * n;
-            const Q = (ap * ae * vf) / 1000;
-            const powerKw = (Q * mat.kc11) / (60 * 1000);
+                currentCalculatedResults = { rpm: res.rpm, vf: res.feed_rate_vf, ap: res.ap, ae: res.ae };
 
-            document.getElementById('res-rpm').innerText = n.toFixed(2) + " U/min";
-            document.getElementById('res-vf').innerText = vf.toFixed(2) + " mm/min";
-            document.getElementById('res-apae').innerText = ap.toFixed(1) + " / " + ae.toFixed(1) + " mm";
-            document.getElementById('res-q').innerText = Q.toFixed(2) + " cm³/min";
-            document.getElementById('res-power').innerText = powerKw.toFixed(2) + " kW";
+                document.getElementById('res-rpm').innerText = res.rpm.toFixed(2) + " U/min";
+                document.getElementById('res-vf').innerText = res.feed_rate_vf.toFixed(2) + " mm/min";
+                document.getElementById('res-apae').innerText = res.ap.toFixed(1) + " / " + res.ae.toFixed(1) + " mm";
+                document.getElementById('res-q').innerText = res.metal_removal_rate_q.toFixed(2) + " cm³/min";
+                document.getElementById('res-power').innerText = res.power_required_kw.toFixed(2) + " kW";
+            } catch(e) {
+                console.error("Berechnungsfehler:", e);
+            }
         }
 
-        updateDropdowns();
+        // Init beim Start
+        loadServerData();
     </script>
 </body>
 </html>
