@@ -162,18 +162,18 @@
                 
                 <div>
                     <label class="block text-sm text-slate-400 mb-1">Werkzeug wählen</label>
-                    <select id="tool-select" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white" onchange="onToolChange()"></select>
+                    <select id="tool-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" onchange="onToolChange()"></select>
                     <div id="tool-specs" class="text-xs text-slate-400 mt-2 bg-slate-950 p-2 rounded border border-slate-800"></div>
                 </div>
 
                 <div>
                     <label class="block text-sm text-slate-400 mb-1">Werkstoff wählen</label>
-                    <select id="material-select" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white" onchange="calculate()"></select>
+                    <select id="material-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" onchange="calculate()"></select>
                 </div>
 
                 <div>
                     <label class="block text-sm text-slate-400 mb-1">Bearbeitungsprofil</label>
-                    <select id="profile-select" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white" onchange="calculate()"></select>
+                    <select id="profile-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" onchange="calculate()"></select>
                     <div id="profile-specs" class="text-xs text-slate-400 mt-2 bg-slate-950 p-2 rounded border border-slate-800"></div>
                 </div>
             </div>
@@ -241,8 +241,10 @@
         async function loadServerData() {
             try {
                 const response = await fetch('/api/data');
+                if (!response.ok) throw new Error("Netzwerk-Antwort war nicht ok");
                 db = await response.json();
-                updateDropdowns();
+                
+                populateDropdowns();
                 renderFavorites();
             } catch (e) {
                 console.error("Fehler beim Laden vom Server:", e);
@@ -253,8 +255,76 @@
             document.getElementById('admin-panel').classList.toggle('hidden');
         }
 
+        function populateDropdowns() {
+            // 1. Werkzeuge füllen
+            const toolSel = document.getElementById('tool-select');
+            const delToolSel = document.getElementById('del-tool-select');
+            toolSel.innerHTML = ''; 
+            if(delToolSel) delToolSel.innerHTML = '';
+            
+            for (const [id, t] of Object.entries(db.tools)) {
+                toolSel.add(new Option(t.name, id));
+                if(delToolSel) delToolSel.add(new Option(t.name, id));
+            }
+
+            // 2. Profile füllen
+            const profSel = document.getElementById('profile-select');
+            const delProfSel = document.getElementById('del-profile-select');
+            profSel.innerHTML = ''; 
+            if(delProfSel) delProfSel.innerHTML = '';
+            
+            for (const [id, p] of Object.entries(db.profiles)) {
+                profSel.add(new Option(p.name, id));
+                if(delProfSel) delProfSel.add(new Option(p.name, id));
+            }
+
+            // 3. Materialien für Admin löschen füllen
+            const delMatSel = document.getElementById('del-material-select');
+            if(delMatSel) {
+                delMatSel.innerHTML = '';
+                for (const [id, m] of Object.entries(db.materials)) {
+                    delMatSel.add(new Option(m.name, id));
+                }
+            }
+
+            renderToolMatrixInputs();
+            updateMaterialDropdownForTool();
+        }
+
+        function updateMaterialDropdownForTool() {
+            const toolId = document.getElementById('tool-select').value;
+            const matSel = document.getElementById('material-select');
+            const tool = db.tools[toolId];
+            
+            matSel.innerHTML = '';
+            if (!tool) return;
+
+            const suitableList = tool.suitable_materials || [];
+
+            for (const [id, m] of Object.entries(db.materials)) {
+                if (suitableList.includes(id)) {
+                    matSel.add(new Option(m.name, id));
+                }
+            }
+
+            // Falls durch Filter nichts übrig bleibt, alle anzeigen als Fallback
+            if (matSel.options.length === 0) {
+                for (const [id, m] of Object.entries(db.materials)) {
+                    matSel.add(new Option(m.name, id));
+                }
+            }
+
+            updateSpecs();
+            calculate();
+        }
+
+        function onToolChange() {
+            updateMaterialDropdownForTool();
+        }
+
         function renderToolMatrixInputs() {
             const container = document.getElementById('adm-tool-matrix-container');
+            if(!container) return;
             container.innerHTML = '';
             for (const [matId, mat] of Object.entries(db.materials)) {
                 const div = document.createElement('div');
@@ -271,65 +341,6 @@
                 `;
                 container.appendChild(div);
             }
-        }
-
-        function updateDropdowns() {
-            const delMatSel = document.getElementById('del-material-select');
-            delMatSel.innerHTML = '';
-            for (const [id, m] of Object.entries(db.materials)) {
-                delMatSel.add(new Option(m.name, id));
-            }
-
-            const toolSel = document.getElementById('tool-select');
-            const delToolSel = document.getElementById('del-tool-select');
-            toolSel.innerHTML = ''; delToolSel.innerHTML = '';
-            for (const [id, t] of Object.entries(db.tools)) {
-                toolSel.add(new Option(t.name, id)); delToolSel.add(new Option(t.name, id));
-            }
-
-            const profSel = document.getElementById('profile-select');
-            const delProfSel = document.getElementById('del-profile-select');
-            profSel.innerHTML = ''; delProfSel.innerHTML = '';
-            for (const [id, p] of Object.entries(db.profiles)) {
-                profSel.add(new Option(p.name, id)); delProfSel.add(new Option(p.name, id));
-            }
-
-            renderToolMatrixInputs();
-            updateMaterialDropdownForTool();
-        }
-
-        function updateMaterialDropdownForTool() {
-            const toolId = document.getElementById('tool-select').value;
-            const matSel = document.getElementById('material-select');
-            const currentMat = matSel.value;
-            const tool = db.tools[toolId];
-            
-            matSel.innerHTML = '';
-            if (!tool) return;
-
-            const suitableList = tool.suitable_materials || [];
-            let validSelectionExists = false;
-
-            for (const [id, m] of Object.entries(db.materials)) {
-                if (suitableList.includes(id)) {
-                    const opt = new Option(m.name, id);
-                    matSel.add(opt);
-                    if (id === currentMat) validSelectionExists = true;
-                }
-            }
-
-            if (!validSelectionExists && matSel.options.length > 0) {
-                matSel.selectedIndex = 0;
-            } else if (validSelectionExists) {
-                matSel.value = currentMat;
-            }
-
-            updateSpecs();
-            calculate();
-        }
-
-        function onToolChange() {
-            updateMaterialDropdownForTool();
         }
 
         function updateSpecs() {
