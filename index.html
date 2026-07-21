@@ -33,7 +33,7 @@
 
         <!-- ADMIN BEREICH -->
         <div id="admin-panel" class="hidden bg-slate-900 p-6 rounded-xl border border-emerald-500/30 space-y-6">
-            <h2 class="text-xl font-semibold text-emerald-400">Admin-Konsole: Zentrale Server-Daten</h2>
+            <h2 class="text-xl font-semibold text-emerald-400">Admin-Konsole: Lokale Datenbank-Verwaltung</h2>
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 border-b border-slate-800 pb-6">
                 <!-- 1. Materialien -->
@@ -227,7 +227,7 @@
                         </div>
                     </div>
                     <button onclick="saveCurrentAsFavorite()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-xs font-medium transition">
-                        💾 In die zentrale Praxis-Liste übernehmen
+                        💾 In die lokale Praxis-Liste übernehmen
                     </button>
                 </div>
             </div>
@@ -235,20 +235,68 @@
     </div>
 
     <script>
-        let db = { materials: {}, profiles: {}, tools: {}, favorites: [] };
+        // Vollständige lokale Datenbank für den reinen GitHub-Pages-Betrieb (Statik-Modus)
+        let db = {
+            materials: {
+                "stahl_c45": { "name": "Stahl (z.B. C45)", "kc11": 1800 },
+                "alu_wrought": { "name": "Aluminium (knetlegiert)", "kc11": 700 },
+                "rostfrei": { "name": "Rostfreier Stahl (Inox)", "kc11": 2400 },
+                "titan": { "name": "Titanlegierung", "kc11": 2800 },
+                "gehaertet_55hrc": { "name": "Gehärteter Stahl (55 HRC)", "kc11": 3200 }
+            },
+            profiles: {
+                "schruppen": { "name": "Schruppen (Roughing)", "vc_factor": 0.85, "fz_factor": 1.20, "ap_factor": 1.0, "ae_factor": 0.7, "description": "Hohes Spanvolumen, reduziertes vc, hoher Vorschub" },
+                "schlichten": { "name": "Schlichten (Finishing)", "vc_factor": 1.20, "fz_factor": 0.50, "ap_factor": 0.2, "ae_factor": 0.1, "description": "Hohe Oberflächengüte, hohes vc, feiner Vorschub" },
+                "planfraesen": { "name": "Planfräsen (Face Milling)", "vc_factor": 1.0, "fz_factor": 1.0, "ap_factor": 0.5, "ae_factor": 0.8, "description": "Standard-Flächenbearbeitung" },
+                "besaeumen": { "name": "Besäumen / Kantenfräsen", "vc_factor": 0.95, "fz_factor": 0.9, "ap_factor": 0.8, "ae_factor": 0.3, "description": "Kanten- und Konturbearbeitung" }
+            },
+            tools: {
+                "tool_vhm_12": {
+                    "name": "VHM Schaftfräser D12 (Standard)",
+                    "type": "Schaftfräser",
+                    "material_schneidstoff": "VHM",
+                    "diameter": 12.0,
+                    "z": 4,
+                    "max_overhang": 36.0,
+                    "helix_angle": 30.0,
+                    "vc_per_material": { "stahl_c45": 220, "alu_wrought": 600, "rostfrei": 140, "titan": 60 },
+                    "suitable_materials": ["stahl_c45", "alu_wrought", "rostfrei", "titan"]
+                },
+                "tool_schrupp_16": {
+                    "name": "Schruppfräser Schrupp-Pro D16",
+                    "type": "Schruppfräser",
+                    "material_schneidstoff": "VHM",
+                    "diameter": 16.0,
+                    "z": 3,
+                    "max_overhang": 48.0,
+                    "helix_angle": 45.0,
+                    "vc_per_material": { "stahl_c45": 180, "alu_wrought": 500, "rostfrei": 110, "titan": 45 },
+                    "suitable_materials": ["stahl_c45", "rostfrei"]
+                }
+            },
+            favorites: [
+                {
+                    "id": "fav_1",
+                    "title": "Bewährtes C45 Schruppen mit D12",
+                    "tool_id": "tool_vhm_12",
+                    "material_id": "stahl_c45",
+                    "profile_id": "schruppen",
+                    "rating": 5,
+                    "feedback": "Läuft extrem stabil, leiser Lauf, Standzeit top.",
+                    "rpm": 5836.62,
+                    "feed_rate_vf": 1391.14,
+                    "ap": 12.0,
+                    "ae": 8.4
+                }
+            ]
+        };
+
         let currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0 };
 
-        async function loadServerData() {
-            try {
-                const response = await fetch('/api/data');
-                if (!response.ok) throw new Error("Netzwerk-Antwort war nicht ok");
-                db = await response.json();
-                
-                populateDropdowns();
-                renderFavorites();
-            } catch (e) {
-                console.error("Fehler beim Laden vom Server:", e);
-            }
+        function initApp() {
+            populateDropdowns();
+            renderFavorites();
+            calculate();
         }
 
         function toggleAdmin() {
@@ -294,24 +342,28 @@
         function updateMaterialDropdownForTool() {
             const toolId = document.getElementById('tool-select').value;
             const matSel = document.getElementById('material-select');
+            const currentMat = matSel.value;
             const tool = db.tools[toolId];
             
             matSel.innerHTML = '';
             if (!tool) return;
 
             const suitableList = tool.suitable_materials || [];
+            let validSelectionExists = false;
 
             for (const [id, m] of Object.entries(db.materials)) {
                 if (suitableList.includes(id)) {
                     matSel.add(new Option(m.name, id));
+                    if (id === currentMat) validSelectionExists = true;
                 }
             }
 
-            // Falls durch Filter nichts übrig bleibt, alle anzeigen als Fallback
             if (matSel.options.length === 0) {
                 for (const [id, m] of Object.entries(db.materials)) {
                     matSel.add(new Option(m.name, id));
                 }
+            } else if (validSelectionExists) {
+                matSel.value = currentMat;
             }
 
             updateSpecs();
@@ -365,7 +417,7 @@
             const container = document.getElementById('favorites-container');
             container.innerHTML = '';
             if (!db.favorites || db.favorites.length === 0) {
-                container.innerHTML = `<div class="text-xs text-slate-500 italic col-span-3">Noch keine Praxis-Favoriten gespeichert. Berechne Daten und speichere erfolgreiche Läufe ab!</div>`;
+                container.innerHTML = `<div class="text-xs text-slate-500 italic col-span-3">Noch keine Praxis-Favoriten gespeichert.</div>`;
                 return;
             }
 
@@ -401,7 +453,7 @@
             calculate();
         }
 
-        async function saveCurrentAsFavorite() {
+        function saveCurrentAsFavorite() {
             const title = document.getElementById('fav-title').value;
             const rating = parseInt(document.getElementById('fav-rating').value);
             const feedback = document.getElementById('fav-feedback').value;
@@ -411,7 +463,8 @@
 
             if(!title) { alert('Bitte einen Titel für den Favoriten vergeben'); return; }
 
-            const payload = {
+            const newFav = {
+                id: 'fav_' + (db.favorites.length + 1),
                 title, tool_id: toolId, material_id: materialId, profile_id: profileId,
                 rating, feedback,
                 rpm: currentCalculatedResults.rpm,
@@ -420,41 +473,39 @@
                 ae: currentCalculatedResults.ae
             };
 
-            const response = await fetch('/api/favorites', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const resData = await response.json();
-            alert(resData.message);
+            db.favorites.push(newFav);
+            alert('Erfolgreich als Praxis-Favorit gespeichert!');
             document.getElementById('fav-title').value = '';
             document.getElementById('fav-feedback').value = '';
-            loadServerData();
+            renderFavorites();
         }
 
-        async function deleteFavorite(favId) {
-            await fetch(`/api/favorites/${favId}`, { method: 'DELETE' });
-            loadServerData();
+        function deleteFavorite(favId) {
+            db.favorites = db.favorites.filter(f => f.id !== favId);
+            renderFavorites();
         }
 
-        async function addNewMaterial() {
+        function addNewMaterial() {
             const id = document.getElementById('adm-mat-id').value;
             const name = document.getElementById('adm-mat-name').value;
+            const kc11 = parseFloat(document.getElementById('adm-mat-kc11').value);
             if(!id || !name) { alert('Bitte ID und Name ausfüllen'); return; }
-            await fetch('/api/admin/material', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ material_id: id, name: name, kc11: parseFloat(document.getElementById('adm-mat-kc11').value) })
-            });
-            loadServerData(); alert('Material hinzugefügt!');
+            
+            db.materials[id] = { name, kc11 };
+            populateDropdowns();
+            alert('Material hinzugefügt!');
         }
 
-        async function deleteMaterial() {
+        function deleteMaterial() {
             const id = document.getElementById('del-material-select').value;
-            await fetch(`/api/admin/material/${id}`, { method: 'DELETE' });
-            loadServerData(); alert('Gelöscht!');
+            if(db.materials[id]) {
+                delete db.materials[id];
+                populateDropdowns();
+                alert('Gelöscht!');
+            }
         }
 
-        async function addNewTool() {
+        function addNewTool() {
             const id = document.getElementById('adm-tool-id').value;
             const name = document.getElementById('adm-tool-name').value;
             if(!id || !name) { alert('Bitte Tool-ID und Name ausfüllen'); return; }
@@ -467,82 +518,98 @@
                 vcMap[matId] = vcInput ? parseFloat(vcInput.value) : 200;
             }
 
-            await fetch('/api/admin/tool', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    tool_id: id, name, type: document.getElementById('adm-tool-type').value,
-                    material_schneidstoff: document.getElementById('adm-tool-mat').value,
-                    diameter: parseFloat(document.getElementById('adm-tool-d').value),
-                    z: parseInt(document.getElementById('adm-tool-z').value),
-                    max_overhang: parseFloat(document.getElementById('adm-tool-overhang').value),
-                    helix_angle: parseFloat(document.getElementById('adm-tool-helix').value),
-                    vc_per_material: vcMap, suitable_materials: suitableList
-                })
-            });
-            loadServerData(); alert('Werkzeug hinzugefügt!');
+            db.tools[id] = {
+                name,
+                type: document.getElementById('adm-tool-type').value,
+                material_schneidstoff: document.getElementById('adm-tool-mat').value,
+                diameter: parseFloat(document.getElementById('adm-tool-d').value),
+                z: parseInt(document.getElementById('adm-tool-z').value),
+                max_overhang: parseFloat(document.getElementById('adm-tool-overhang').value),
+                helix_angle: parseFloat(document.getElementById('adm-tool-helix').value),
+                vc_per_material: vcMap,
+                suitable_materials: suitableList
+            };
+
+            populateDropdowns();
+            alert('Werkzeug hinzugefügt!');
         }
 
-        async function deleteTool() {
+        function deleteTool() {
             const id = document.getElementById('del-tool-select').value;
-            await fetch(`/api/admin/tool/${id}`, { method: 'DELETE' });
-            loadServerData(); alert('Gelöscht!');
+            if(db.tools[id]) {
+                delete db.tools[id];
+                populateDropdowns();
+                alert('Gelöscht!');
+            }
         }
 
-        async function addNewProfile() {
+        function addNewProfile() {
             const id = document.getElementById('adm-prof-id').value;
             const name = document.getElementById('adm-prof-name').value;
             if(!id || !name) { alert('Bitte Profil-ID und Name ausfüllen'); return; }
-            await fetch('/api/admin/profile', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    profile_id: id, name,
-                    vc_factor: parseFloat(document.getElementById('adm-prof-vc').value),
-                    fz_factor: parseFloat(document.getElementById('adm-prof-fz').value),
-                    ap_factor: parseFloat(document.getElementById('adm-prof-ap').value),
-                    ae_factor: parseFloat(document.getElementById('adm-prof-ae').value),
-                    description: document.getElementById('adm-prof-desc').value
-                })
-            });
-            loadServerData(); alert('Profil hinzugefügt!');
+            
+            db.profiles[id] = {
+                name,
+                vc_factor: parseFloat(document.getElementById('adm-prof-vc').value),
+                fz_factor: parseFloat(document.getElementById('adm-prof-fz').value),
+                ap_factor: parseFloat(document.getElementById('adm-prof-ap').value),
+                ae_factor: parseFloat(document.getElementById('adm-prof-ae').value),
+                description: document.getElementById('adm-prof-desc').value
+            };
+
+            populateDropdowns();
+            alert('Profil hinzugefügt!');
         }
 
-        async function deleteProfile() {
+        function deleteProfile() {
             const id = document.getElementById('del-profile-select').value;
-            await fetch(`/api/admin/profile/${id}`, { method: 'DELETE' });
-            loadServerData(); alert('Gelöscht!');
+            if(db.profiles[id]) {
+                delete db.profiles[id];
+                populateDropdowns();
+                alert('Gelöscht!');
+            }
         }
 
-        async function calculate() {
+        function calculate() {
             const toolId = document.getElementById('tool-select').value;
             const matId = document.getElementById('material-select').value;
             const profId = document.getElementById('profile-select').value;
             
-            if(!toolId || !matId || !profId) return;
+            const tool = db.tools[toolId];
+            const mat = db.materials[matId];
+            const profile = db.profiles[profId];
+            
+            if(!tool || !mat || !profile) return;
             updateSpecs();
 
-            try {
-                const response = await fetch('/api/calculate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ tool_id: toolId, material_id: matId, profile_id: profId })
-                });
-                if(!response.ok) return;
-                const res = await response.json();
+            const baseVc = tool.vc_per_material ? (tool.vc_per_material[matId] || 200) : 200;
+            const effectiveVc = baseVc * profile.vc_factor;
+            
+            const baseFz = tool.diameter * 0.007;
+            const effectiveFz = baseFz * profile.fz_factor;
 
-                currentCalculatedResults = { rpm: res.rpm, vf: res.feed_rate_vf, ap: res.ap, ae: res.ae };
+            const D = tool.diameter;
+            const z = tool.z;
+            
+            const ap = D * profile.ap_factor;
+            const ae = D * profile.ae_factor;
 
-                document.getElementById('res-rpm').innerText = res.rpm.toFixed(2) + " U/min";
-                document.getElementById('res-vf').innerText = res.feed_rate_vf.toFixed(2) + " mm/min";
-                document.getElementById('res-apae').innerText = res.ap.toFixed(1) + " / " + res.ae.toFixed(1) + " mm";
-                document.getElementById('res-q').innerText = res.metal_removal_rate_q.toFixed(2) + " cm³/min";
-                document.getElementById('res-power').innerText = res.power_required_kw.toFixed(2) + " kW";
-            } catch(e) {
-                console.error("Berechnungsfehler:", e);
-            }
+            const n = (effectiveVc * 1000) / (Math.PI * D);
+            const vf = effectiveFz * z * n;
+            const Q = (ap * ae * vf) / 1000;
+            const power_kw = (Q * mat.kc11) / (60 * 1000);
+
+            currentCalculatedResults = { rpm: n, vf: vf, ap: ap, ae: ae };
+
+            document.getElementById('res-rpm').innerText = n.toFixed(2) + " U/min";
+            document.getElementById('res-vf').innerText = vf.toFixed(2) + " mm/min";
+            document.getElementById('res-apae').innerText = ap.toFixed(1) + " / " + ae.toFixed(1) + " mm";
+            document.getElementById('res-q').innerText = Q.toFixed(2) + " cm³/min";
+            document.getElementById('res-power').innerText = power_kw.toFixed(2) + " kW";
         }
 
-        // Init beim Start
-        loadServerData();
+        // Direkt beim Laden ausführen
+        initApp();
     </script>
 </body>
 </html>
