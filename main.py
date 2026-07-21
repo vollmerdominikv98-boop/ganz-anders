@@ -3,18 +3,17 @@ from pydantic import BaseModel
 from typing import Dict, List, Optional
 import math
 
-app = FastAPI(title="CNC Open Tool Guide - Vollversion mit Profil-Verwaltung", version="4.0.0")
+app = FastAPI(title="CNC Open Tool Guide - Werkzeug-spezifische vc", version="5.0.0")
 
 # --- DATENBANKEN ---
 
 materials_db: Dict[str, dict] = {
-    "stahl_c45": {"name": "Stahl (z.B. C45)", "base_vc": 220, "kc11": 1800},
-    "alu_wrought": {"name": "Aluminium (knetlegiert)", "base_vc": 600, "kc11": 700},
-    "rostfrei": {"name": "Rostfreier Stahl (Inox)", "base_vc": 140, "kc11": 2400},
-    "titan": {"name": "Titanlegierung", "base_vc": 60, "kc11": 2800}
+    "stahl_c45": {"name": "Stahl (z.B. C45)", "kc11": 1800},
+    "alu_wrought": {"name": "Aluminium (knetlegiert)", "kc11": 700},
+    "rostfrei": {"name": "Rostfreier Stahl (Inox)", "kc11": 2400},
+    "titan": {"name": "Titanlegierung", "kc11": 2800}
 }
 
-# Bearbeitungsprofile mit allen wichtigen veränderlichen Faktoren
 milling_profiles: Dict[str, dict] = {
     "schruppen": {
         "name": "Schruppen (Roughing)",
@@ -50,6 +49,7 @@ milling_profiles: Dict[str, dict] = {
     }
 }
 
+# Werkzeuge enthalten nun ein Dictionary für materialabhängige Schnittgeschwindigkeiten (vc_per_material)
 tools_db: Dict[str, dict] = {
     "tool_vhm_12": {
         "name": "VHM Schaftfräser D12 (Standard)",
@@ -58,7 +58,13 @@ tools_db: Dict[str, dict] = {
         "diameter": 12.0,
         "z": 4,
         "max_overhang": 36.0,
-        "helix_angle": 30.0
+        "helix_angle": 30.0,
+        "vc_per_material": {
+            "stahl_c45": 220,
+            "alu_wrought": 600,
+            "rostfrei": 140,
+            "titan": 60
+        }
     },
     "tool_schrupp_16": {
         "name": "Schruppfräser Schrupp-Pro D16",
@@ -67,7 +73,13 @@ tools_db: Dict[str, dict] = {
         "diameter": 16.0,
         "z": 3,
         "max_overhang": 48.0,
-        "helix_angle": 45.0
+        "helix_angle": 45.0,
+        "vc_per_material": {
+            "stahl_c45": 180,
+            "alu_wrought": 500,
+            "rostfrei": 110,
+            "titan": 45
+        }
     }
 }
 
@@ -83,7 +95,6 @@ class CalculationRequest(BaseModel):
 class AdminMaterialAdd(BaseModel):
     material_id: str
     name: str
-    base_vc: float
     kc11: float
 
 class AdminToolAdd(BaseModel):
@@ -95,6 +106,7 @@ class AdminToolAdd(BaseModel):
     z: int
     max_overhang: float
     helix_angle: float
+    vc_per_material: Dict[str, float]
 
 class AdminProfileAdd(BaseModel):
     profile_id: str
@@ -124,7 +136,10 @@ def calculate_advanced_milling(data: CalculationRequest):
     if not tool or not mat or not profile:
         raise HTTPException(status_code=404, detail="Ungültige Parameter übergeben")
 
-    effective_vc = mat["base_vc"] * profile["vc_factor"]
+    # vc wird nun vom Werkzeug für das spezifische Material bezogen (mit Fallback, falls nicht gepflegt)
+    base_vc = tool.get("vc_per_material", {}).get(data.material_id, 200)
+    effective_vc = base_vc * profile["vc_factor"]
+    
     base_fz = tool["diameter"] * 0.007
     effective_fz = base_fz * profile["fz_factor"]
 
@@ -154,7 +169,7 @@ def calculate_advanced_milling(data: CalculationRequest):
 
 @app.post("/api/admin/material")
 def add_material(mat: AdminMaterialAdd):
-    materials_db[mat.material_id] = {"name": mat.name, "base_vc": mat.base_vc, "kc11": mat.kc11}
+    materials_db[mat.material_id] = {"name": mat.name, "kc11": mat.kc11}
     return {"message": "Material hinzugefügt"}
 
 @app.delete("/api/admin/material/{material_id}")
@@ -176,14 +191,7 @@ def delete_tool(tool_id: str):
 
 @app.post("/api/admin/profile")
 def add_profile(profile: AdminProfileAdd):
-    milling_profiles[profile.profile_id] = {
-        "name": profile.name,
-        "vc_factor": profile.vc_factor,
-        "fz_factor": profile.fz_factor,
-        "ap_factor": profile.ap_factor,
-        "ae_factor": profile.ae_factor,
-        "description": profile.description
-    }
+    milling_profiles[profile.profile_id] = profile.dict()
     return {"message": "Profil hinzugefügt"}
 
 @app.delete("/api/admin/profile/{profile_id}")
