@@ -61,18 +61,36 @@
                     </div>
                 </div>
 
-                <!-- 3. Bearbeitungsprofile -->
+                <!-- 3. Bearbeitungsprofile (Mit Beschriftungen & Einheiten) -->
                 <div class="space-y-3">
                     <h3 class="font-medium text-slate-200">Bearbeitungsprofil</h3>
                     <input type="text" id="adm-prof-id" placeholder="ID (z.B. trochoidal)" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
-                    <input type="text" id="adm-prof-name" placeholder="Profil-Name" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
-                    <div class="grid grid-cols-4 gap-1">
-                        <input type="number" step="0.1" id="adm-prof-vc" placeholder="vc-F" value="1.0" class="bg-slate-950 border border-slate-800 rounded p-1 text-white text-xs">
-                        <input type="number" step="0.1" id="adm-prof-fz" placeholder="fz-F" value="1.0" class="bg-slate-950 border border-slate-800 rounded p-1 text-white text-xs">
-                        <input type="number" step="0.1" id="adm-prof-ap" placeholder="ap-F" value="0.5" class="bg-slate-950 border border-slate-800 rounded p-1 text-white text-xs">
-                        <input type="number" step="0.1" id="adm-prof-ae" placeholder="ae-F" value="0.2" class="bg-slate-950 border border-slate-800 rounded p-1 text-white text-xs">
+                    <input type="text" id="adm-prof-name" placeholder="Profil-Name (z.B. Trochoidalfräsen)" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                    
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                            <label class="block text-slate-400 mb-1">vc-Faktor (-)</label>
+                            <input type="number" step="0.05" id="adm-prof-vc" value="1.0" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1">fz-Faktor (-)</label>
+                            <input type="number" step="0.05" id="adm-prof-fz" value="1.0" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1">ap-Faktor (× Ø)</label>
+                            <input type="number" step="0.05" id="adm-prof-ap" value="0.5" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1">ae-Faktor (× Ø)</label>
+                            <input type="number" step="0.05" id="adm-prof-ae" value="0.2" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white">
+                        </div>
                     </div>
-                    <input type="text" id="adm-prof-desc" placeholder="Beschreibung" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+
+                    <div>
+                        <label class="block text-slate-400 mb-1 text-xs">Beschreibung</label>
+                        <input type="text" id="adm-prof-desc" placeholder="Kurzbeschreibung der Anwendung" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm">
+                    </div>
+
                     <button onclick="addNewProfile()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-sm font-medium">Hinzufügen</button>
                     <div class="flex gap-2 pt-2">
                         <select id="del-profile-select" class="flex-1 bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm"></select>
@@ -164,7 +182,6 @@
         }
 
         function updateDropdowns() {
-            // Material
             const matSel = document.getElementById('material-select');
             const delMatSel = document.getElementById('del-material-select');
             matSel.innerHTML = ''; delMatSel.innerHTML = '';
@@ -172,7 +189,6 @@
                 matSel.add(new Option(m.name, id)); delMatSel.add(new Option(m.name, id));
             }
 
-            // Tools
             const toolSel = document.getElementById('tool-select');
             const delToolSel = document.getElementById('del-tool-select');
             toolSel.innerHTML = ''; delToolSel.innerHTML = '';
@@ -180,7 +196,6 @@
                 toolSel.add(new Option(t.name, id)); delToolSel.add(new Option(t.name, id));
             }
 
-            // Profiles
             const profSel = document.getElementById('profile-select');
             const delProfSel = document.getElementById('del-profile-select');
             profSel.innerHTML = ''; delProfSel.innerHTML = '';
@@ -246,7 +261,7 @@
         function addNewProfile() {
             const id = document.getElementById('adm-prof-id').value;
             const name = document.getElementById('adm-prof-name').value;
-            if(!id || !name) { alert('Bitte Felder ausfüllen'); return; }
+            if(!id || !name) { alert('Bitte ID und Profil-Name ausfüllen'); return; }
             db.profiles[id] = {
                 name: name,
                 vc_factor: parseFloat(document.getElementById('adm-prof-vc').value),
@@ -255,7 +270,7 @@
                 ae_factor: parseFloat(document.getElementById('adm-prof-ae').value),
                 description: document.getElementById('adm-prof-desc').value
             };
-            updateDropdowns(); alert('Profil hinzugefügt!');
+            updateDropdowns(); alert('Bearbeitungsprofil hinzugefügt!');
         }
 
         function deleteProfile() {
