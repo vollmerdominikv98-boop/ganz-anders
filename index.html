@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ToolPilot - CNC Cut Optimizer (Scalable Admin)</title>
+    <title>ToolPilot - CNC Cut Optimizer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -65,7 +65,7 @@
                 </div>
             </div>
 
-            <!-- TAB 1: WERKZEUGE (PERFEKT FÜR 100+ FRÄSER) -->
+            <!-- TAB 1: WERKZEUGE -->
             <div id="admin-tab-tools" class="space-y-6">
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                     
@@ -81,11 +81,11 @@
                         <div class="grid grid-cols-2 gap-2 text-xs">
                             <div>
                                 <label class="block text-slate-600 mb-1 font-medium">Hersteller</label>
-                                <input type="text" id="adm-tool-brand" placeholder="z.B. GARANT" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-900">
+                                <input type="text" id="adm-tool-brand" placeholder="z.B. PRECITOOL" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-900">
                             </div>
                             <div>
                                 <label class="block text-slate-600 mb-1 font-medium">Produktlinie</label>
-                                <input type="text" id="adm-tool-line" placeholder="z.B. MasterSteel" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-900">
+                                <input type="text" id="adm-tool-line" placeholder="z.B. PREMUS GP" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-900">
                             </div>
                         </div>
 
@@ -173,24 +173,24 @@
                         <h3 class="font-bold text-slate-800 text-xs uppercase tracking-wider border-b border-slate-200 pb-1">Neue Maschine hinzufügen</h3>
                         <div>
                             <label class="block text-slate-600 mb-1 text-xs font-medium">Maschinen-ID</label>
-                            <input type="text" id="adm-mach-id" placeholder="z.B. dmg_dmc" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
+                            <input type="text" id="adm-mach-id" placeholder="z.B. dmg_dmu75" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
                         </div>
                         <div>
                             <label class="block text-slate-600 mb-1 text-xs font-medium">Bezeichnung</label>
-                            <input type="text" id="adm-mach-name" placeholder="z.B. DMG MORI DMC 1035" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
+                            <input type="text" id="adm-mach-name" placeholder="z.B. DMG DMU 75 Monoblock" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
                         </div>
                         <div class="grid grid-cols-3 gap-2 text-xs">
                             <div>
                                 <label class="block text-slate-600 mb-1 font-medium">Max U/min</label>
-                                <input type="number" id="adm-mach-rpm" value="12000" class="w-full bg-white border border-slate-300 rounded-lg p-1.5">
+                                <input type="number" id="adm-mach-rpm" value="15000" class="w-full bg-white border border-slate-300 rounded-lg p-1.5">
                             </div>
                             <div>
                                 <label class="block text-slate-600 mb-1 font-medium">Max vf (mm/min)</label>
-                                <input type="number" id="adm-mach-vf" value="15000" class="w-full bg-white border border-slate-300 rounded-lg p-1.5">
+                                <input type="number" id="adm-mach-vf" value="30000" class="w-full bg-white border border-slate-300 rounded-lg p-1.5">
                             </div>
                             <div>
                                 <label class="block text-slate-600 mb-1 font-medium">Max kW</label>
-                                <input type="number" step="0.5" id="adm-mach-kw" value="25" class="w-full bg-white border border-slate-300 rounded-lg p-1.5">
+                                <input type="number" step="0.5" id="adm-mach-kw" value="18" class="w-full bg-white border border-slate-300 rounded-lg p-1.5">
                             </div>
                         </div>
                         <button onclick="addNewMachine()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-2 rounded-lg text-xs font-bold transition">Maschine Speichern</button>
@@ -203,22 +203,22 @@
                 </div>
             </div>
 
-            <!-- TAB 3: MATERIALIEN & STEIFIGKEIT -->
+            <!-- TAB 3: MATERIALIEN -->
             <div id="admin-tab-materials" class="hidden space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                     <div class="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
                         <h3 class="font-bold text-slate-800 text-xs uppercase tracking-wider border-b border-slate-200 pb-1">Neues Material</h3>
                         <div>
                             <label class="block text-slate-600 mb-1 text-xs font-medium">Material-ID</label>
-                            <input type="text" id="adm-mat-id" placeholder="z.B. messing" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
+                            <input type="text" id="adm-mat-id" placeholder="z.B. gehaertet_60hrc" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
                         </div>
                         <div>
                             <label class="block text-slate-600 mb-1 text-xs font-medium">Bezeichnung</label>
-                            <input type="text" id="adm-mat-name" placeholder="z.B. Messing CuZn39Pb3" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
+                            <input type="text" id="adm-mat-name" placeholder="z.B. Gehärteter Stahl (~60 HRC)" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
                         </div>
                         <div>
                             <label class="block text-slate-600 mb-1 text-xs font-medium">Spez. Schnittkraft kc1.1 (N/mm²)</label>
-                            <input type="number" id="adm-mat-kc11" value="1400" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
+                            <input type="number" id="adm-mat-kc11" value="3400" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
                         </div>
                         <button onclick="addNewMaterial()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-2 rounded-lg text-xs font-bold transition">Material Hinzufügen</button>
                     </div>
@@ -527,16 +527,17 @@
     <script>
         const defaultDb = {
             machines: {
-                "std_cnc": { "name": "Standard CNC Fräse", "max_rpm": 12000, "max_vf": 12000, "max_kw": 20 },
-                "heavy_cnc": { "name": "Schweres Bearbeitungszentrum", "max_rpm": 8000, "max_vf": 15000, "max_kw": 45 },
-                "hsc_micro": { "name": "HSC Micro-Fräse", "max_rpm": 30000, "max_vf": 20000, "max_kw": 12 }
+                "dmg_5achs": { "name": "DMG DMU 75 Monoblock", "max_rpm": 15000, "max_vf": 30000, "max_kw": 18 },
+                "dmg_3achs": { "name": "DMG Mori DMC 850V", "max_rpm": 15000, "max_vf": 30000, "max_kw": 15 }
             },
             materials: {
-                "stahl_c45": { "name": "Stahl (z.B. C45)", "kc11": 1800 },
-                "alu_wrought": { "name": "Aluminium (knetlegiert)", "kc11": 700 },
-                "rostfrei": { "name": "Rostfreier Stahl (Inox)", "kc11": 2400 },
-                "titan": { "name": "Titanlegierung", "kc11": 2800 },
-                "gehaertet_55hrc": { "name": "Gehärteter Stahl (55 HRC)", "kc11": 3200 }
+                "stahl_c45": { "name": "Stahl < 850 N/mm² (z.B. C45, St52)", "kc11": 1800 },
+                "stahl_1200": { "name": "Werkzeugstahl ungehärtet < 1200 N/mm²", "kc11": 2200 },
+                "gehaertet_55hrc": { "name": "Gehärteter Stahl (~55 HRC)", "kc11": 3000 },
+                "gehaertet_60hrc": { "name": "Gehärteter Stahl (~60 HRC)", "kc11": 3400 },
+                "gehaertet_65hrc": { "name": "Gehärteter Stahl (~65 HRC)", "kc11": 3800 },
+                "rostfrei": { "name": "Rostfreier Stahl (Inox < 750 N/mm²)", "kc11": 2400 },
+                "alu_wrought": { "name": "Aluminium (knetlegiert)", "kc11": 700 }
             },
             rigidity: {
                 "hoch": { "name": "Hoch (VHM / Kurze Auskragung)", "factor": 1.15 },
@@ -550,35 +551,35 @@
                 "planfraesen": { "name": "Planfräsen (Face Milling)", "vc_factor": 1.0, "fz_factor": 1.0, "ap_factor": 0.5, "ae_factor": 0.8, "description": "Standard-Flächenbearbeitung" }
             },
             tools: {
-                "tool_vhm_12": {
-                    "name": "GARANT VHM Schaftfräser D12",
-                    "brand": "GARANT",
-                    "line": "MasterSteel",
+                "premus_gp_d10": {
+                    "name": "PREMUS GP Universal D10 Z4",
+                    "brand": "PRECITOOL",
+                    "line": "PREMUS GP",
                     "type": "Schaftfräser",
                     "geo_type": "shaft",
                     "radius": 0,
                     "material_schneidstoff": "VHM",
-                    "diameter": 12.0,
+                    "diameter": 10.0,
                     "z": 4,
-                    "max_overhang": 36.0,
-                    "vc_per_material": { "stahl_c45": 220, "alu_wrought": 600, "rostfrei": 140, "titan": 60 },
-                    "suitable_materials": ["stahl_c45", "alu_wrought", "rostfrei", "titan"],
+                    "max_overhang": 30.0,
+                    "vc_per_material": { "stahl_c45": 180, "stahl_1200": 110, "rostfrei": 90, "alu_wrought": 400 },
+                    "suitable_materials": ["stahl_c45", "stahl_1200", "rostfrei", "alu_wrought"],
                     "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal", "planfraesen"]
                 },
-                "tool_kugel_10": {
-                    "name": "HOFFMANN VHM Kugelfräser D10",
-                    "brand": "HOFFMANN",
-                    "line": "HPC Universal",
-                    "type": "Kugelfräser",
-                    "geo_type": "ball",
-                    "radius": 5.0,
+                "yg1_x5070_d10_r10": {
+                    "name": "X5070 Torusfräser D10 R1.0 Z4",
+                    "brand": "YG-1",
+                    "line": "X5070",
+                    "type": "Torusfräser",
+                    "geo_type": "torus",
+                    "radius": 1.0,
                     "material_schneidstoff": "VHM",
                     "diameter": 10.0,
-                    "z": 2,
+                    "z": 4,
                     "max_overhang": 30.0,
-                    "vc_per_material": { "stahl_c45": 200, "alu_wrought": 550, "rostfrei": 120, "titan": 50 },
-                    "suitable_materials": ["stahl_c45", "alu_wrought", "rostfrei", "titan"],
-                    "suitable_profiles": ["schlichten", "hsc_trochoidal"]
+                    "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 },
+                    "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"],
+                    "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal"]
                 }
             },
             favorites: []
@@ -700,7 +701,7 @@
 
         // --- LOKALER SPEICHER / BACKUP ---
         function loadDatabase() {
-            const saved = localStorage.getItem('toolpilot_db_v5');
+            const saved = localStorage.getItem('toolpilot_db_v6');
             if (saved) {
                 try { 
                     const parsed = JSON.parse(saved);
@@ -715,7 +716,7 @@
         }
 
         function saveLocalDatabaseBackup() {
-            localStorage.setItem('toolpilot_db_v5', JSON.stringify(db));
+            localStorage.setItem('toolpilot_db_v6', JSON.stringify(db));
         }
 
         function saveDatabase() {
@@ -873,13 +874,11 @@
 
             toggleToolGeoFields();
 
-            // Checkboxes Profil
             for (const profId of Object.keys(db.profiles)) {
                 const chk = document.getElementById(`tool-prof-${profId}`);
                 if(chk) chk.checked = t.suitable_profiles ? t.suitable_profiles.includes(profId) : true;
             }
 
-            // Matrix vc
             for (const matId of Object.keys(db.materials)) {
                 const chk = document.getElementById(`tool-suit-${matId}`);
                 const input = document.getElementById(`tool-vc-${matId}`);
@@ -977,7 +976,6 @@
             }
         }
 
-        // --- ANDERE LISTERENDERINGS ---
         function renderAdminMachinesList() {
             const container = document.getElementById('adm-machines-list');
             if(!container) return;
@@ -1393,7 +1391,7 @@
             renderFavorites();
         }
 
-        // --- HAUPTBERECHNUNG ---
+        // --- HAUPTBERECHNUNG MIT MASCHINEN-CAPPING ---
         function calculate() {
             const machId = document.getElementById('machine-select').value;
             const matId = document.getElementById('material-select').value;
@@ -1495,27 +1493,39 @@
             document.getElementById('physics-info').innerHTML = physicsInfoHtml;
 
             const effectiveFz = effectiveFzBase;
-            const n = (effectiveVc * 1000) / (Math.PI * Deff);
-            const vf = effectiveFz * z * n;
-            const Q = (ap * ae * vf) / 1000;
+            
+            // 1. Theoretische Drehzahl
+            let n_theo = (effectiveVc * 1000) / (Math.PI * Deff);
+            
+            // 2. MASCHINEN-CAPPING (Drehzahl auf Max-RPM der Maschine begrenzen)
+            let n_eff = Math.min(n_theo, mach.max_rpm);
+            
+            // 3. Vorschub passend zur REELLEN Drehzahl berechnen & ebenfalls deckeln
+            let vf_eff = effectiveFz * z * n_eff;
+            vf_eff = Math.min(vf_eff, mach.max_vf);
+
+            const Q = (ap * ae * vf_eff) / 1000;
             const power_kw = (Q * mat.kc11) / (60 * 1000);
 
-            currentCalculatedResults = { rpm: n, vf: vf, ap: ap, ae: ae, q: Q, power: power_kw, fz_eff: effectiveFz };
+            currentCalculatedResults = { rpm: n_eff, vf: vf_eff, ap: ap, ae: ae, q: Q, power: power_kw, fz_eff: effectiveFz };
 
             const rpmEl = document.getElementById('res-rpm');
             const vfEl = document.getElementById('res-vf');
             const powerEl = document.getElementById('res-power');
 
-            rpmEl.innerText = n.toFixed(2) + " U/min";
-            if (n > mach.max_rpm) {
-                rpmEl.className = "text-xl font-black font-mono text-rose-600 animate-pulse";
+            // Anzeige mit optischer Warnung bei Maschinen-Limit
+            rpmEl.innerText = n_eff.toFixed(0) + " U/min";
+            if (n_theo > mach.max_rpm) {
+                rpmEl.className = "text-xl font-black font-mono text-rose-600";
+                rpmEl.title = `Gekappt! Theoretisch nötig: ${n_theo.toFixed(0)} U/min`;
             } else {
                 rpmEl.className = "text-xl font-black font-mono text-emerald-700";
+                rpmEl.title = "";
             }
 
-            vfEl.innerText = vf.toFixed(2) + " mm/min";
-            if (vf > mach.max_vf) {
-                vfEl.className = "text-xl font-black font-mono text-rose-600 animate-pulse";
+            vfEl.innerText = vf_eff.toFixed(0) + " mm/min";
+            if (effectiveFz * z * n_theo > mach.max_vf) {
+                vfEl.className = "text-xl font-black font-mono text-rose-600";
             } else {
                 vfEl.className = "text-xl font-black font-mono text-emerald-700";
             }
@@ -1546,8 +1556,8 @@ Profil: ${prof}
 Werkzeug: ${tool}
 Steifigkeit: ${rig}
 ----------------------------------
-Drehzahl (n): ${currentCalculatedResults.rpm.toFixed(2)} U/min
-Tischvorschub (vf): ${currentCalculatedResults.vf.toFixed(2)} mm/min
+Drehzahl (n): ${currentCalculatedResults.rpm.toFixed(0)} U/min
+Tischvorschub (vf): ${currentCalculatedResults.vf.toFixed(0)} mm/min
 Eff. fz: ${currentCalculatedResults.fz_eff.toFixed(4)} mm
 Schnitttiefe (ap): ${currentCalculatedResults.ap.toFixed(1)} mm
 Schnittbreite (ae): ${currentCalculatedResults.ae.toFixed(1)} mm
