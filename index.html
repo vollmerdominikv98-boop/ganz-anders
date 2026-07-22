@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CNC Open Tool Guide - Profi Dashboard Light</title>
+    <title>CNC Open Tool Guide - Clean Light UI</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-100 text-slate-900 font-sans p-4 lg:p-6 min-h-screen">
@@ -25,21 +25,22 @@
             </div>
         </header>
 
-        <!-- ADMIN BEREICH (EINKLAPPBAR) -->
+        <!-- ADMIN BEREICH (SAUBERES GRID & OHNE OVERFLOW) -->
         <div id="admin-panel" class="hidden bg-white p-6 rounded-xl border border-emerald-300 shadow-md space-y-6">
             <h2 class="text-xl font-semibold text-emerald-800">Admin-Konsole: Lokale Datenbank-Verwaltung</h2>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 border-b border-slate-200 pb-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 border-b border-slate-200 pb-6 items-start">
+                
                 <!-- 0. Maschinen -->
                 <div class="space-y-3 bg-slate-50 p-4 rounded-lg border border-slate-200">
-                    <h3 class="font-medium text-slate-800 text-sm">Maschine</h3>
+                    <h3 class="font-semibold text-slate-800 text-sm border-b border-slate-200 pb-1">Maschine</h3>
                     <div>
                         <label class="block text-slate-600 mb-1 text-xs">Maschinen-ID</label>
-                        <input type="text" id="adm-mach-id" placeholder="z.B. dmg_dmc" class="w-full bg-white border border-slate-300 rounded p-2 text-slate-900 text-sm focus:ring-1 focus:ring-emerald-500">
+                        <input type="text" id="adm-mach-id" placeholder="z.B. dmg_dmc" class="w-full bg-white border border-slate-300 rounded p-2 text-slate-900 text-sm">
                     </div>
                     <div>
                         <label class="block text-slate-600 mb-1 text-xs">Bezeichnung</label>
-                        <input type="text" id="adm-mach-name" placeholder="z.B. DMG MORI" class="w-full bg-white border border-slate-300 rounded p-2 text-slate-900 text-sm focus:ring-1 focus:ring-emerald-500">
+                        <input type="text" id="adm-mach-name" placeholder="z.B. DMG MORI" class="w-full bg-white border border-slate-300 rounded p-2 text-slate-900 text-sm">
                     </div>
                     <div class="grid grid-cols-3 gap-2 text-xs">
                         <div>
@@ -57,14 +58,14 @@
                     </div>
                     <button onclick="addNewMachine()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-2 rounded text-sm font-medium mt-2 transition">Hinzufügen</button>
                     <div class="flex gap-2 pt-2 border-t border-slate-200 mt-2">
-                        <select id="del-machine-select" class="flex-1 bg-white border border-slate-300 rounded p-2 text-slate-900 text-sm"></select>
-                        <button onclick="deleteMachine()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1 rounded text-sm transition">Löschen</button>
+                        <select id="del-machine-select" class="flex-1 bg-white border border-slate-300 rounded p-1.5 text-slate-900 text-xs"></select>
+                        <button onclick="deleteMachine()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1 rounded text-xs transition">Löschen</button>
                     </div>
                 </div>
 
                 <!-- 1. Materialien -->
                 <div class="space-y-3 bg-slate-50 p-4 rounded-lg border border-slate-200">
-                    <h3 class="font-medium text-slate-800 text-sm">Material</h3>
+                    <h3 class="font-semibold text-slate-800 text-sm border-b border-slate-200 pb-1">Material</h3>
                     <div>
                         <label class="block text-slate-600 mb-1 text-xs">Material-ID</label>
                         <input type="text" id="adm-mat-id" placeholder="z.B. messing" class="w-full bg-white border border-slate-300 rounded p-2 text-slate-900 text-sm">
@@ -79,14 +80,14 @@
                     </div>
                     <button onclick="addNewMaterial()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-2 rounded text-sm font-medium mt-2 transition">Hinzufügen</button>
                     <div class="flex gap-2 pt-2 border-t border-slate-200 mt-2">
-                        <select id="del-material-select" class="flex-1 bg-white border border-slate-300 rounded p-2 text-slate-900 text-sm"></select>
-                        <button onclick="deleteMaterial()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1 rounded text-sm transition">Löschen</button>
+                        <select id="del-material-select" class="flex-1 bg-white border border-slate-300 rounded p-1.5 text-slate-900 text-xs"></select>
+                        <button onclick="deleteMaterial()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1 rounded text-xs transition">Löschen</button>
                     </div>
                 </div>
 
                 <!-- 2. Steifigkeit -->
                 <div class="space-y-3 bg-slate-50 p-4 rounded-lg border border-slate-200">
-                    <h3 class="font-medium text-slate-800 text-sm">Steifigkeit</h3>
+                    <h3 class="font-semibold text-slate-800 text-sm border-b border-slate-200 pb-1">Steifigkeit</h3>
                     <div>
                         <label class="block text-slate-600 mb-1 text-xs">Steifigkeits-ID</label>
                         <input type="text" id="adm-rigidity-id" placeholder="z.B. extrem" class="w-full bg-white border border-slate-300 rounded p-2 text-slate-900 text-sm">
@@ -101,91 +102,99 @@
                     </div>
                     <button onclick="addNewRigidity()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-2 rounded text-sm font-medium mt-2 transition">Hinzufügen</button>
                     <div class="flex gap-2 pt-2 border-t border-slate-200 mt-2">
-                        <select id="del-rigidity-select" class="flex-1 bg-white border border-slate-300 rounded p-2 text-slate-900 text-sm"></select>
-                        <button onclick="deleteRigidity()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1 rounded text-sm transition">Löschen</button>
+                        <select id="del-rigidity-select" class="flex-1 bg-white border border-slate-300 rounded p-1.5 text-slate-900 text-xs"></select>
+                        <button onclick="deleteRigidity()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1 rounded text-xs transition">Löschen</button>
                     </div>
                 </div>
 
-                <!-- 3. Werkzeuge -->
-                <div class="space-y-3 bg-slate-50 p-4 rounded-lg border border-slate-200">
-                    <h3 class="font-medium text-slate-800 text-sm">Neues Werkzeug anlegen</h3>
+                <!-- 3. Werkzeuge (AUFGERÄUMTE MASKE) -->
+                <div class="space-y-3 bg-slate-50 p-4 rounded-lg border border-slate-200 lg:col-span-2">
+                    <h3 class="font-semibold text-slate-800 text-sm border-b border-slate-200 pb-1">Neues Werkzeug anlegen / verwalten</h3>
                     
-                    <div class="grid grid-cols-2 gap-2 text-xs">
-                        <div>
-                            <label class="block text-slate-600 mb-1">Hersteller</label>
-                            <input type="text" id="adm-tool-brand" placeholder="z.B. GARANT" class="w-full bg-white border border-slate-300 rounded p-1.5 text-slate-900">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="space-y-3">
+                            <div class="grid grid-cols-2 gap-2 text-xs">
+                                <div>
+                                    <label class="block text-slate-600 mb-1">Hersteller</label>
+                                    <input type="text" id="adm-tool-brand" placeholder="z.B. GARANT" class="w-full bg-white border border-slate-300 rounded p-1.5 text-slate-900">
+                                </div>
+                                <div>
+                                    <label class="block text-slate-600 mb-1">Produktlinie</label>
+                                    <input type="text" id="adm-tool-line" placeholder="z.B. MasterSteel" class="w-full bg-white border border-slate-300 rounded p-1.5 text-slate-900">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2 text-xs">
+                                <div>
+                                    <label class="block text-slate-600 mb-1">Fräsertyp</label>
+                                    <select id="adm-tool-geotype" onchange="toggleToolGeoFields()" class="w-full bg-white border border-slate-300 rounded p-1.5 text-slate-900">
+                                        <option value="shaft">Schaftfräser</option>
+                                        <option value="ball">Kugelfräser</option>
+                                        <option value="torus">Torusfräser</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-slate-600 mb-1" title="Leer lassen für automatischen Namen">Bezeichnung (optional)</label>
+                                    <input type="text" id="adm-tool-name" placeholder="z.B. HPC Schaft D10" class="w-full bg-white border border-slate-300 rounded p-1.5 text-slate-900">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-2 text-xs">
+                                <div>
+                                    <label class="block text-slate-600 mb-1">Ø (mm)</label>
+                                    <input type="number" id="adm-tool-d" value="10" class="w-full bg-white border border-slate-300 rounded p-1.5 text-slate-900">
+                                </div>
+                                <div>
+                                    <label class="block text-slate-600 mb-1">Zahn (Z)</label>
+                                    <input type="number" id="adm-tool-z" value="4" class="w-full bg-white border border-slate-300 rounded p-1.5 text-slate-900">
+                                </div>
+                                <div>
+                                    <label class="block text-slate-600 mb-1" title="Auskraglänge">L Max (mm)</label>
+                                    <input type="number" id="adm-tool-overhang" value="30" class="w-full bg-white border border-slate-300 rounded p-1.5 text-slate-900">
+                                </div>
+                            </div>
+
+                            <div id="adm-tool-radius-container" class="hidden text-xs">
+                                <label class="block text-slate-600 mb-1">Radius r (mm)</label>
+                                <input type="number" step="0.1" id="adm-tool-radius" value="1.0" class="w-full bg-white border border-slate-300 rounded p-1.5 text-slate-900">
+                            </div>
+
+                            <div class="pt-2 border-t border-slate-200">
+                                <label class="block text-slate-600 text-xs mb-1">Werte von Werkzeug laden:</label>
+                                <div class="flex gap-2">
+                                    <select id="adm-copy-source-select" class="flex-1 bg-white border border-slate-300 rounded p-1.5 text-slate-900 text-xs"></select>
+                                    <button onclick="loadVcFromSelectedTool()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 border border-slate-300 px-2 py-1 rounded text-xs transition font-medium">📋 Übernehmen</button>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-slate-600 mb-1">Produktlinie</label>
-                            <input type="text" id="adm-tool-line" placeholder="z.B. MasterSteel" class="w-full bg-white border border-slate-300 rounded p-1.5 text-slate-900">
+
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-slate-700 text-xs mb-1 font-semibold">Freigegebene Bearbeitungsprofile:</label>
+                                <div id="adm-tool-profiles-container" class="grid grid-cols-2 gap-1.5 text-xs bg-white p-2 rounded border border-slate-300"></div>
+                            </div>
+
+                            <div>
+                                <label class="block text-slate-700 text-xs mb-1 font-semibold">Material-Freigabe & vc:</label>
+                                <div id="adm-tool-matrix-container" class="grid grid-cols-2 gap-2 text-xs"></div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-2 text-xs">
-                        <div>
-                            <label class="block text-slate-600 mb-1">Fräsertyp</label>
-                            <select id="adm-tool-geotype" onchange="toggleToolGeoFields()" class="w-full bg-white border border-slate-300 rounded p-1.5 text-slate-900">
-                                <option value="shaft">Schaftfräser</option>
-                                <option value="ball">Kugelfräser</option>
-                                <option value="torus">Torusfräser</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-slate-600 mb-1" title="Leer lassen für automatischen Namen">Bezeichnung (optional)</label>
-                            <input type="text" id="adm-tool-name" placeholder="z.B. HPC Schaft D10" class="w-full bg-white border border-slate-300 rounded p-1.5 text-slate-900">
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-3 gap-2 text-xs">
-                        <div>
-                            <label class="block text-slate-600 mb-1">Ø (mm)</label>
-                            <input type="number" id="adm-tool-d" value="10" class="w-full bg-white border border-slate-300 rounded p-1.5 text-slate-900">
-                        </div>
-                        <div>
-                            <label class="block text-slate-600 mb-1">Zahn (Z)</label>
-                            <input type="number" id="adm-tool-z" value="4" class="w-full bg-white border border-slate-300 rounded p-1.5 text-slate-900">
-                        </div>
-                        <div>
-                            <label class="block text-slate-600 mb-1" title="Auskraglänge">L Max (mm)</label>
-                            <input type="number" id="adm-tool-overhang" value="30" class="w-full bg-white border border-slate-300 rounded p-1.5 text-slate-900">
-                        </div>
-                    </div>
-
-                    <div id="adm-tool-radius-container" class="hidden text-xs">
-                        <label class="block text-slate-600 mb-1">Radius r (mm)</label>
-                        <input type="number" step="0.1" id="adm-tool-radius" value="1.0" class="w-full bg-white border border-slate-300 rounded p-1.5 text-slate-900">
-                    </div>
-
-                    <div class="pt-2 border-t border-slate-200">
-                        <label class="block text-slate-700 text-xs mb-1 font-semibold">Freigegebene Bearbeitungsprofile:</label>
-                        <div id="adm-tool-profiles-container" class="grid grid-cols-2 gap-1.5 text-xs bg-white p-2 rounded border border-slate-300"></div>
-                    </div>
-
-                    <div class="pt-2 border-t border-slate-200">
-                        <label class="block text-slate-600 text-xs mb-1">Werte von Werkzeug laden:</label>
+                    <button onclick="addNewTool()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-2 rounded text-sm font-medium mt-3 transition">Werkzeug Speichern</button>
+                    
+                    <div class="flex flex-col sm:flex-row gap-2 pt-3 border-t border-slate-200 mt-2">
+                        <select id="del-tool-select" class="flex-1 bg-white border border-slate-300 rounded p-1.5 text-slate-900 text-xs"></select>
                         <div class="flex gap-2">
-                            <select id="adm-copy-source-select" class="flex-1 bg-white border border-slate-300 rounded p-1 text-slate-900 text-xs"></select>
-                            <button onclick="loadVcFromSelectedTool()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 border border-slate-300 px-2 py-1 rounded text-xs transition font-medium">📋 Übernehmen</button>
+                            <button onclick="duplicateTool()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs transition">Kopieren</button>
+                            <button onclick="deleteTool()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded text-xs transition">Löschen</button>
                         </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-slate-700 text-xs mb-1 font-semibold">Material-Freigabe & vc:</label>
-                        <div id="adm-tool-matrix-container" class="grid grid-cols-2 gap-2 text-xs"></div>
-                    </div>
-
-                    <button onclick="addNewTool()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-2 rounded text-sm font-medium mt-2 transition">Speichern</button>
-                    
-                    <div class="flex gap-2 pt-2 border-t border-slate-200 mt-2">
-                        <select id="del-tool-select" class="flex-1 bg-white border border-slate-300 rounded p-2 text-slate-900 text-sm"></select>
-                        <button onclick="duplicateTool()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition">Kopieren</button>
-                        <button onclick="deleteTool()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1 rounded text-sm transition">Löschen</button>
                     </div>
                 </div>
 
                 <!-- 4. Bearbeitungsprofile -->
                 <div class="space-y-3 bg-slate-50 p-4 rounded-lg border border-slate-200">
-                    <h3 class="font-medium text-slate-800 text-sm">Profil</h3>
+                    <h3 class="font-semibold text-slate-800 text-sm border-b border-slate-200 pb-1">Profil</h3>
                     <div>
                         <label class="block text-slate-600 mb-1 text-xs">Profil-ID</label>
                         <input type="text" id="adm-prof-id" placeholder="z.B. trochoidal" class="w-full bg-white border border-slate-300 rounded p-2 text-slate-900 text-sm">
@@ -221,8 +230,8 @@
 
                     <button onclick="addNewProfile()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-2 rounded text-sm font-medium mt-2 transition">Hinzufügen</button>
                     <div class="flex gap-2 pt-2 border-t border-slate-200 mt-2">
-                        <select id="del-profile-select" class="flex-1 bg-white border border-slate-300 rounded p-2 text-slate-900 text-sm"></select>
-                        <button onclick="deleteProfile()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1 rounded text-sm transition">Löschen</button>
+                        <select id="del-profile-select" class="flex-1 bg-white border border-slate-300 rounded p-1.5 text-slate-900 text-xs"></select>
+                        <button onclick="deleteProfile()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1 rounded text-xs transition">Löschen</button>
                     </div>
                 </div>
             </div>
@@ -233,7 +242,7 @@
             </div>
         </div>
 
-        <!-- DASHBOARD GRID: 3 SPALTEN IM HELLEN DESIGN -->
+        <!-- DASHBOARD GRID: CLEAN LIGHT UI OHNE UNTERSCHRIFTEN -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             
             <!-- SPALTE 1: SETUP & SELEKTION (4 Cols) -->
@@ -245,7 +254,6 @@
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Maschine</label>
                     <select id="machine-select" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-slate-900 text-sm focus:ring-2 focus:ring-emerald-500 font-medium" onchange="calculate()"></select>
-                    <div id="machine-specs" class="text-[11px] text-slate-600 mt-1 bg-slate-50 p-2 rounded border border-slate-200 font-mono"></div>
                 </div>
 
                 <div>
@@ -256,7 +264,6 @@
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Bearbeitungsprofil</label>
                     <select id="profile-select" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-slate-900 text-sm focus:ring-2 focus:ring-emerald-500 font-medium" onchange="onMaterialOrProfileChange()"></select>
-                    <div id="profile-specs" class="text-[11px] text-slate-500 mt-1 bg-slate-50 p-2 rounded border border-slate-200 italic"></div>
                 </div>
 
                 <!-- WERKZEUG GEFILTERT -->
@@ -275,7 +282,6 @@
 
                     <div>
                         <select id="tool-select" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-900 text-xs font-bold shadow-sm" onchange="onToolChange()"></select>
-                        <div id="tool-specs" class="text-[11px] text-slate-700 mt-2 bg-white p-2 rounded border border-slate-200 font-mono"></div>
                     </div>
                 </div>
 
@@ -473,7 +479,7 @@
         let currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0, q: 0, power: 0, fz_eff: 0 };
 
         function loadDatabase() {
-            const saved = localStorage.getItem('cnc_tool_guide_db_dashboard_light_v1');
+            const saved = localStorage.getItem('cnc_tool_guide_db_clean_light_v1');
             if (saved) {
                 try { 
                     const parsed = JSON.parse(saved);
@@ -488,7 +494,7 @@
         }
 
         function saveDatabase() {
-            localStorage.setItem('cnc_tool_guide_db_dashboard_light_v1', JSON.stringify(db));
+            localStorage.setItem('cnc_tool_guide_db_clean_light_v1', JSON.stringify(db));
         }
 
         function resetToDefaultData() {
@@ -641,12 +647,10 @@
                 toolSel.value = previousToolId;
             }
 
-            updateSpecs();
             calculate();
         }
 
         function onToolChange() {
-            updateSpecs();
             calculate();
         }
 
@@ -810,40 +814,6 @@
         function deleteTool() {
             const id = document.getElementById('del-tool-select').value;
             delete db.tools[id]; saveDatabase(); populateDropdowns(); alert('Gelöscht!');
-        }
-
-        function updateSpecs() {
-            const machId = document.getElementById('machine-select').value;
-            const toolId = document.getElementById('tool-select').value;
-            const matId = document.getElementById('material-select').value;
-            const profId = document.getElementById('profile-select').value;
-            
-            const mach = db.machines[machId];
-            const tool = db.tools[toolId];
-            const prof = db.profiles[profId];
-
-            if(mach) {
-                document.getElementById('machine-specs').innerHTML = 
-                    `max. ${mach.max_rpm} U/min | max. ${mach.max_vf} mm/min | max. ${mach.max_kw} kW`;
-            }
-            if(tool) {
-                const baseVc = tool.vc_per_material ? (tool.vc_per_material[matId] || 200) : 200;
-                let typeName = "Schaftfräser";
-                if(tool.geo_type === "ball") typeName = "Kugelfräser";
-                if(tool.geo_type === "torus") typeName = `Torus (r=${tool.radius}mm)`;
-                
-                const brandInfo = tool.brand ? `${tool.brand} | ` : '';
-                const lineInfo = tool.line ? `${tool.line} | ` : '';
-
-                document.getElementById('tool-specs').innerHTML = 
-                    `${brandInfo}${lineInfo}${typeName} | Ø${tool.diameter}mm | Z${tool.z} | vc: ${baseVc} m/min`;
-            } else {
-                document.getElementById('tool-specs').innerHTML = `<em class="text-rose-600 font-sans font-semibold">Kein freigegebenes Werkzeug gefunden.</em>`;
-            }
-            if(prof) {
-                document.getElementById('profile-specs').innerHTML = 
-                    `${prof.description}`;
-            }
         }
 
         function renderFavorites() {
@@ -1023,8 +993,6 @@
                 document.getElementById('res-power').innerText = "-- kW";
                 return;
             }
-            
-            updateSpecs();
 
             const D = tool.diameter;
             const z = tool.z;
