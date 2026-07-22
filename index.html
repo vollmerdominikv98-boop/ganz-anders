@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CNC Open Tool Guide - Dynamischer Workflow</title>
+    <title>CNC Open Tool Guide - Hersteller, Produktlinie & RCT</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans p-6">
@@ -11,7 +11,7 @@
         <header class="border-b border-slate-800 pb-4 flex justify-between items-center">
             <div>
                 <h1 class="text-3xl font-bold tracking-tight text-emerald-400">CNC Open Tool Guide</h1>
-                <p class="text-slate-400">Fräsrechner mit dynamischer Werkzeuganlage, Deff-Kompensation & RCT</p>
+                <p class="text-slate-400">Fräsrechner mit Hersteller- & Produktlinien-Filter, Deff-Kompensation & RCT</p>
             </div>
             <div class="flex gap-2">
                 <button onclick="exportDataReport()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg border border-slate-700 text-sm font-medium transition" title="Berechnete Werte kopieren">
@@ -117,10 +117,21 @@
                     </div>
                 </div>
 
-                <!-- 3. Werkzeuge (DYNAMISCH & MIT HERSTELLER) -->
+                <!-- 3. Werkzeuge (MIT HERSTELLER & PRODUKTLINIE) -->
                 <div class="space-y-3 bg-slate-950/50 p-4 rounded-lg border border-slate-800">
                     <h3 class="font-medium text-slate-200">Neues Werkzeug anlegen</h3>
                     
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                            <label class="block text-slate-400 mb-1">Hersteller</label>
+                            <input type="text" id="adm-tool-brand" placeholder="z.B. GARANT" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1">Produktlinie</label>
+                            <input type="text" id="adm-tool-line" placeholder="z.B. MasterSteel" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
+                        </div>
+                    </div>
+
                     <div class="grid grid-cols-2 gap-2 text-xs">
                         <div>
                             <label class="block text-slate-400 mb-1">Fräsertyp</label>
@@ -131,14 +142,9 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-slate-400 mb-1">Hersteller (optional)</label>
-                            <input type="text" id="adm-tool-brand" placeholder="z.B. Garant, Hoffmann" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
+                            <label class="block text-slate-400 mb-1" title="Leer lassen für automatischen Namen">Bezeichnung (optional)</label>
+                            <input type="text" id="adm-tool-name" placeholder="z.B. HPC Schaft D10" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
                         </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-slate-400 mb-1 text-xs" title="Leer lassen für automatischen Namen">Bezeichnung (optional)</label>
-                        <input type="text" id="adm-tool-name" placeholder="z.B. VHM Schaft D10" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white text-xs">
                     </div>
 
                     <div class="grid grid-cols-3 gap-2 text-xs">
@@ -156,13 +162,11 @@
                         </div>
                     </div>
 
-                    <!-- Dynamisches Feld für Radius -->
                     <div id="adm-tool-radius-container" class="hidden text-xs">
                         <label class="block text-slate-400 mb-1">Radius r (mm)</label>
                         <input type="number" step="0.1" id="adm-tool-radius" value="1.0" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
                     </div>
 
-                    <!-- Vorhandene Schnittwerte eines anderen Werkzeugs übernehmen -->
                     <div class="pt-2 border-t border-slate-800">
                         <label class="block text-slate-400 text-xs mb-1">Werte von Werkzeug laden:</label>
                         <div class="flex gap-2">
@@ -246,10 +250,24 @@
                     <div id="machine-specs" class="text-xs text-slate-400 mt-2 bg-slate-950 p-2 rounded border border-slate-800"></div>
                 </div>
 
-                <div>
-                    <label class="block text-sm text-slate-400 mb-1">Werkzeug wählen</label>
-                    <select id="tool-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" onchange="onToolChange()"></select>
-                    <div id="tool-specs" class="text-xs text-slate-400 mt-2 bg-slate-950 p-2 rounded border border-slate-800"></div>
+                <!-- NEU: STUFENWEISE WERKZEUGAUSWAHL (HERSTELLER -> PRODUKTLINIE -> WERKZEUG) -->
+                <div class="space-y-3 bg-slate-950/60 p-3 rounded-lg border border-slate-800">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Hersteller wählen</label>
+                            <select id="brand-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-xs" onchange="onBrandChange()"></select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Produktlinie wählen</label>
+                            <select id="line-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-xs" onchange="onLineChange()"></select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm text-slate-400 mb-1">Werkzeug wählen</label>
+                        <select id="tool-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" onchange="onToolChange()"></select>
+                        <div id="tool-specs" class="text-xs text-slate-400 mt-2 bg-slate-950 p-2 rounded border border-slate-800"></div>
+                    </div>
                 </div>
 
                 <div>
@@ -396,7 +414,8 @@
             tools: {
                 "tool_vhm_12": {
                     "name": "GARANT VHM Schaftfräser D12",
-                    "brand": "Garant",
+                    "brand": "GARANT",
+                    "line": "MasterSteel",
                     "type": "Schaftfräser",
                     "geo_type": "shaft",
                     "radius": 0,
@@ -409,7 +428,8 @@
                 },
                 "tool_kugel_10": {
                     "name": "HOFFMANN VHM Kugelfräser D10",
-                    "brand": "Hoffmann",
+                    "brand": "HOFFMANN",
+                    "line": "HPC Universal",
                     "type": "Kugelfräser",
                     "geo_type": "ball",
                     "radius": 5.0,
@@ -428,7 +448,7 @@
         let currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0, q: 0, power: 0, fz_eff: 0 };
 
         function loadDatabase() {
-            const saved = localStorage.getItem('cnc_tool_guide_db_workflow_v2');
+            const saved = localStorage.getItem('cnc_tool_guide_db_lines_v1');
             if (saved) {
                 try { 
                     const parsed = JSON.parse(saved);
@@ -443,7 +463,7 @@
         }
 
         function saveDatabase() {
-            localStorage.setItem('cnc_tool_guide_db_workflow_v2', JSON.stringify(db));
+            localStorage.setItem('cnc_tool_guide_db_lines_v1', JSON.stringify(db));
         }
 
         function resetToDefaultData() {
@@ -466,6 +486,7 @@
         }
 
         function populateDropdowns() {
+            // Maschinen
             const machSel = document.getElementById('machine-select');
             const delMachSel = document.getElementById('del-machine-select');
             machSel.innerHTML = ''; if(delMachSel) delMachSel.innerHTML = '';
@@ -474,6 +495,7 @@
                 if(delMachSel) delMachSel.add(new Option(m.name, id));
             }
 
+            // Steifigkeit
             const rigSel = document.getElementById('rigidity-select');
             const delRigSel = document.getElementById('del-rigidity-select');
             rigSel.innerHTML = ''; if(delRigSel) delRigSel.innerHTML = '';
@@ -483,21 +505,7 @@
             }
             if(db.rigidity["mittel"]) rigSel.value = "mittel";
 
-            const toolSel = document.getElementById('tool-select');
-            const delToolSel = document.getElementById('del-tool-select');
-            const copySourceSel = document.getElementById('adm-copy-source-select');
-            
-            toolSel.innerHTML = ''; 
-            if(delToolSel) delToolSel.innerHTML = '';
-            if(copySourceSel) copySourceSel.innerHTML = '';
-
-            for (const [id, t] of Object.entries(db.tools)) {
-                const displayName = t.brand ? `[${t.brand}] ${t.name}` : t.name;
-                toolSel.add(new Option(displayName, id));
-                if(delToolSel) delToolSel.add(new Option(displayName, id));
-                if(copySourceSel) copySourceSel.add(new Option(displayName, id));
-            }
-
+            // Profile
             const profSel = document.getElementById('profile-select');
             const delProfSel = document.getElementById('del-profile-select');
             profSel.innerHTML = ''; if(delProfSel) delProfSel.innerHTML = '';
@@ -506,6 +514,7 @@
                 if(delProfSel) delProfSel.add(new Option(p.name, id));
             }
 
+            // Materialien
             const delMatSel = document.getElementById('del-material-select');
             if(delMatSel) {
                 delMatSel.innerHTML = '';
@@ -514,7 +523,83 @@
                 }
             }
 
+            // Admin Löschen & Kopieren Liste
+            const delToolSel = document.getElementById('del-tool-select');
+            const copySourceSel = document.getElementById('adm-copy-source-select');
+            if(delToolSel) delToolSel.innerHTML = '';
+            if(copySourceSel) copySourceSel.innerHTML = '';
+
+            for (const [id, t] of Object.entries(db.tools)) {
+                const displayName = `${t.brand ? '[' + t.brand + '] ' : ''}${t.line ? t.line + ' - ' : ''}${t.name}`;
+                if(delToolSel) delToolSel.add(new Option(displayName, id));
+                if(copySourceSel) copySourceSel.add(new Option(displayName, id));
+            }
+
             renderToolMatrixInputs();
+            populateBrandDropdown();
+        }
+
+        // --- HERSTELLER & PRODUKTLINIEN FILTER LOGIK ---
+
+        function populateBrandDropdown() {
+            const brandSel = document.getElementById('brand-select');
+            brandSel.innerHTML = '';
+            
+            const brands = new Set();
+            for (const t of Object.values(db.tools)) {
+                if (t.brand && t.brand.trim() !== '') brands.add(t.brand.trim());
+            }
+
+            brandSel.add(new Option('-- Alle Hersteller --', 'ALL'));
+            brands.forEach(b => brandSel.add(new Option(b, b)));
+
+            onBrandChange();
+        }
+
+        function onBrandChange() {
+            const selectedBrand = document.getElementById('brand-select').value;
+            const lineSel = document.getElementById('line-select');
+            lineSel.innerHTML = '';
+
+            const lines = new Set();
+            for (const t of Object.values(db.tools)) {
+                if (selectedBrand === 'ALL' || t.brand === selectedBrand) {
+                    if (t.line && t.line.trim() !== '') lines.add(t.line.trim());
+                }
+            }
+
+            lineSel.add(new Option('-- Alle Produktlinien --', 'ALL'));
+            lines.forEach(l => lineSel.add(new Option(l, l)));
+
+            onLineChange();
+        }
+
+        function onLineChange() {
+            const selectedBrand = document.getElementById('brand-select').value;
+            const selectedLine = document.getElementById('line-select').value;
+            const toolSel = document.getElementById('tool-select');
+            
+            const previousToolId = toolSel.value;
+            toolSel.innerHTML = '';
+
+            let toolCount = 0;
+            for (const [id, t] of Object.entries(db.tools)) {
+                const brandMatch = (selectedBrand === 'ALL' || t.brand === selectedBrand);
+                const lineMatch = (selectedLine === 'ALL' || t.line === selectedLine);
+
+                if (brandMatch && lineMatch) {
+                    const label = `${t.line ? '[' + t.line + '] ' : ''}${t.name}`;
+                    toolSel.add(new Option(label, id));
+                    toolCount++;
+                }
+            }
+
+            if (toolCount === 0) {
+                toolSel.add(new Option('-- Keine Werkzeuge gefunden --', ''));
+            } else if (db.tools[previousToolId]) {
+                toolSel.value = previousToolId;
+            }
+
             updateMaterialDropdownForTool();
         }
 
@@ -525,7 +610,10 @@
             const tool = db.tools[toolId];
             
             matSel.innerHTML = '';
-            if (!tool) return;
+            if (!tool) {
+                calculate();
+                return;
+            }
 
             const suitableList = tool.suitable_materials || [];
             let validSelectionExists = false;
@@ -617,6 +705,7 @@
         function addNewTool() {
             const geoType = document.getElementById('adm-tool-geotype').value;
             const brand = document.getElementById('adm-tool-brand').value.trim();
+            const line = document.getElementById('adm-tool-line').value.trim();
             const d = parseFloat(document.getElementById('adm-tool-d').value);
             const z = parseInt(document.getElementById('adm-tool-z').value);
             const radius = parseFloat(document.getElementById('adm-tool-radius').value) || 0;
@@ -644,6 +733,7 @@
             db.tools[id] = {
                 name: fullName,
                 brand: brand,
+                line: line,
                 type: geoType === 'ball' ? 'Kugelfräser' : (geoType === 'torus' ? 'Torusfräser' : 'Schaftfräser'),
                 geo_type: geoType,
                 radius: radius,
@@ -659,6 +749,7 @@
             populateDropdowns(); 
             document.getElementById('adm-tool-name').value = ''; 
             document.getElementById('adm-tool-brand').value = '';
+            document.getElementById('adm-tool-line').value = '';
             alert('Werkzeug erfolgreich gespeichert!');
         }
 
@@ -675,7 +766,6 @@
             saveDatabase();
             populateDropdowns();
             alert(`Werkzeug kopiert! Es heißt jetzt: "${newTool.name}".`);
-            document.getElementById('del-tool-select').value = newId;
         }
 
         function deleteTool() {
@@ -704,9 +794,12 @@
                 if(tool.geo_type === "torus") typeName = `Torusfräser (r=${tool.radius}mm)`;
                 
                 const brandInfo = tool.brand ? `<strong>Hersteller:</strong> ${tool.brand} | ` : '';
+                const lineInfo = tool.line ? `<strong>Serie:</strong> ${tool.line} | ` : '';
 
                 document.getElementById('tool-specs').innerHTML = 
-                    `${brandInfo}<strong>Typ:</strong> ${typeName} | <strong>Ø:</strong> ${tool.diameter}mm | <strong>Z:</strong> ${tool.z} | <strong>vc:</strong> ${baseVc} m/min`;
+                    `${brandInfo}${lineInfo}<strong>Typ:</strong> ${typeName} | <strong>Ø:</strong> ${tool.diameter}mm | <strong>Z:</strong> ${tool.z} | <strong>vc:</strong> ${baseVc} m/min`;
+            } else {
+                document.getElementById('tool-specs').innerHTML = `<em>Kein Werkzeug gewählt.</em>`;
             }
             if(prof) {
                 document.getElementById('profile-specs').innerHTML = 
@@ -748,6 +841,9 @@
         function loadFavorite(favId) {
             const fav = db.favorites.find(f => f.id === favId);
             if(!fav) return;
+
+            document.getElementById('brand-select').value = 'ALL';
+            onBrandChange();
 
             if(db.tools[fav.tool_id]) document.getElementById('tool-select').value = fav.tool_id;
             updateMaterialDropdownForTool();
@@ -886,7 +982,15 @@
             const profile = db.profiles[profId];
             const rigidity = db.rigidity[rigId];
             
-            if(!mach || !tool || !mat || !profile || !rigidity) return;
+            if(!mach || !tool || !mat || !profile || !rigidity) {
+                document.getElementById('res-rpm').innerText = "-- U/min";
+                document.getElementById('res-vf').innerText = "-- mm/min";
+                document.getElementById('res-apae').innerText = "-- / -- mm";
+                document.getElementById('res-q').innerText = "-- cm³/min";
+                document.getElementById('res-power').innerText = "-- kW";
+                return;
+            }
+            
             updateSpecs();
 
             const D = tool.diameter;
