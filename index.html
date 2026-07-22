@@ -3,44 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CNC Open Tool Guide - Logischer Auswahl-Workflow</title>
+    <title>CNC Open Tool Guide - Profi Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans p-6">
-    <div class="max-w-6xl mx-auto space-y-6">
-        <header class="border-b border-slate-800 pb-4 flex justify-between items-center">
+<body class="bg-slate-950 text-slate-100 font-sans p-4 lg:p-6 min-h-screen">
+    <div class="max-w-[1500px] mx-auto space-y-6">
+        
+        <!-- HEADER -->
+        <header class="border-b border-slate-800 pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-                <h1 class="text-3xl font-bold tracking-tight text-emerald-400">CNC Open Tool Guide</h1>
-                <p class="text-slate-400">Fräsrechner mit zielgeführtem Workflow (Material & Profil $\rightarrow$ Werkzeug), Deff & RCT</p>
+                <h1 class="text-2xl lg:text-3xl font-bold tracking-tight text-emerald-400">CNC Open Tool Guide</h1>
+                <p class="text-xs lg:text-sm text-slate-400">Herstellerunabhängiger Fräsrechner mit zielgeführtem Workflow, Deff & RCT</p>
             </div>
-            <div class="flex gap-2">
-                <button onclick="exportDataReport()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg border border-slate-700 text-sm font-medium transition" title="Berechnete Werte kopieren">
+            <div class="flex gap-2 w-full sm:w-auto">
+                <button onclick="exportDataReport()" class="flex-1 sm:flex-initial bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg border border-slate-700 text-xs font-medium transition flex items-center justify-center gap-1.5" title="Berechnete Werte kopieren">
                     📋 Bericht kopieren
                 </button>
-                <button onclick="toggleAdmin()" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 px-4 py-2 rounded-lg border border-slate-700 font-medium transition">
-                    ⚙️ Admin-Konsole umschalten
+                <button onclick="toggleAdmin()" class="flex-1 sm:flex-initial bg-slate-800 hover:bg-slate-700 text-emerald-400 px-4 py-2 rounded-lg border border-slate-700 text-xs font-medium transition flex items-center justify-center gap-1.5">
+                    ⚙️ Admin-Konsole
                 </button>
             </div>
         </header>
 
-        <!-- PRAXIS-FAVORITEN SCHNELLWAHL -->
-        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800">
-            <div class="flex justify-between items-center mb-3">
-                <h2 class="text-lg font-semibold text-emerald-400 flex items-center gap-2">
-                    ⭐ Bewährte Praxis-Favoriten (Werkstatt-Erfahrungswerte)
-                </h2>
-                <span class="text-xs text-slate-400">Mit 1 Klick laden & direkt übernehmen</span>
-            </div>
-            <div id="favorites-container" class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <!-- Wird dynamisch gefüllt -->
-            </div>
-        </div>
-
-        <!-- ADMIN BEREICH -->
+        <!-- ADMIN BEREICH (EINKLAPPBAR) -->
         <div id="admin-panel" class="hidden bg-slate-900 p-6 rounded-xl border border-emerald-500/30 space-y-6">
             <h2 class="text-xl font-semibold text-emerald-400">Admin-Konsole: Lokale Datenbank-Verwaltung</h2>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 border-b border-slate-800 pb-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 border-b border-slate-800 pb-6">
                 <!-- 0. Maschinen -->
                 <div class="space-y-3 bg-slate-950/50 p-4 rounded-lg border border-slate-800">
                     <h3 class="font-medium text-slate-200">Maschine</h3>
@@ -117,7 +106,7 @@
                     </div>
                 </div>
 
-                <!-- 3. Werkzeuge (MIT HERSTELLER, PRODUKTLINIE & PROFIL-FREIGABE) -->
+                <!-- 3. Werkzeuge -->
                 <div class="space-y-3 bg-slate-950/50 p-4 rounded-lg border border-slate-800">
                     <h3 class="font-medium text-slate-200">Neues Werkzeug anlegen</h3>
                     
@@ -167,13 +156,11 @@
                         <input type="number" step="0.1" id="adm-tool-radius" value="1.0" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
                     </div>
 
-                    <!-- NEU: PROFIL-FREIGABE CHECKBOXEN -->
                     <div class="pt-2 border-t border-slate-800">
                         <label class="block text-slate-400 text-xs mb-1 font-semibold text-emerald-400">Freigegebene Bearbeitungsprofile:</label>
                         <div id="adm-tool-profiles-container" class="grid grid-cols-2 gap-1.5 text-xs bg-slate-900 p-2 rounded border border-slate-700"></div>
                     </div>
 
-                    <!-- Vorhandene Schnittwerte eines anderen Werkzeugs übernehmen -->
                     <div class="pt-2 border-t border-slate-800">
                         <label class="block text-slate-400 text-xs mb-1">Werte von Werkzeug laden:</label>
                         <div class="flex gap-2">
@@ -183,7 +170,7 @@
                     </div>
 
                     <div>
-                        <label class="block text-slate-400 text-xs mb-1 font-semibold text-emerald-400">Material-Freigabe & Schnittgeschwindigkeiten (vc):</label>
+                        <label class="block text-slate-400 text-xs mb-1 font-semibold text-emerald-400">Material-Freigabe & vc:</label>
                         <div id="adm-tool-matrix-container" class="grid grid-cols-2 gap-2 text-xs"></div>
                     </div>
 
@@ -191,7 +178,7 @@
                     
                     <div class="flex gap-2 pt-2 border-t border-slate-800 mt-2">
                         <select id="del-tool-select" class="flex-1 bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm"></select>
-                        <button onclick="duplicateTool()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-sm transition" title="Ausgewähltes Werkzeug duplizieren">Kopieren</button>
+                        <button onclick="duplicateTool()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-sm transition">Kopieren</button>
                         <button onclick="deleteTool()" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1 rounded text-sm transition">Löschen</button>
                     </div>
                 </div>
@@ -246,68 +233,75 @@
             </div>
         </div>
 
-        <!-- HAUPTRECHNER & ERGEBNISSE -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="bg-slate-900 p-6 rounded-xl border border-slate-800 space-y-4">
-                <h2 class="text-xl font-semibold text-slate-200">Konfiguration</h2>
+        <!-- DASHBOARD GRID: 3 NEBENEINANDER-LIEGENDE SPALTEN AUF DESKTOP -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- SPALTE 1: SETUP & SELEKTION (4 Cols) -->
+            <div class="lg:col-span-4 bg-slate-900 p-5 rounded-xl border border-slate-800 space-y-4">
+                <h2 class="text-lg font-semibold text-emerald-400 border-b border-slate-800 pb-2 flex items-center gap-2">
+                    🛠️ 1. Werkstück & Werkzeug
+                </h2>
                 
-                <!-- 1. MASCHINE WÄHLEN -->
                 <div>
-                    <label class="block text-sm text-slate-400 mb-1">1. Maschine wählen</label>
-                    <select id="machine-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" onchange="calculate()"></select>
-                    <div id="machine-specs" class="text-xs text-slate-400 mt-2 bg-slate-950 p-2 rounded border border-slate-800"></div>
+                    <label class="block text-xs text-slate-400 mb-1">Maschine</label>
+                    <select id="machine-select" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm" onchange="calculate()"></select>
+                    <div id="machine-specs" class="text-[11px] text-slate-400 mt-1 bg-slate-950/80 p-2 rounded border border-slate-800/80 font-mono"></div>
                 </div>
 
-                <!-- 2. WERKSTOFF WÄHLEN (NUN AN POSITION 2) -->
                 <div>
-                    <label class="block text-sm text-slate-400 mb-1">2. Werkstoff wählen</label>
-                    <select id="material-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" onchange="onMaterialOrProfileChange()"></select>
+                    <label class="block text-xs text-slate-400 mb-1">Werkstoff</label>
+                    <select id="material-select" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm" onchange="onMaterialOrProfileChange()"></select>
                 </div>
 
-                <!-- 3. BEARBEITUNGSPROFIL WÄHLEN (NUN AN POSITION 3) -->
                 <div>
-                    <label class="block text-sm text-slate-400 mb-1">3. Bearbeitungsprofil wählen</label>
-                    <select id="profile-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" onchange="onMaterialOrProfileChange()"></select>
-                    <div id="profile-specs" class="text-xs text-slate-400 mt-2 bg-slate-950 p-2 rounded border border-slate-800"></div>
+                    <label class="block text-xs text-slate-400 mb-1">Bearbeitungsprofil</label>
+                    <select id="profile-select" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm" onchange="onMaterialOrProfileChange()"></select>
+                    <div id="profile-specs" class="text-[11px] text-slate-400 mt-1 bg-slate-950/80 p-2 rounded border border-slate-800/80 italic"></div>
                 </div>
 
-                <!-- 4. WERKZEUG AUSWAHL (GEFILTERT NACH MATERIAL & PROFIL) -->
-                <div class="space-y-3 bg-slate-950/60 p-3 rounded-lg border border-slate-800">
-                    <label class="block text-sm font-semibold text-emerald-400">4. Passendes Werkzeug wählen</label>
+                <!-- WERKZEUG GEFILTERT -->
+                <div class="space-y-2.5 bg-slate-950/80 p-3 rounded-lg border border-slate-800">
+                    <label class="block text-xs font-semibold text-emerald-400">Gefiltertes Werkzeug</label>
                     <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <label class="block text-xs text-slate-400 mb-1">Hersteller wählen</label>
-                            <select id="brand-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-xs" onchange="onBrandChange()"></select>
+                            <label class="block text-[10px] text-slate-400 mb-1">Hersteller</label>
+                            <select id="brand-select" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white text-xs" onchange="onBrandChange()"></select>
                         </div>
                         <div>
-                            <label class="block text-xs text-slate-400 mb-1">Produktlinie wählen</label>
-                            <select id="line-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-xs" onchange="onLineChange()"></select>
+                            <label class="block text-[10px] text-slate-400 mb-1">Produktlinie</label>
+                            <select id="line-select" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white text-xs" onchange="onLineChange()"></select>
                         </div>
                     </div>
 
                     <div>
-                        <select id="tool-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" onchange="onToolChange()"></select>
-                        <div id="tool-specs" class="text-xs text-slate-400 mt-2 bg-slate-950 p-2 rounded border border-slate-800"></div>
+                        <select id="tool-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-xs font-medium" onchange="onToolChange()"></select>
+                        <div id="tool-specs" class="text-[11px] text-slate-400 mt-2 bg-slate-900 p-2 rounded border border-slate-800 font-mono"></div>
                     </div>
                 </div>
 
-                <!-- 5. STEIFIGKEIT / STABILITÄT -->
                 <div>
-                    <label class="block text-sm text-slate-400 mb-1">5. Steifigkeit / Stabilität</label>
-                    <select id="rigidity-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" onchange="calculate()"></select>
+                    <label class="block text-xs text-slate-400 mb-1">Steifigkeit / Stabilität</label>
+                    <select id="rigidity-select" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm" onchange="calculate()"></select>
                 </div>
+            </div>
 
-                <!-- Dynamische Zustellung (Schieberegler) -->
+            <!-- SPALTE 2: DYNAMIK & PHYSIK (4 Cols) -->
+            <div class="lg:col-span-4 bg-slate-900 p-5 rounded-xl border border-slate-800 space-y-5">
+                <h2 class="text-lg font-semibold text-emerald-400 border-b border-slate-800 pb-2 flex items-center gap-2">
+                    🎛️ 2. Zustellung & Korrekturen
+                </h2>
+
+                <!-- Schieberegler -->
                 <div class="bg-slate-950 p-4 rounded-lg border border-slate-800 space-y-4">
                     <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-                        <h3 class="text-sm font-semibold text-emerald-400">Zustellung (Faktoren vom Ø)</h3>
-                        <button onclick="resetSliders()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded transition">Profil-Werte laden</button>
+                        <h3 class="text-xs font-semibold text-slate-300">Zustellung (× D)</h3>
+                        <button onclick="resetSliders()" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded transition">Reset auf Profil</button>
                     </div>
                     
                     <div>
                         <div class="flex justify-between text-xs text-slate-400 mb-1">
                             <label>Schnitttiefe (ap): <span id="val-ap-factor" class="text-white font-mono ml-1">1.00</span> × D</label>
-                            <span id="val-ap-mm" class="text-emerald-400 font-bold">-- mm</span>
+                            <span id="val-ap-mm" class="text-emerald-400 font-bold font-mono">-- mm</span>
                         </div>
                         <input type="range" id="slider-ap" min="0.01" max="5.0" step="0.01" value="1.0" oninput="calculate()" class="w-full accent-emerald-500 bg-slate-800 rounded-lg appearance-none h-2 cursor-pointer">
                     </div>
@@ -315,7 +309,7 @@
                     <div>
                         <div class="flex justify-between text-xs text-slate-400 mb-1">
                             <label>Schnittbreite (ae): <span id="val-ae-factor" class="text-white font-mono ml-1">0.50</span> × D</label>
-                            <span id="val-ae-mm" class="text-emerald-400 font-bold">-- mm</span>
+                            <span id="val-ae-mm" class="text-emerald-400 font-bold font-mono">-- mm</span>
                         </div>
                         <input type="range" id="slider-ae" min="0.01" max="1.0" step="0.01" value="0.5" oninput="calculate()" class="w-full accent-emerald-500 bg-slate-800 rounded-lg appearance-none h-2 cursor-pointer">
                     </div>
@@ -324,77 +318,95 @@
                 </div>
 
                 <!-- Dynamische Physik Box -->
-                <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-3">
+                <div class="bg-slate-950 p-4 rounded-lg border border-slate-800 space-y-3">
                     <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                        <h3 class="text-xs font-semibold text-emerald-400 flex items-center gap-2">⚙️ Dynamische Schnittwertkorrektur</h3>
-                        <label class="flex items-center gap-2 cursor-pointer">
+                        <h3 class="text-xs font-semibold text-emerald-400 flex items-center gap-1.5">⚙️ Dynamische Physik</h3>
+                        <label class="flex items-center gap-1.5 cursor-pointer">
                             <input type="checkbox" id="physics-toggle" checked onchange="calculate()" class="rounded bg-slate-900 border-slate-700 text-emerald-500 focus:ring-0">
                             <span class="text-[10px] text-slate-400">Aktiv</span>
                         </label>
                     </div>
-                    <div id="physics-info" class="space-y-1">
+                    <div id="physics-info" class="space-y-1.5 font-mono">
                         <!-- Dynamisch befüllt -->
                     </div>
                 </div>
             </div>
 
-            <!-- ERGEBNISSE & SPEICHERMASKE -->
-            <div class="bg-slate-900 p-6 rounded-xl border border-slate-800 flex flex-col justify-between space-y-6">
-                <div>
-                    <h2 class="text-xl font-semibold mb-4 text-slate-200">Berechnete Schnittdaten</h2>
-                    <div class="space-y-3">
-                        <div class="bg-slate-950 p-3 rounded border border-slate-800 flex justify-between items-center">
-                            <span class="text-sm text-slate-400">Drehzahl (n):</span>
-                            <span id="res-rpm" class="text-xl font-bold text-emerald-400">-- U/min</span>
+            <!-- SPALTE 3: ERGEBNISSE & FAVORITEN (4 Cols) -->
+            <div class="lg:col-span-4 flex flex-col space-y-6">
+                
+                <!-- BERECHNETE WERTE -->
+                <div class="bg-slate-900 p-5 rounded-xl border border-slate-800 space-y-4">
+                    <h2 class="text-lg font-semibold text-emerald-400 border-b border-slate-800 pb-2 flex items-center gap-2">
+                        📊 3. Berechnete Schnittdaten
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 gap-2.5">
+                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 flex justify-between items-center">
+                            <span class="text-xs text-slate-400">Drehzahl (n):</span>
+                            <span id="res-rpm" class="text-xl font-bold font-mono text-emerald-400">-- U/min</span>
                         </div>
-                        <div class="bg-slate-950 p-3 rounded border border-slate-800 flex justify-between items-center">
+                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 flex justify-between items-center">
                             <div>
-                                <span class="text-sm text-slate-400 block">Tischvorschub (vf):</span>
-                                <span id="res-fz-eff" class="text-[10px] text-slate-500">fz(eff): -- mm</span>
+                                <span class="text-xs text-slate-400 block">Tischvorschub (vf):</span>
+                                <span id="res-fz-eff" class="text-[10px] text-slate-500 font-mono">fz(eff): -- mm</span>
                             </div>
-                            <span id="res-vf" class="text-xl font-bold text-emerald-400">-- mm/min</span>
+                            <span id="res-vf" class="text-xl font-bold font-mono text-emerald-400">-- mm/min</span>
                         </div>
-                        <div class="bg-slate-950 p-3 rounded border border-slate-800 flex justify-between items-center">
-                            <span class="text-sm text-slate-400">Zustellung (ap / ae):</span>
-                            <span id="res-apae" class="text-lg font-semibold text-white">-- / -- mm</span>
+                        <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 flex justify-between items-center">
+                            <span class="text-xs text-slate-400">Zustellung (ap / ae):</span>
+                            <span id="res-apae" class="text-sm font-semibold font-mono text-white">-- / -- mm</span>
                         </div>
-                        <div class="bg-slate-950 p-3 rounded border border-slate-800 flex justify-between items-center">
-                            <span class="text-sm text-slate-400">Zeitspanvolumen (Q):</span>
-                            <span id="res-q" class="text-xl font-bold text-emerald-400">-- cm³/min</span>
+                        <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 flex justify-between items-center">
+                            <span class="text-xs text-slate-400">Zeitspanvolumen (Q):</span>
+                            <span id="res-q" class="text-base font-bold font-mono text-emerald-400">-- cm³/min</span>
                         </div>
-                        <div class="bg-slate-950 p-3 rounded border border-slate-800 flex justify-between items-center">
-                            <span class="text-sm text-slate-400">Antriebsleistung (Pc):</span>
-                            <span id="res-power" class="text-xl font-bold text-amber-400">-- kW</span>
+                        <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 flex justify-between items-center">
+                            <span class="text-xs text-slate-400">Antriebsleistung (Pc):</span>
+                            <span id="res-power" class="text-base font-bold font-mono text-amber-400">-- kW</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- PRAXIS-BEWERTUNGSBOX -->
-                <div class="bg-slate-950 p-4 rounded-xl border border-emerald-500/30 space-y-3">
-                    <h3 class="text-sm font-semibold text-emerald-400">📝 Lauf in Praxis getestet? Als Favorit speichern</h3>
-                    <div>
-                        <input type="text" id="fav-title" placeholder="Titel z.B. C45 Schruppen stabil" class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-white text-xs">
-                    </div>
+                <!-- FAVORITEN SPEICHERN -->
+                <div class="bg-slate-900 p-4 rounded-xl border border-emerald-500/30 space-y-3">
+                    <h3 class="text-xs font-semibold text-emerald-400">📝 Als Praxis-Favorit speichern</h3>
+                    <input type="text" id="fav-title" placeholder="Titel z.B. C45 Schruppen stabil" class="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-white text-xs">
+                    
                     <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <label class="block text-[10px] text-slate-400 mb-1">Bewertung (Sterne)</label>
-                            <select id="fav-rating" class="w-full bg-slate-900 border border-slate-800 rounded p-1 text-white text-xs">
-                                <option value="5">⭐⭐⭐⭐⭐ (Perfekt)</option>
-                                <option value="4">⭐⭐⭐⭐ (Sehr gut)</option>
-                                <option value="3">⭐⭐⭐ (Stabil)</option>
+                            <label class="block text-[10px] text-slate-400 mb-1">Bewertung</label>
+                            <select id="fav-rating" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white text-xs">
+                                <option value="5">⭐⭐⭐⭐⭐</option>
+                                <option value="4">⭐⭐⭐⭐</option>
+                                <option value="3">⭐⭐⭐</option>
                             </select>
                         </div>
                         <div>
                             <label class="block text-[10px] text-slate-400 mb-1">Notiz</label>
-                            <input type="text" id="fav-feedback" placeholder="z.B. Läuft super" class="w-full bg-slate-900 border border-slate-800 rounded p-1 text-white text-xs">
+                            <input type="text" id="fav-feedback" placeholder="z.B. Läuft super" class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white text-xs">
                         </div>
                     </div>
                     <button onclick="saveCurrentAsFavorite()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-xs font-medium transition">
-                        💾 In die lokale Praxis-Liste übernehmen
+                        💾 Favorit übernehmen
                     </button>
                 </div>
             </div>
         </div>
+
+        <!-- PRAXIS-FAVORITEN LISTE (UNTEN GEWORDEN FÜR SAUBEREN UNTEREN ABSCHLUSS) -->
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800">
+            <div class="flex justify-between items-center mb-3 border-b border-slate-800 pb-2">
+                <h2 class="text-sm font-semibold text-emerald-400 flex items-center gap-2">
+                    ⭐ Gespeicherte Praxis-Favoriten
+                </h2>
+                <span class="text-xs text-slate-500">Mit 1 Klick wiederherstellen</span>
+            </div>
+            <div id="favorites-container" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                <!-- Wird dynamisch gefüllt -->
+            </div>
+        </div>
+
     </div>
 
     <script>
@@ -461,7 +473,7 @@
         let currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0, q: 0, power: 0, fz_eff: 0 };
 
         function loadDatabase() {
-            const saved = localStorage.getItem('cnc_tool_guide_db_workflow_v3');
+            const saved = localStorage.getItem('cnc_tool_guide_db_dashboard_v1');
             if (saved) {
                 try { 
                     const parsed = JSON.parse(saved);
@@ -476,7 +488,7 @@
         }
 
         function saveDatabase() {
-            localStorage.setItem('cnc_tool_guide_db_workflow_v3', JSON.stringify(db));
+            localStorage.setItem('cnc_tool_guide_db_dashboard_v1', JSON.stringify(db));
         }
 
         function resetToDefaultData() {
@@ -499,7 +511,6 @@
         }
 
         function populateDropdowns() {
-            // Maschinen
             const machSel = document.getElementById('machine-select');
             const delMachSel = document.getElementById('del-machine-select');
             machSel.innerHTML = ''; if(delMachSel) delMachSel.innerHTML = '';
@@ -508,7 +519,6 @@
                 if(delMachSel) delMachSel.add(new Option(m.name, id));
             }
 
-            // Materialien (Position 2 im Hauptrechner)
             const matSel = document.getElementById('material-select');
             const delMatSel = document.getElementById('del-material-select');
             matSel.innerHTML = ''; if(delMatSel) delMatSel.innerHTML = '';
@@ -517,7 +527,6 @@
                 if(delMatSel) delMatSel.add(new Option(m.name, id));
             }
 
-            // Profile (Position 3 im Hauptrechner)
             const profSel = document.getElementById('profile-select');
             const delProfSel = document.getElementById('del-profile-select');
             profSel.innerHTML = ''; if(delProfSel) delProfSel.innerHTML = '';
@@ -526,7 +535,6 @@
                 if(delProfSel) delProfSel.add(new Option(p.name, id));
             }
 
-            // Steifigkeit
             const rigSel = document.getElementById('rigidity-select');
             const delRigSel = document.getElementById('del-rigidity-select');
             rigSel.innerHTML = ''; if(delRigSel) delRigSel.innerHTML = '';
@@ -536,7 +544,6 @@
             }
             if(db.rigidity["mittel"]) rigSel.value = "mittel";
 
-            // Admin Löschen & Kopieren Liste
             const delToolSel = document.getElementById('del-tool-select');
             const copySourceSel = document.getElementById('adm-copy-source-select');
             if(delToolSel) delToolSel.innerHTML = '';
@@ -552,8 +559,6 @@
             renderProfileCheckboxes();
             populateBrandDropdown();
         }
-
-        // --- FILTERLOGIK: WERKZEUGE NACH MATERIAL & PROFIL GEFILTERT ---
 
         function onMaterialOrProfileChange() {
             resetSliders();
@@ -655,8 +660,6 @@
             }
         }
 
-        // --- DYNAMISCHER WERKZEUG ADMIN BEREICH (PROFIL & MATERIAL FREIGABEN) ---
-
         function toggleToolGeoFields() {
             const geoType = document.getElementById('adm-tool-geotype').value;
             const radiusContainer = document.getElementById('adm-tool-radius-container');
@@ -691,7 +694,6 @@
             const suitableList = sourceTool.suitable_materials || [];
             const suitableProfs = sourceTool.suitable_profiles || [];
 
-            // Materialien laden
             for (const matId of Object.keys(db.materials)) {
                 const vcInput = document.getElementById(`tool-vc-${matId}`);
                 if(vcInput) {
@@ -703,7 +705,6 @@
                 }
             }
 
-            // Profile laden
             for (const profId of Object.keys(db.profiles)) {
                 const profCheck = document.getElementById(`tool-prof-${profId}`);
                 if(profCheck) {
@@ -823,25 +824,25 @@
 
             if(mach) {
                 document.getElementById('machine-specs').innerHTML = 
-                    `<strong>Limits:</strong> max. ${mach.max_rpm} U/min | max. ${mach.max_vf} mm/min | max. ${mach.max_kw} kW`;
+                    `max. ${mach.max_rpm} U/min | max. ${mach.max_vf} mm/min | max. ${mach.max_kw} kW`;
             }
             if(tool) {
                 const baseVc = tool.vc_per_material ? (tool.vc_per_material[matId] || 200) : 200;
                 let typeName = "Schaftfräser";
                 if(tool.geo_type === "ball") typeName = "Kugelfräser";
-                if(tool.geo_type === "torus") typeName = `Torusfräser (r=${tool.radius}mm)`;
+                if(tool.geo_type === "torus") typeName = `Torus (r=${tool.radius}mm)`;
                 
-                const brandInfo = tool.brand ? `<strong>Hersteller:</strong> ${tool.brand} | ` : '';
-                const lineInfo = tool.line ? `<strong>Serie:</strong> ${tool.line} | ` : '';
+                const brandInfo = tool.brand ? `${tool.brand} | ` : '';
+                const lineInfo = tool.line ? `${tool.line} | ` : '';
 
                 document.getElementById('tool-specs').innerHTML = 
-                    `${brandInfo}${lineInfo}<strong>Typ:</strong> ${typeName} | <strong>Ø:</strong> ${tool.diameter}mm | <strong>Z:</strong> ${tool.z} | <strong>vc:</strong> ${baseVc} m/min`;
+                    `${brandInfo}${lineInfo}${typeName} | Ø${tool.diameter}mm | Z${tool.z} | vc: ${baseVc} m/min`;
             } else {
-                document.getElementById('tool-specs').innerHTML = `<em class="text-rose-400">Kein zugelassenes Werkzeug für diese Kombination aus Material & Profil gefunden.</em>`;
+                document.getElementById('tool-specs').innerHTML = `<em class="text-rose-400 font-sans">Kein freigegebenes Werkzeug gefunden.</em>`;
             }
             if(prof) {
                 document.getElementById('profile-specs').innerHTML = 
-                    `<strong>Info:</strong> ${prof.description}`;
+                    `${prof.description}`;
             }
         }
 
@@ -849,7 +850,7 @@
             const container = document.getElementById('favorites-container');
             container.innerHTML = '';
             if (!db.favorites || db.favorites.length === 0) {
-                container.innerHTML = `<div class="text-xs text-slate-500 italic col-span-3">Noch keine Praxis-Favoriten gespeichert.</div>`;
+                container.innerHTML = `<div class="text-xs text-slate-500 italic col-span-4">Noch keine Praxis-Favoriten gespeichert.</div>`;
                 return;
             }
 
@@ -859,12 +860,12 @@
                 card.innerHTML = `
                     <div>
                         <div class="flex justify-between items-start">
-                            <span class="font-semibold text-emerald-400 text-xs">${fav.title}</span>
-                            <span class="text-amber-400 text-xs">${'⭐'.repeat(fav.rating)}</span>
+                            <span class="font-semibold text-emerald-400 text-xs truncate">${fav.title}</span>
+                            <span class="text-amber-400 text-[10px] flex-shrink-0">${'⭐'.repeat(fav.rating)}</span>
                         </div>
-                        <p class="text-[11px] text-slate-300 mt-1 italic">"${fav.feedback || 'Keine Notiz'}"</p>
-                        <div class="text-[10px] text-slate-400 mt-2 space-y-0.5">
-                            <div>Drehzahl: <strong class="text-white">${fav.rpm} U/min</strong> | Vorschub: <strong class="text-white">${fav.feed_rate_vf} mm/min</strong></div>
+                        <p class="text-[11px] text-slate-300 mt-1 italic truncate">"${fav.feedback || 'Keine Notiz'}"</p>
+                        <div class="text-[10px] text-slate-400 mt-2 space-y-0.5 font-mono">
+                            <div>n: <strong class="text-white">${fav.rpm} U/min</strong> | vf: <strong class="text-white">${fav.feed_rate_vf} mm/min</strong></div>
                         </div>
                     </div>
                     <div class="flex gap-2 pt-1">
@@ -931,7 +932,6 @@
             renderFavorites();
         }
 
-        // --- Weitere Admin-Funktionen ---
         function addNewMachine() {
             const id = document.getElementById('adm-mach-id').value;
             const name = document.getElementById('adm-mach-name').value;
@@ -1001,7 +1001,6 @@
             delete db.profiles[id]; saveDatabase(); populateDropdowns(); alert('Gelöscht!');
         }
 
-        // --- Hauptberechnung ---
         function calculate() {
             const machId = document.getElementById('machine-select').value;
             const matId = document.getElementById('material-select').value;
@@ -1045,7 +1044,7 @@
             const warningBox = document.getElementById('depth-warning');
             if (ap > Lmax) {
                 warningBox.classList.remove('hidden');
-                warningBox.innerText = `⚠️ WARNUNG: Schnitttiefe ap (${ap.toFixed(1)}mm) überschreitet max. Auskragung (${Lmax}mm)!`;
+                warningBox.innerText = `⚠️ WARNUNG: ap (${ap.toFixed(1)}mm) > Lmax (${Lmax}mm)!`;
             } else {
                 warningBox.classList.add('hidden');
             }
@@ -1069,7 +1068,7 @@
                 }
                 geoInfoText = `<div class="text-[10px] text-cyan-400">🍩 Torusfräser Deff: ${Deff.toFixed(2)} mm</div>`;
             } else {
-                geoInfoText = `<div class="text-[10px] text-slate-500">cylindrischer Schaftfräser (Deff = D)</div>`;
+                geoInfoText = `<div class="text-[10px] text-slate-500">Zylindrischer Schaftfräser (Deff = D)</div>`;
             }
 
             const baseVc = tool.vc_per_material ? (tool.vc_per_material[matId] || 200) : 200;
@@ -1084,20 +1083,20 @@
                 let kv_ae = 1.0;
                 if (ae_factor < 0.5) {
                     kv_ae = Math.min(Math.pow(0.5 / ae_factor, 0.3), 2.5);
-                    physicsInfoHtml += `<div class="text-[10px] text-emerald-400">🌡️ Kühlungseffekt (ae < 0.5D): vc +${((kv_ae - 1) * 100).toFixed(0)}%</div>`;
+                    physicsInfoHtml += `<div class="text-[10px] text-emerald-400">🌡️ Kühlung (ae < 0.5D): vc +${((kv_ae - 1) * 100).toFixed(0)}%</div>`;
                 }
 
                 let k_ap = 1.0;
                 if (ap_factor > 1.0 && tool.geo_type === "shaft") {
                     k_ap = Math.max(Math.pow(1.0 / ap_factor, 0.25), 0.4);
-                    physicsInfoHtml += `<div class="text-[10px] text-amber-400">⚖️ Schnittdruck (ap > 1.0D): vc/fz -${((1 - k_ap) * 100).toFixed(0)}%</div>`;
+                    physicsInfoHtml += `<div class="text-[10px] text-amber-400">⚖️ Schnittdruck (ap > 1.0D): -${((1 - k_ap) * 100).toFixed(0)}%</div>`;
                 }
 
                 let rctFactor = 1.0;
                 if (ae_factor < 0.5) {
                     rctFactor = 1 / Math.sqrt(ae_factor * (2 - ae_factor));
                     rctFactor = Math.min(rctFactor, 3.0);
-                    physicsInfoHtml += `<div class="text-[10px] text-emerald-400">⚡ RCT Spanmittendicke (ae < 0.5D): fz +${((rctFactor - 1) * 100).toFixed(0)}%</div>`;
+                    physicsInfoHtml += `<div class="text-[10px] text-emerald-400">⚡ RCT Spanmitte: fz +${((rctFactor - 1) * 100).toFixed(0)}%</div>`;
                 }
 
                 effectiveVc = effectiveVc * kv_ae * k_ap;
@@ -1120,16 +1119,16 @@
 
             rpmEl.innerText = n.toFixed(2) + " U/min";
             if (n > mach.max_rpm) {
-                rpmEl.className = "text-xl font-bold text-rose-500 animate-pulse";
+                rpmEl.className = "text-xl font-bold font-mono text-rose-500 animate-pulse";
             } else {
-                rpmEl.className = "text-xl font-bold text-emerald-400";
+                rpmEl.className = "text-xl font-bold font-mono text-emerald-400";
             }
 
             vfEl.innerText = vf.toFixed(2) + " mm/min";
             if (vf > mach.max_vf) {
-                vfEl.className = "text-xl font-bold text-rose-500 animate-pulse";
+                vfEl.className = "text-xl font-bold font-mono text-rose-500 animate-pulse";
             } else {
-                vfEl.className = "text-xl font-bold text-emerald-400";
+                vfEl.className = "text-xl font-bold font-mono text-emerald-400";
             }
 
             document.getElementById('res-fz-eff').innerText = `fz(eff): ${effectiveFz.toFixed(4)} mm`;
@@ -1138,9 +1137,9 @@
 
             powerEl.innerText = power_kw.toFixed(2) + " kW";
             if (power_kw > mach.max_kw) {
-                powerEl.className = "text-xl font-bold text-rose-500 animate-pulse";
+                powerEl.className = "text-base font-bold font-mono text-rose-500 animate-pulse";
             } else {
-                powerEl.className = "text-xl font-bold text-amber-400";
+                powerEl.className = "text-base font-bold font-mono text-amber-400";
             }
         }
 
