@@ -281,7 +281,7 @@
                     <select id="profile-select" class="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 transition" onchange="onMaterialOrProfileChange()"></select>
                 </div>
 
-                <!-- WERKZEUGAUSWAHL BOX (SAUBER STRUCTURIERT & HARMONISCH) -->
+                <!-- WERKZEUGAUSWAHL BOX -->
                 <div class="space-y-3 bg-slate-50/80 p-4 rounded-xl border border-slate-200">
                     <div class="flex items-center justify-between">
                         <label class="block text-xs font-bold text-slate-900 uppercase tracking-wider">Werkzeugauswahl</label>
@@ -311,29 +311,35 @@
                 </div>
             </div>
 
-            <!-- SPALTE 2: DYNAMIK & PHYSIK -->
+            <!-- SPALTE 2: DYNAMIK & PHYSIK (NUN DYNAMISCH IN MM GEFÜHRT) -->
             <div class="lg:col-span-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                     <span class="text-base font-bold text-slate-900">2. Zustellung & Parameter</span>
                     <button onclick="resetSliders()" class="text-[11px] bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 px-2.5 py-1 rounded-lg transition font-semibold">Reset auf Profil</button>
                 </div>
 
-                <!-- Schieberegler -->
+                <!-- Schieberegler in MM -->
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
                     <div>
-                        <div class="flex justify-between text-xs text-slate-600 mb-1.5">
-                            <label class="font-medium">Schnitttiefe (ap): <span id="val-ap-factor" class="text-slate-900 font-bold font-mono ml-1">1.00</span> × D</label>
-                            <span id="val-ap-mm" class="text-emerald-700 font-bold font-mono">-- mm</span>
+                        <div class="flex justify-between items-baseline text-xs mb-1.5">
+                            <div class="flex items-center gap-1.5">
+                                <label class="font-semibold text-slate-800">Schnitttiefe (ap):</label>
+                                <span id="val-ap-factor" class="text-slate-400 text-[11px] font-mono">(0.00 × D)</span>
+                            </div>
+                            <span id="val-ap-mm" class="text-emerald-700 font-extrabold text-sm font-mono">-- mm</span>
                         </div>
-                        <input type="range" id="slider-ap" min="0.01" max="5.0" step="0.01" value="1.0" oninput="calculate()" class="w-full accent-emerald-600 bg-slate-200 rounded-lg appearance-none h-2 cursor-pointer">
+                        <input type="range" id="slider-ap" min="0.1" max="30.0" step="0.1" value="10.0" oninput="calculate()" class="w-full accent-emerald-600 bg-slate-200 rounded-lg appearance-none h-2 cursor-pointer">
                     </div>
 
                     <div>
-                        <div class="flex justify-between text-xs text-slate-600 mb-1.5">
-                            <label class="font-medium">Schnittbreite (ae): <span id="val-ae-factor" class="text-slate-900 font-bold font-mono ml-1">0.50</span> × D</label>
-                            <span id="val-ae-mm" class="text-emerald-700 font-bold font-mono">-- mm</span>
+                        <div class="flex justify-between items-baseline text-xs mb-1.5">
+                            <div class="flex items-center gap-1.5">
+                                <label class="font-semibold text-slate-800">Schnittbreite (ae):</label>
+                                <span id="val-ae-factor" class="text-slate-400 text-[11px] font-mono">(0.00 × D)</span>
+                            </div>
+                            <span id="val-ae-mm" class="text-emerald-700 font-extrabold text-sm font-mono">-- mm</span>
                         </div>
-                        <input type="range" id="slider-ae" min="0.01" max="1.0" step="0.01" value="0.5" oninput="calculate()" class="w-full accent-emerald-600 bg-slate-200 rounded-lg appearance-none h-2 cursor-pointer">
+                        <input type="range" id="slider-ae" min="0.1" max="12.0" step="0.1" value="6.0" oninput="calculate()" class="w-full accent-emerald-600 bg-slate-200 rounded-lg appearance-none h-2 cursor-pointer">
                     </div>
 
                     <div id="depth-warning" class="text-xs font-bold text-rose-600 bg-rose-50 p-2.5 rounded-lg border border-rose-200 mt-1 hidden"></div>
@@ -495,7 +501,7 @@
         let currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0, q: 0, power: 0, fz_eff: 0 };
 
         function loadDatabase() {
-            const saved = localStorage.getItem('toolpilot_db_v1');
+            const saved = localStorage.getItem('toolpilot_db_v2');
             if (saved) {
                 try { 
                     const parsed = JSON.parse(saved);
@@ -510,7 +516,7 @@
         }
 
         function saveDatabase() {
-            localStorage.setItem('toolpilot_db_v1', JSON.stringify(db));
+            localStorage.setItem('toolpilot_db_v2', JSON.stringify(db));
         }
 
         function resetToDefaultData() {
@@ -583,7 +589,6 @@
         }
 
         function onMaterialOrProfileChange() {
-            resetSliders();
             populateBrandDropdown();
         }
 
@@ -663,21 +668,39 @@
                 toolSel.value = previousToolId;
             }
 
-            calculate();
+            resetSliders();
         }
 
         function onToolChange() {
-            calculate();
+            resetSliders();
         }
 
+        // SLIDER SKALIERUNG DIREKT IN MILLIMETER (MM)
         function resetSliders() {
+            const toolId = document.getElementById('tool-select').value;
             const profId = document.getElementById('profile-select').value;
+            const tool = db.tools[toolId];
             const prof = db.profiles[profId];
-            if(prof) {
-                document.getElementById('slider-ap').value = prof.ap_factor;
-                document.getElementById('slider-ae').value = prof.ae_factor;
-                calculate();
+
+            if(tool && prof) {
+                const D = tool.diameter;
+                const Lmax = tool.max_overhang || (D * 3);
+
+                const apSlider = document.getElementById('slider-ap');
+                const aeSlider = document.getElementById('slider-ae');
+
+                // Maxima der Schieberegler dynamisch auf mm anpassen
+                apSlider.max = Lmax.toFixed(1);
+                aeSlider.max = D.toFixed(1);
+
+                // Berechnete Standard-Startwerte in mm
+                const targetAp = D * prof.ap_factor;
+                const targetAe = D * prof.ae_factor;
+
+                apSlider.value = Math.min(targetAp, Lmax).toFixed(1);
+                aeSlider.value = Math.min(targetAe, D).toFixed(1);
             }
+            calculate();
         }
 
         function toggleToolGeoFields() {
@@ -875,9 +898,15 @@
             if(db.tools[fav.tool_id]) document.getElementById('tool-select').value = fav.tool_id;
             if(fav.rigidity_id && db.rigidity[fav.rigidity_id]) document.getElementById('rigidity-select').value = fav.rigidity_id;
             
-            if (fav.ap_factor !== undefined && fav.ae_factor !== undefined) {
-                document.getElementById('slider-ap').value = fav.ap_factor;
-                document.getElementById('slider-ae').value = fav.ae_factor;
+            // Setze ap/ae mm Werte aus dem Favorit (oder berechne aus Faktor)
+            const tool = db.tools[fav.tool_id];
+            if(tool) {
+                const D = tool.diameter;
+                const apVal = fav.ap_mm !== undefined ? fav.ap_mm : (fav.ap_factor !== undefined ? fav.ap_factor * D : D);
+                const aeVal = fav.ae_mm !== undefined ? fav.ae_mm : (fav.ae_factor !== undefined ? fav.ae_factor * D : D * 0.5);
+
+                document.getElementById('slider-ap').value = apVal.toFixed(1);
+                document.getElementById('slider-ae').value = aeVal.toFixed(1);
             }
 
             calculate();
@@ -890,6 +919,9 @@
 
             if(!title) { alert('Bitte einen Titel vergeben'); return; }
 
+            const ap_mm = parseFloat(document.getElementById('slider-ap').value);
+            const ae_mm = parseFloat(document.getElementById('slider-ae').value);
+
             const newFav = {
                 id: 'fav_' + Date.now(),
                 title, 
@@ -897,8 +929,8 @@
                 material_id: document.getElementById('material-select').value, 
                 profile_id: document.getElementById('profile-select').value, 
                 rigidity_id: document.getElementById('rigidity-select').value,
-                ap_factor: parseFloat(document.getElementById('slider-ap').value),
-                ae_factor: parseFloat(document.getElementById('slider-ae').value),
+                ap_mm: ap_mm,
+                ae_mm: ae_mm,
                 rating, feedback,
                 rpm: currentCalculatedResults.rpm,
                 feed_rate_vf: currentCalculatedResults.vf
@@ -987,6 +1019,7 @@
             delete db.profiles[id]; saveDatabase(); populateDropdowns(); alert('Gelöscht!');
         }
 
+        // --- HAUPTBERECHNUNG (RECHNET MIT MM & BACKEND-FAKTOREN) ---
         function calculate() {
             const machId = document.getElementById('machine-select').value;
             const matId = document.getElementById('material-select').value;
@@ -1014,21 +1047,26 @@
             const z = tool.z;
             const Lmax = tool.max_overhang || (D * 3);
 
-            const ap_factor = parseFloat(document.getElementById('slider-ap').value);
-            const ae_factor = parseFloat(document.getElementById('slider-ae').value);
+            // Werte direkt in mm vom Slider auslesen
+            const ap = parseFloat(document.getElementById('slider-ap').value) || 0.1;
+            const ae = parseFloat(document.getElementById('slider-ae').value) || 0.1;
 
-            const ap = D * ap_factor;
-            const ae = D * ae_factor;
+            // Faktoren intern für physikalische Formeln berechnen
+            const ap_factor = ap / D;
+            const ae_factor = ae / D;
 
-            document.getElementById('val-ap-factor').innerText = ap_factor.toFixed(2);
+            // UI-Label aktualisieren (mm groß, x D klein als Zusatzinfo)
             document.getElementById('val-ap-mm').innerText = ap.toFixed(1) + " mm";
-            document.getElementById('val-ae-factor').innerText = ae_factor.toFixed(2);
+            document.getElementById('val-ap-factor').innerText = `(${ap_factor.toFixed(2)} × D)`;
+            
             document.getElementById('val-ae-mm').innerText = ae.toFixed(1) + " mm";
+            document.getElementById('val-ae-factor').innerText = `(${ae_factor.toFixed(2)} × D)`;
 
+            // Kollisionswarnung Lmax
             const warningBox = document.getElementById('depth-warning');
             if (ap > Lmax) {
                 warningBox.classList.remove('hidden');
-                warningBox.innerText = `⚠️ WARNUNG: ap (${ap.toFixed(1)}mm) > Lmax (${Lmax}mm)!`;
+                warningBox.innerText = `⚠️ WARNUNG: ap (${ap.toFixed(1)}mm) überschreitet max. Auskragung (${Lmax}mm)!`;
             } else {
                 warningBox.classList.add('hidden');
             }
@@ -1040,7 +1078,7 @@
                 let effectiveAp = Math.min(ap, D / 2);
                 Deff = 2 * Math.sqrt(effectiveAp * (D - effectiveAp));
                 if (Deff < 0.1) Deff = 0.1;
-                geoInfoText = `<div class="text-xs text-cyan-800 font-semibold">⚽ Kugelfräser Deff: ${Deff.toFixed(2)} mm</div>`;
+                geoInfoText = `<div class="text-[11px] text-cyan-800 font-semibold">⚽ Kugelfräser Deff: ${Deff.toFixed(2)} mm</div>`;
             } else if (tool.geo_type === "torus") {
                 let r = tool.radius || 0;
                 if (ap <= r) {
@@ -1050,9 +1088,9 @@
                     Deff = D - (2 * r) + (2 * Math.sqrt(r * r - Math.pow(r - (ap - r), 2)));
                     if(isNaN(Deff) || Deff <= 0) Deff = D - (2*r);
                 }
-                geoInfoText = `<div class="text-xs text-cyan-800 font-semibold">🍩 Torusfräser Deff: ${Deff.toFixed(2)} mm</div>`;
+                geoInfoText = `<div class="text-[11px] text-cyan-800 font-semibold">🍩 Torusfräser Deff: ${Deff.toFixed(2)} mm</div>`;
             } else {
-                geoInfoText = `<div class="text-xs text-slate-500 font-medium">Zylindrischer Schaftfräser (Deff = D)</div>`;
+                geoInfoText = `<div class="text-[11px] text-slate-500">Zylindrischer Schaftfräser (Deff = D)</div>`;
             }
 
             const baseVc = tool.vc_per_material ? (tool.vc_per_material[matId] || 200) : 200;
@@ -1067,20 +1105,20 @@
                 let kv_ae = 1.0;
                 if (ae_factor < 0.5) {
                     kv_ae = Math.min(Math.pow(0.5 / ae_factor, 0.3), 2.5);
-                    physicsInfoHtml += `<div class="text-xs text-emerald-800 font-semibold">🌡️ Kühlung (ae < 0.5D): vc +${((kv_ae - 1) * 100).toFixed(0)}%</div>`;
+                    physicsInfoHtml += `<div class="text-[11px] text-emerald-700 font-semibold">🌡️ Kühlung (ae < 0.5D): vc +${((kv_ae - 1) * 100).toFixed(0)}%</div>`;
                 }
 
                 let k_ap = 1.0;
                 if (ap_factor > 1.0 && tool.geo_type === "shaft") {
                     k_ap = Math.max(Math.pow(1.0 / ap_factor, 0.25), 0.4);
-                    physicsInfoHtml += `<div class="text-xs text-amber-800 font-semibold">⚖️ Schnittdruck (ap > 1.0D): -${((1 - k_ap) * 100).toFixed(0)}%</div>`;
+                    physicsInfoHtml += `<div class="text-[11px] text-amber-700 font-semibold">⚖️ Schnittdruck (ap > 1.0D): -${((1 - k_ap) * 100).toFixed(0)}%</div>`;
                 }
 
                 let rctFactor = 1.0;
                 if (ae_factor < 0.5) {
                     rctFactor = 1 / Math.sqrt(ae_factor * (2 - ae_factor));
                     rctFactor = Math.min(rctFactor, 3.0);
-                    physicsInfoHtml += `<div class="text-xs text-emerald-800 font-semibold">⚡ RCT Spanmitte: fz +${((rctFactor - 1) * 100).toFixed(0)}%</div>`;
+                    physicsInfoHtml += `<div class="text-[11px] text-emerald-700 font-semibold">⚡ RCT Spanmitte: fz +${((rctFactor - 1) * 100).toFixed(0)}%</div>`;
                 }
 
                 effectiveVc = effectiveVc * kv_ae * k_ap;
