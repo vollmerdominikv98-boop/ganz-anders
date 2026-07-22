@@ -117,7 +117,7 @@
                     </div>
                 </div>
 
-                <!-- 3. Werkzeuge (DYNAMISCH & KOMPAKT) -->
+                <!-- 3. Werkzeuge (DYNAMISCH & MIT HERSTELLER) -->
                 <div class="space-y-3 bg-slate-950/50 p-4 rounded-lg border border-slate-800">
                     <h3 class="font-medium text-slate-200">Neues Werkzeug anlegen</h3>
                     
@@ -131,9 +131,14 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-slate-400 mb-1" title="Leer lassen für automatischen Namen">Bezeichnung (optional)</label>
-                            <input type="text" id="adm-tool-name" placeholder="z.B. VHM Schaft D10" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
+                            <label class="block text-slate-400 mb-1">Hersteller (optional)</label>
+                            <input type="text" id="adm-tool-brand" placeholder="z.B. Garant, Hoffmann" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
                         </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-slate-400 mb-1 text-xs" title="Leer lassen für automatischen Namen">Bezeichnung (optional)</label>
+                        <input type="text" id="adm-tool-name" placeholder="z.B. VHM Schaft D10" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white text-xs">
                     </div>
 
                     <div class="grid grid-cols-3 gap-2 text-xs">
@@ -157,13 +162,17 @@
                         <input type="number" step="0.1" id="adm-tool-radius" value="1.0" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
                     </div>
 
-                    <div class="pt-2">
-                        <div class="flex justify-between items-center mb-2">
-                            <label class="block text-slate-400 text-xs">Schnittgeschwindigkeiten (vc):</label>
-                            <button onclick="applyVhmUniversal()" class="text-[10px] bg-emerald-900/40 text-emerald-400 hover:bg-emerald-800/60 px-2 py-1 rounded border border-emerald-700/50 transition">
-                                ⚡ VHM Standard laden
-                            </button>
+                    <!-- Vorhandene Schnittwerte eines anderen Werkzeugs übernehmen -->
+                    <div class="pt-2 border-t border-slate-800">
+                        <label class="block text-slate-400 text-xs mb-1">Werte von Werkzeug laden:</label>
+                        <div class="flex gap-2">
+                            <select id="adm-copy-source-select" class="flex-1 bg-slate-900 border border-slate-700 rounded p-1 text-white text-xs"></select>
+                            <button onclick="loadVcFromSelectedTool()" class="bg-emerald-900/50 hover:bg-emerald-800/80 text-emerald-300 border border-emerald-700/50 px-2 py-1 rounded text-xs transition">📋 Übernehmen</button>
                         </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-slate-400 text-xs mb-1">Schnittgeschwindigkeiten (vc):</label>
                         <div id="adm-tool-matrix-container" class="grid grid-cols-2 gap-2 text-xs"></div>
                     </div>
 
@@ -386,7 +395,8 @@
             },
             tools: {
                 "tool_vhm_12": {
-                    "name": "VHM Schaftfräser D12",
+                    "name": "GARANT VHM Schaftfräser D12",
+                    "brand": "Garant",
                     "type": "Schaftfräser",
                     "geo_type": "shaft",
                     "radius": 0,
@@ -398,7 +408,8 @@
                     "suitable_materials": ["stahl_c45", "alu_wrought", "rostfrei", "titan"]
                 },
                 "tool_kugel_10": {
-                    "name": "VHM Kugelfräser D10",
+                    "name": "HOFFMANN VHM Kugelfräser D10",
+                    "brand": "Hoffmann",
                     "type": "Kugelfräser",
                     "geo_type": "ball",
                     "radius": 5.0,
@@ -417,7 +428,7 @@
         let currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0, q: 0, power: 0, fz_eff: 0 };
 
         function loadDatabase() {
-            const saved = localStorage.getItem('cnc_tool_guide_db_workflow');
+            const saved = localStorage.getItem('cnc_tool_guide_db_workflow_v2');
             if (saved) {
                 try { 
                     const parsed = JSON.parse(saved);
@@ -428,15 +439,11 @@
                     }
                 } catch (e) { console.error(e); }
             }
-            const initial = JSON.parse(JSON.stringify(defaultDb));
-            for(let tId in initial.tools) {
-                if(!initial.tools[tId].max_overhang) initial.tools[tId].max_overhang = initial.tools[tId].diameter * 3;
-            }
-            return initial;
+            return JSON.parse(JSON.stringify(defaultDb));
         }
 
         function saveDatabase() {
-            localStorage.setItem('cnc_tool_guide_db_workflow', JSON.stringify(db));
+            localStorage.setItem('cnc_tool_guide_db_workflow_v2', JSON.stringify(db));
         }
 
         function resetToDefaultData() {
@@ -478,10 +485,17 @@
 
             const toolSel = document.getElementById('tool-select');
             const delToolSel = document.getElementById('del-tool-select');
-            toolSel.innerHTML = ''; if(delToolSel) delToolSel.innerHTML = '';
+            const copySourceSel = document.getElementById('adm-copy-source-select');
+            
+            toolSel.innerHTML = ''; 
+            if(delToolSel) delToolSel.innerHTML = '';
+            if(copySourceSel) copySourceSel.innerHTML = '';
+
             for (const [id, t] of Object.entries(db.tools)) {
-                toolSel.add(new Option(t.name, id));
-                if(delToolSel) delToolSel.add(new Option(t.name, id));
+                const displayName = t.brand ? `[${t.brand}] ${t.name}` : t.name;
+                toolSel.add(new Option(displayName, id));
+                if(delToolSel) delToolSel.add(new Option(displayName, id));
+                if(copySourceSel) copySourceSel.add(new Option(displayName, id));
             }
 
             const profSel = document.getElementById('profile-select');
@@ -549,7 +563,7 @@
             }
         }
 
-        // --- NEU: DYNAMISCHER WERKZEUG ADMIN BEREICH ---
+        // --- DYNAMISCHER WERKZEUG ADMIN BEREICH ---
 
         function toggleToolGeoFields() {
             const geoType = document.getElementById('adm-tool-geotype').value;
@@ -561,20 +575,25 @@
             }
         }
 
-        function applyVhmUniversal() {
-            for (const [matId, mat] of Object.entries(db.materials)) {
+        function loadVcFromSelectedTool() {
+            const sourceId = document.getElementById('adm-copy-source-select').value;
+            const sourceTool = db.tools[sourceId];
+            if(!sourceTool) return alert('Kein Quell-Werkzeug gefunden.');
+
+            const vcMap = sourceTool.vc_per_material || {};
+            const suitableList = sourceTool.suitable_materials || [];
+
+            for (const matId of Object.keys(db.materials)) {
                 const vcInput = document.getElementById(`tool-vc-${matId}`);
                 if(vcInput) {
-                    const name = mat.name.toLowerCase();
-                    if(name.includes('alu')) vcInput.value = 450;
-                    else if(name.includes('rostfrei') || name.includes('inox')) vcInput.value = 120;
-                    else if(name.includes('titan')) vcInput.value = 60;
-                    else if(name.includes('gehärtet')) vcInput.value = 40;
-                    else vcInput.value = 180; // Standard für Stahl/Messing
+                    vcInput.value = vcMap[matId] !== undefined ? vcMap[matId] : 200;
                 }
                 const suitCheck = document.getElementById(`tool-suit-${matId}`);
-                if(suitCheck) suitCheck.checked = true;
+                if(suitCheck) {
+                    suitCheck.checked = suitableList.includes(matId);
+                }
             }
+            alert(`Schnittwerte von "${sourceTool.name}" übernommen!`);
         }
 
         function renderToolMatrixInputs() {
@@ -597,21 +616,21 @@
 
         function addNewTool() {
             const geoType = document.getElementById('adm-tool-geotype').value;
+            const brand = document.getElementById('adm-tool-brand').value.trim();
             const d = parseFloat(document.getElementById('adm-tool-d').value);
             const z = parseInt(document.getElementById('adm-tool-z').value);
             const radius = parseFloat(document.getElementById('adm-tool-radius').value) || 0;
             
             if(isNaN(d) || isNaN(z)) return alert('Bitte Durchmesser und Zähnezahl prüfen.');
 
-            // Automatische Namensgenerierung wenn Feld leer
-            let name = document.getElementById('adm-tool-name').value.trim();
-            if(!name) {
-                if(geoType === 'shaft') name = `VHM Schaftfräser D${d} Z${z}`;
-                if(geoType === 'ball') name = `VHM Kugelfräser D${d} Z${z}`;
-                if(geoType === 'torus') name = `VHM Torusfräser D${d} R${radius} Z${z}`;
+            let baseTitle = document.getElementById('adm-tool-name').value.trim();
+            if(!baseTitle) {
+                if(geoType === 'shaft') baseTitle = `VHM Schaftfräser D${d} Z${z}`;
+                if(geoType === 'ball') baseTitle = `VHM Kugelfräser D${d} Z${z}`;
+                if(geoType === 'torus') baseTitle = `VHM Torusfräser D${d} R${radius} Z${z}`;
             }
 
-            // Automatische ID generieren (Timestamp)
+            const fullName = brand ? `${brand} ${baseTitle}` : baseTitle;
             const id = 'tool_' + Date.now();
             
             let vcMap = {}; let suitableList = [];
@@ -623,7 +642,8 @@
             }
 
             db.tools[id] = {
-                name,
+                name: fullName,
+                brand: brand,
                 type: geoType === 'ball' ? 'Kugelfräser' : (geoType === 'torus' ? 'Torusfräser' : 'Schaftfräser'),
                 geo_type: geoType,
                 radius: radius,
@@ -637,7 +657,8 @@
 
             saveDatabase(); 
             populateDropdowns(); 
-            document.getElementById('adm-tool-name').value = ''; // Feld wieder leeren
+            document.getElementById('adm-tool-name').value = ''; 
+            document.getElementById('adm-tool-brand').value = '';
             alert('Werkzeug erfolgreich gespeichert!');
         }
 
@@ -653,9 +674,7 @@
             db.tools[newId] = newTool;
             saveDatabase();
             populateDropdowns();
-            alert(`Werkzeug kopiert! Es heißt jetzt: "${newTool.name}". Bitte passe die Werte (z.B. Durchmesser) entsprechend an und speichere erneut.`);
-            
-            // Setze den Dropdown auf das neu kopierte Element
+            alert(`Werkzeug kopiert! Es heißt jetzt: "${newTool.name}".`);
             document.getElementById('del-tool-select').value = newId;
         }
 
@@ -663,8 +682,6 @@
             const id = document.getElementById('del-tool-select').value;
             delete db.tools[id]; saveDatabase(); populateDropdowns(); alert('Gelöscht!');
         }
-
-        // --- ENDE DYNAMISCHER WERKZEUG ADMIN ---
 
         function updateSpecs() {
             const machId = document.getElementById('machine-select').value;
@@ -685,9 +702,11 @@
                 let typeName = "Schaftfräser";
                 if(tool.geo_type === "ball") typeName = "Kugelfräser";
                 if(tool.geo_type === "torus") typeName = `Torusfräser (r=${tool.radius}mm)`;
+                
+                const brandInfo = tool.brand ? `<strong>Hersteller:</strong> ${tool.brand} | ` : '';
 
                 document.getElementById('tool-specs').innerHTML = 
-                    `<strong>Typ:</strong> ${typeName} | <strong>Ø:</strong> ${tool.diameter}mm | <strong>Z:</strong> ${tool.z} | <strong>L Max:</strong> ${tool.max_overhang || (tool.diameter*3)}mm | <strong>vc:</strong> ${baseVc} m/min`;
+                    `${brandInfo}<strong>Typ:</strong> ${typeName} | <strong>Ø:</strong> ${tool.diameter}mm | <strong>Z:</strong> ${tool.z} | <strong>vc:</strong> ${baseVc} m/min`;
             }
             if(prof) {
                 document.getElementById('profile-specs').innerHTML = 
