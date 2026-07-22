@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CNC Open Tool Guide - Hersteller, Produktlinie & RCT</title>
+    <title>CNC Open Tool Guide - Logischer Auswahl-Workflow</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans p-6">
@@ -11,7 +11,7 @@
         <header class="border-b border-slate-800 pb-4 flex justify-between items-center">
             <div>
                 <h1 class="text-3xl font-bold tracking-tight text-emerald-400">CNC Open Tool Guide</h1>
-                <p class="text-slate-400">Fräsrechner mit Hersteller- & Produktlinien-Filter, Deff-Kompensation & RCT</p>
+                <p class="text-slate-400">Fräsrechner mit zielgeführtem Workflow (Material & Profil $\rightarrow$ Werkzeug), Deff & RCT</p>
             </div>
             <div class="flex gap-2">
                 <button onclick="exportDataReport()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg border border-slate-700 text-sm font-medium transition" title="Berechnete Werte kopieren">
@@ -117,7 +117,7 @@
                     </div>
                 </div>
 
-                <!-- 3. Werkzeuge (MIT HERSTELLER & PRODUKTLINIE) -->
+                <!-- 3. Werkzeuge (MIT HERSTELLER, PRODUKTLINIE & PROFIL-FREIGABE) -->
                 <div class="space-y-3 bg-slate-950/50 p-4 rounded-lg border border-slate-800">
                     <h3 class="font-medium text-slate-200">Neues Werkzeug anlegen</h3>
                     
@@ -167,6 +167,13 @@
                         <input type="number" step="0.1" id="adm-tool-radius" value="1.0" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
                     </div>
 
+                    <!-- NEU: PROFIL-FREIGABE CHECKBOXEN -->
+                    <div class="pt-2 border-t border-slate-800">
+                        <label class="block text-slate-400 text-xs mb-1 font-semibold text-emerald-400">Freigegebene Bearbeitungsprofile:</label>
+                        <div id="adm-tool-profiles-container" class="grid grid-cols-2 gap-1.5 text-xs bg-slate-900 p-2 rounded border border-slate-700"></div>
+                    </div>
+
+                    <!-- Vorhandene Schnittwerte eines anderen Werkzeugs übernehmen -->
                     <div class="pt-2 border-t border-slate-800">
                         <label class="block text-slate-400 text-xs mb-1">Werte von Werkzeug laden:</label>
                         <div class="flex gap-2">
@@ -176,7 +183,7 @@
                     </div>
 
                     <div>
-                        <label class="block text-slate-400 text-xs mb-1">Schnittgeschwindigkeiten (vc):</label>
+                        <label class="block text-slate-400 text-xs mb-1 font-semibold text-emerald-400">Material-Freigabe & Schnittgeschwindigkeiten (vc):</label>
                         <div id="adm-tool-matrix-container" class="grid grid-cols-2 gap-2 text-xs"></div>
                     </div>
 
@@ -244,14 +251,29 @@
             <div class="bg-slate-900 p-6 rounded-xl border border-slate-800 space-y-4">
                 <h2 class="text-xl font-semibold text-slate-200">Konfiguration</h2>
                 
+                <!-- 1. MASCHINE WÄHLEN -->
                 <div>
-                    <label class="block text-sm text-slate-400 mb-1">Maschine wählen</label>
+                    <label class="block text-sm text-slate-400 mb-1">1. Maschine wählen</label>
                     <select id="machine-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" onchange="calculate()"></select>
                     <div id="machine-specs" class="text-xs text-slate-400 mt-2 bg-slate-950 p-2 rounded border border-slate-800"></div>
                 </div>
 
-                <!-- NEU: STUFENWEISE WERKZEUGAUSWAHL (HERSTELLER -> PRODUKTLINIE -> WERKZEUG) -->
+                <!-- 2. WERKSTOFF WÄHLEN (NUN AN POSITION 2) -->
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">2. Werkstoff wählen</label>
+                    <select id="material-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" onchange="onMaterialOrProfileChange()"></select>
+                </div>
+
+                <!-- 3. BEARBEITUNGSPROFIL WÄHLEN (NUN AN POSITION 3) -->
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">3. Bearbeitungsprofil wählen</label>
+                    <select id="profile-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" onchange="onMaterialOrProfileChange()"></select>
+                    <div id="profile-specs" class="text-xs text-slate-400 mt-2 bg-slate-950 p-2 rounded border border-slate-800"></div>
+                </div>
+
+                <!-- 4. WERKZEUG AUSWAHL (GEFILTERT NACH MATERIAL & PROFIL) -->
                 <div class="space-y-3 bg-slate-950/60 p-3 rounded-lg border border-slate-800">
+                    <label class="block text-sm font-semibold text-emerald-400">4. Passendes Werkzeug wählen</label>
                     <div class="grid grid-cols-2 gap-2">
                         <div>
                             <label class="block text-xs text-slate-400 mb-1">Hersteller wählen</label>
@@ -264,26 +286,15 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm text-slate-400 mb-1">Werkzeug wählen</label>
                         <select id="tool-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" onchange="onToolChange()"></select>
                         <div id="tool-specs" class="text-xs text-slate-400 mt-2 bg-slate-950 p-2 rounded border border-slate-800"></div>
                     </div>
                 </div>
 
+                <!-- 5. STEIFIGKEIT / STABILITÄT -->
                 <div>
-                    <label class="block text-sm text-slate-400 mb-1">Werkstoff wählen</label>
-                    <select id="material-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" onchange="calculate()"></select>
-                </div>
-
-                <div>
-                    <label class="block text-sm text-slate-400 mb-1">Steifigkeit / Stabilität</label>
+                    <label class="block text-sm text-slate-400 mb-1">5. Steifigkeit / Stabilität</label>
                     <select id="rigidity-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" onchange="calculate()"></select>
-                </div>
-
-                <div>
-                    <label class="block text-sm text-slate-400 mb-1">Bearbeitungsprofil</label>
-                    <select id="profile-select" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" onchange="resetSliders()"></select>
-                    <div id="profile-specs" class="text-xs text-slate-400 mt-2 bg-slate-950 p-2 rounded border border-slate-800"></div>
                 </div>
 
                 <!-- Dynamische Zustellung (Schieberegler) -->
@@ -424,7 +435,8 @@
                     "z": 4,
                     "max_overhang": 36.0,
                     "vc_per_material": { "stahl_c45": 220, "alu_wrought": 600, "rostfrei": 140, "titan": 60 },
-                    "suitable_materials": ["stahl_c45", "alu_wrought", "rostfrei", "titan"]
+                    "suitable_materials": ["stahl_c45", "alu_wrought", "rostfrei", "titan"],
+                    "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal", "planfraesen"]
                 },
                 "tool_kugel_10": {
                     "name": "HOFFMANN VHM Kugelfräser D10",
@@ -438,7 +450,8 @@
                     "z": 2,
                     "max_overhang": 30.0,
                     "vc_per_material": { "stahl_c45": 200, "alu_wrought": 550, "rostfrei": 120, "titan": 50 },
-                    "suitable_materials": ["stahl_c45", "alu_wrought", "rostfrei", "titan"]
+                    "suitable_materials": ["stahl_c45", "alu_wrought", "rostfrei", "titan"],
+                    "suitable_profiles": ["schlichten", "hsc_trochoidal"]
                 }
             },
             favorites: []
@@ -448,7 +461,7 @@
         let currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0, q: 0, power: 0, fz_eff: 0 };
 
         function loadDatabase() {
-            const saved = localStorage.getItem('cnc_tool_guide_db_lines_v1');
+            const saved = localStorage.getItem('cnc_tool_guide_db_workflow_v3');
             if (saved) {
                 try { 
                     const parsed = JSON.parse(saved);
@@ -463,7 +476,7 @@
         }
 
         function saveDatabase() {
-            localStorage.setItem('cnc_tool_guide_db_lines_v1', JSON.stringify(db));
+            localStorage.setItem('cnc_tool_guide_db_workflow_v3', JSON.stringify(db));
         }
 
         function resetToDefaultData() {
@@ -495,6 +508,24 @@
                 if(delMachSel) delMachSel.add(new Option(m.name, id));
             }
 
+            // Materialien (Position 2 im Hauptrechner)
+            const matSel = document.getElementById('material-select');
+            const delMatSel = document.getElementById('del-material-select');
+            matSel.innerHTML = ''; if(delMatSel) delMatSel.innerHTML = '';
+            for (const [id, m] of Object.entries(db.materials)) {
+                matSel.add(new Option(m.name, id));
+                if(delMatSel) delMatSel.add(new Option(m.name, id));
+            }
+
+            // Profile (Position 3 im Hauptrechner)
+            const profSel = document.getElementById('profile-select');
+            const delProfSel = document.getElementById('del-profile-select');
+            profSel.innerHTML = ''; if(delProfSel) delProfSel.innerHTML = '';
+            for (const [id, p] of Object.entries(db.profiles)) {
+                profSel.add(new Option(p.name, id));
+                if(delProfSel) delProfSel.add(new Option(p.name, id));
+            }
+
             // Steifigkeit
             const rigSel = document.getElementById('rigidity-select');
             const delRigSel = document.getElementById('del-rigidity-select');
@@ -504,24 +535,6 @@
                 if(delRigSel) delRigSel.add(new Option(`${r.name} (${r.factor})`, id));
             }
             if(db.rigidity["mittel"]) rigSel.value = "mittel";
-
-            // Profile
-            const profSel = document.getElementById('profile-select');
-            const delProfSel = document.getElementById('del-profile-select');
-            profSel.innerHTML = ''; if(delProfSel) delProfSel.innerHTML = '';
-            for (const [id, p] of Object.entries(db.profiles)) {
-                profSel.add(new Option(p.name, id));
-                if(delProfSel) delProfSel.add(new Option(p.name, id));
-            }
-
-            // Materialien
-            const delMatSel = document.getElementById('del-material-select');
-            if(delMatSel) {
-                delMatSel.innerHTML = '';
-                for (const [id, m] of Object.entries(db.materials)) {
-                    delMatSel.add(new Option(m.name, id));
-                }
-            }
 
             // Admin Löschen & Kopieren Liste
             const delToolSel = document.getElementById('del-tool-select');
@@ -536,18 +549,31 @@
             }
 
             renderToolMatrixInputs();
+            renderProfileCheckboxes();
             populateBrandDropdown();
         }
 
-        // --- HERSTELLER & PRODUKTLINIEN FILTER LOGIK ---
+        // --- FILTERLOGIK: WERKZEUGE NACH MATERIAL & PROFIL GEFILTERT ---
+
+        function onMaterialOrProfileChange() {
+            resetSliders();
+            populateBrandDropdown();
+        }
 
         function populateBrandDropdown() {
+            const selectedMat = document.getElementById('material-select').value;
+            const selectedProf = document.getElementById('profile-select').value;
             const brandSel = document.getElementById('brand-select');
             brandSel.innerHTML = '';
             
             const brands = new Set();
             for (const t of Object.values(db.tools)) {
-                if (t.brand && t.brand.trim() !== '') brands.add(t.brand.trim());
+                const matFit = !t.suitable_materials || t.suitable_materials.includes(selectedMat);
+                const profFit = !t.suitable_profiles || t.suitable_profiles.includes(selectedProf);
+
+                if (matFit && profFit) {
+                    if (t.brand && t.brand.trim() !== '') brands.add(t.brand.trim());
+                }
             }
 
             brandSel.add(new Option('-- Alle Hersteller --', 'ALL'));
@@ -557,13 +583,19 @@
         }
 
         function onBrandChange() {
+            const selectedMat = document.getElementById('material-select').value;
+            const selectedProf = document.getElementById('profile-select').value;
             const selectedBrand = document.getElementById('brand-select').value;
             const lineSel = document.getElementById('line-select');
             lineSel.innerHTML = '';
 
             const lines = new Set();
             for (const t of Object.values(db.tools)) {
-                if (selectedBrand === 'ALL' || t.brand === selectedBrand) {
+                const matFit = !t.suitable_materials || t.suitable_materials.includes(selectedMat);
+                const profFit = !t.suitable_profiles || t.suitable_profiles.includes(selectedProf);
+                const brandMatch = (selectedBrand === 'ALL' || t.brand === selectedBrand);
+
+                if (matFit && profFit && brandMatch) {
                     if (t.line && t.line.trim() !== '') lines.add(t.line.trim());
                 }
             }
@@ -575,6 +607,8 @@
         }
 
         function onLineChange() {
+            const selectedMat = document.getElementById('material-select').value;
+            const selectedProf = document.getElementById('profile-select').value;
             const selectedBrand = document.getElementById('brand-select').value;
             const selectedLine = document.getElementById('line-select').value;
             const toolSel = document.getElementById('tool-select');
@@ -584,10 +618,12 @@
 
             let toolCount = 0;
             for (const [id, t] of Object.entries(db.tools)) {
+                const matFit = !t.suitable_materials || t.suitable_materials.includes(selectedMat);
+                const profFit = !t.suitable_profiles || t.suitable_profiles.includes(selectedProf);
                 const brandMatch = (selectedBrand === 'ALL' || t.brand === selectedBrand);
                 const lineMatch = (selectedLine === 'ALL' || t.line === selectedLine);
 
-                if (brandMatch && lineMatch) {
+                if (matFit && profFit && brandMatch && lineMatch) {
                     const label = `${t.line ? '[' + t.line + '] ' : ''}${t.name}`;
                     toolSel.add(new Option(label, id));
                     toolCount++;
@@ -595,42 +631,9 @@
             }
 
             if (toolCount === 0) {
-                toolSel.add(new Option('-- Keine Werkzeuge gefunden --', ''));
+                toolSel.add(new Option('-- Keine passenden Werkzeuge --', ''));
             } else if (db.tools[previousToolId]) {
                 toolSel.value = previousToolId;
-            }
-
-            updateMaterialDropdownForTool();
-        }
-
-        function updateMaterialDropdownForTool() {
-            const toolId = document.getElementById('tool-select').value;
-            const matSel = document.getElementById('material-select');
-            const currentMat = matSel.value;
-            const tool = db.tools[toolId];
-            
-            matSel.innerHTML = '';
-            if (!tool) {
-                calculate();
-                return;
-            }
-
-            const suitableList = tool.suitable_materials || [];
-            let validSelectionExists = false;
-
-            for (const [id, m] of Object.entries(db.materials)) {
-                if (suitableList.includes(id)) {
-                    matSel.add(new Option(m.name, id));
-                    if (id === currentMat) validSelectionExists = true;
-                }
-            }
-
-            if (matSel.options.length === 0) {
-                for (const [id, m] of Object.entries(db.materials)) {
-                    matSel.add(new Option(m.name, id));
-                }
-            } else if (validSelectionExists) {
-                matSel.value = currentMat;
             }
 
             updateSpecs();
@@ -638,7 +641,8 @@
         }
 
         function onToolChange() {
-            updateMaterialDropdownForTool();
+            updateSpecs();
+            calculate();
         }
 
         function resetSliders() {
@@ -651,7 +655,7 @@
             }
         }
 
-        // --- DYNAMISCHER WERKZEUG ADMIN BEREICH ---
+        // --- DYNAMISCHER WERKZEUG ADMIN BEREICH (PROFIL & MATERIAL FREIGABEN) ---
 
         function toggleToolGeoFields() {
             const geoType = document.getElementById('adm-tool-geotype').value;
@@ -663,6 +667,21 @@
             }
         }
 
+        function renderProfileCheckboxes() {
+            const container = document.getElementById('adm-tool-profiles-container');
+            if(!container) return;
+            container.innerHTML = '';
+            for (const [profId, p] of Object.entries(db.profiles)) {
+                const div = document.createElement('div');
+                div.className = "flex items-center gap-1.5";
+                div.innerHTML = `
+                    <input type="checkbox" id="tool-prof-${profId}" checked class="rounded bg-slate-800 border-slate-600 text-emerald-500">
+                    <label for="tool-prof-${profId}" class="text-slate-300 cursor-pointer text-[11px] truncate" title="${p.name}">${p.name}</label>
+                `;
+                container.appendChild(div);
+            }
+        }
+
         function loadVcFromSelectedTool() {
             const sourceId = document.getElementById('adm-copy-source-select').value;
             const sourceTool = db.tools[sourceId];
@@ -670,7 +689,9 @@
 
             const vcMap = sourceTool.vc_per_material || {};
             const suitableList = sourceTool.suitable_materials || [];
+            const suitableProfs = sourceTool.suitable_profiles || [];
 
+            // Materialien laden
             for (const matId of Object.keys(db.materials)) {
                 const vcInput = document.getElementById(`tool-vc-${matId}`);
                 if(vcInput) {
@@ -681,7 +702,16 @@
                     suitCheck.checked = suitableList.includes(matId);
                 }
             }
-            alert(`Schnittwerte von "${sourceTool.name}" übernommen!`);
+
+            // Profile laden
+            for (const profId of Object.keys(db.profiles)) {
+                const profCheck = document.getElementById(`tool-prof-${profId}`);
+                if(profCheck) {
+                    profCheck.checked = suitableProfs.includes(profId);
+                }
+            }
+
+            alert(`Schnittwerte & Profilfreigaben von "${sourceTool.name}" übernommen!`);
         }
 
         function renderToolMatrixInputs() {
@@ -722,12 +752,19 @@
             const fullName = brand ? `${brand} ${baseTitle}` : baseTitle;
             const id = 'tool_' + Date.now();
             
-            let vcMap = {}; let suitableList = [];
+            let vcMap = {}; 
+            let suitableMaterials = [];
             for (const matId of Object.keys(db.materials)) {
                 const chk = document.getElementById(`tool-suit-${matId}`);
                 const vcInput = document.getElementById(`tool-vc-${matId}`);
-                if (chk && chk.checked) suitableList.push(matId);
+                if (chk && chk.checked) suitableMaterials.push(matId);
                 vcMap[matId] = vcInput ? parseFloat(vcInput.value) : 200;
+            }
+
+            let suitableProfiles = [];
+            for (const profId of Object.keys(db.profiles)) {
+                const chkProf = document.getElementById(`tool-prof-${profId}`);
+                if (chkProf && chkProf.checked) suitableProfiles.push(profId);
             }
 
             db.tools[id] = {
@@ -742,7 +779,8 @@
                 z: z,
                 max_overhang: parseFloat(document.getElementById('adm-tool-overhang').value) || (d * 3),
                 vc_per_material: vcMap,
-                suitable_materials: suitableList
+                suitable_materials: suitableMaterials,
+                suitable_profiles: suitableProfiles
             };
 
             saveDatabase(); 
@@ -799,7 +837,7 @@
                 document.getElementById('tool-specs').innerHTML = 
                     `${brandInfo}${lineInfo}<strong>Typ:</strong> ${typeName} | <strong>Ø:</strong> ${tool.diameter}mm | <strong>Z:</strong> ${tool.z} | <strong>vc:</strong> ${baseVc} m/min`;
             } else {
-                document.getElementById('tool-specs').innerHTML = `<em>Kein Werkzeug gewählt.</em>`;
+                document.getElementById('tool-specs').innerHTML = `<em class="text-rose-400">Kein zugelassenes Werkzeug für diese Kombination aus Material & Profil gefunden.</em>`;
             }
             if(prof) {
                 document.getElementById('profile-specs').innerHTML = 
@@ -842,17 +880,13 @@
             const fav = db.favorites.find(f => f.id === favId);
             if(!fav) return;
 
-            document.getElementById('brand-select').value = 'ALL';
-            onBrandChange();
+            if(db.materials[fav.material_id]) document.getElementById('material-select').value = fav.material_id;
+            if(db.profiles[fav.profile_id]) document.getElementById('profile-select').value = fav.profile_id;
+            
+            onMaterialOrProfileChange();
 
             if(db.tools[fav.tool_id]) document.getElementById('tool-select').value = fav.tool_id;
-            updateMaterialDropdownForTool();
-            if(db.materials[fav.material_id]) document.getElementById('material-select').value = fav.material_id;
             if(fav.rigidity_id && db.rigidity[fav.rigidity_id]) document.getElementById('rigidity-select').value = fav.rigidity_id;
-            
-            if(db.profiles[fav.profile_id]) {
-                document.getElementById('profile-select').value = fav.profile_id;
-            }
             
             if (fav.ap_factor !== undefined && fav.ae_factor !== undefined) {
                 document.getElementById('slider-ap').value = fav.ap_factor;
@@ -970,16 +1004,16 @@
         // --- Hauptberechnung ---
         function calculate() {
             const machId = document.getElementById('machine-select').value;
-            const toolId = document.getElementById('tool-select').value;
             const matId = document.getElementById('material-select').value;
             const profId = document.getElementById('profile-select').value;
+            const toolId = document.getElementById('tool-select').value;
             const rigId = document.getElementById('rigidity-select').value;
             const physicsActive = document.getElementById('physics-toggle').checked;
             
             const mach = db.machines[machId];
-            const tool = db.tools[toolId];
             const mat = db.materials[matId];
             const profile = db.profiles[profId];
+            const tool = db.tools[toolId];
             const rigidity = db.rigidity[rigId];
             
             if(!mach || !tool || !mat || !profile || !rigidity) {
@@ -1119,10 +1153,10 @@
 
             const report = `--- CNC OPEN TOOL GUIDE BERICHT ---
 Maschine: ${mach}
-Werkzeug: ${tool}
 Werkstoff: ${mat}
-Steifigkeit: ${rig}
 Profil: ${prof}
+Werkzeug: ${tool}
+Steifigkeit: ${rig}
 ----------------------------------
 Drehzahl (n): ${currentCalculatedResults.rpm.toFixed(2)} U/min
 Tischvorschub (vf): ${currentCalculatedResults.vf.toFixed(2)} mm/min
