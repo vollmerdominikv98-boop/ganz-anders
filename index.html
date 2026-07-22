@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CNC Open Tool Guide - Kugel-/Torusfräser & Deff</title>
+    <title>CNC Open Tool Guide - Dynamischer Workflow</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans p-6">
@@ -11,7 +11,7 @@
         <header class="border-b border-slate-800 pb-4 flex justify-between items-center">
             <div>
                 <h1 class="text-3xl font-bold tracking-tight text-emerald-400">CNC Open Tool Guide</h1>
-                <p class="text-slate-400">Fräsrechner mit Deff-Kompensation für Kugelfräser, Torusfräser & Schaftfräser</p>
+                <p class="text-slate-400">Fräsrechner mit dynamischer Werkzeuganlage, Deff-Kompensation & RCT</p>
             </div>
             <div class="flex gap-2">
                 <button onclick="exportDataReport()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg border border-slate-700 text-sm font-medium transition" title="Berechnete Werte kopieren">
@@ -117,55 +117,62 @@
                     </div>
                 </div>
 
-                <!-- 3. Werkzeuge (Inkl. Fräsertyp & Radius) -->
+                <!-- 3. Werkzeuge (DYNAMISCH & KOMPAKT) -->
                 <div class="space-y-3 bg-slate-950/50 p-4 rounded-lg border border-slate-800">
-                    <h3 class="font-medium text-slate-200">Werkzeug (Schaft/Kugel/Torus)</h3>
-                    <div>
-                        <label class="block text-slate-400 mb-1 text-xs">Werkzeug-ID</label>
-                        <input type="text" id="adm-tool-id" placeholder="z.B. tool_kugel_10" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-slate-400 mb-1 text-xs">Bezeichnung</label>
-                        <input type="text" id="adm-tool-name" placeholder="z.B. Kugelfräser D10" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm">
-                    </div>
+                    <h3 class="font-medium text-slate-200">Neues Werkzeug anlegen</h3>
+                    
                     <div class="grid grid-cols-2 gap-2 text-xs">
                         <div>
                             <label class="block text-slate-400 mb-1">Fräsertyp</label>
-                            <select id="adm-tool-geotype" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-white">
+                            <select id="adm-tool-geotype" onchange="toggleToolGeoFields()" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
                                 <option value="shaft">Schaftfräser</option>
                                 <option value="ball">Kugelfräser</option>
                                 <option value="torus">Torusfräser</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-slate-400 mb-1">Eckenradius r (mm)</label>
-                            <input type="number" step="0.1" id="adm-tool-radius" value="0" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-white" placeholder="Nur Torus">
+                            <label class="block text-slate-400 mb-1" title="Leer lassen für automatischen Namen">Bezeichnung (optional)</label>
+                            <input type="text" id="adm-tool-name" placeholder="z.B. VHM Schaft D10" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
                         </div>
                     </div>
+
                     <div class="grid grid-cols-3 gap-2 text-xs">
                         <div>
                             <label class="block text-slate-400 mb-1">Ø (mm)</label>
-                            <input type="number" id="adm-tool-d" value="10" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-white">
+                            <input type="number" id="adm-tool-d" value="10" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
                         </div>
                         <div>
                             <label class="block text-slate-400 mb-1">Zahn (Z)</label>
-                            <input type="number" id="adm-tool-z" value="2" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-white">
+                            <input type="number" id="adm-tool-z" value="4" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
                         </div>
                         <div>
-                            <label class="block text-slate-400 mb-1">L Max (mm)</label>
-                            <input type="number" id="adm-tool-overhang" value="30" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-white">
+                            <label class="block text-slate-400 mb-1" title="Auskraglänge">L Max (mm)</label>
+                            <input type="number" id="adm-tool-overhang" value="30" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
                         </div>
                     </div>
 
-                    <div>
-                        <label class="block text-slate-400 mb-1 text-xs">vc (m/min) je Material:</label>
-                        <div id="adm-tool-matrix-container" class="space-y-1 bg-slate-900 p-2 rounded border border-slate-700 text-xs max-h-24 overflow-y-auto"></div>
+                    <!-- Dynamisches Feld für Radius -->
+                    <div id="adm-tool-radius-container" class="hidden text-xs">
+                        <label class="block text-slate-400 mb-1">Radius r (mm)</label>
+                        <input type="number" step="0.1" id="adm-tool-radius" value="1.0" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white">
                     </div>
 
-                    <button onclick="addNewTool()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-sm font-medium mt-2">Hinzufügen</button>
+                    <div class="pt-2">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="block text-slate-400 text-xs">Schnittgeschwindigkeiten (vc):</label>
+                            <button onclick="applyVhmUniversal()" class="text-[10px] bg-emerald-900/40 text-emerald-400 hover:bg-emerald-800/60 px-2 py-1 rounded border border-emerald-700/50 transition">
+                                ⚡ VHM Standard laden
+                            </button>
+                        </div>
+                        <div id="adm-tool-matrix-container" class="grid grid-cols-2 gap-2 text-xs"></div>
+                    </div>
+
+                    <button onclick="addNewTool()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-sm font-medium mt-2">Speichern</button>
+                    
                     <div class="flex gap-2 pt-2 border-t border-slate-800 mt-2">
                         <select id="del-tool-select" class="flex-1 bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm"></select>
-                        <button onclick="deleteTool()" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1 rounded text-sm">Löschen</button>
+                        <button onclick="duplicateTool()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-sm transition" title="Ausgewähltes Werkzeug duplizieren">Kopieren</button>
+                        <button onclick="deleteTool()" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1 rounded text-sm transition">Löschen</button>
                     </div>
                 </div>
 
@@ -259,7 +266,6 @@
                         <button onclick="resetSliders()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded transition">Profil-Werte laden</button>
                     </div>
                     
-                    <!-- ap Slider -->
                     <div>
                         <div class="flex justify-between text-xs text-slate-400 mb-1">
                             <label>Schnitttiefe (ap): <span id="val-ap-factor" class="text-white font-mono ml-1">1.00</span> × D</label>
@@ -268,7 +274,6 @@
                         <input type="range" id="slider-ap" min="0.01" max="5.0" step="0.01" value="1.0" oninput="calculate()" class="w-full accent-emerald-500 bg-slate-800 rounded-lg appearance-none h-2 cursor-pointer">
                     </div>
 
-                    <!-- ae Slider -->
                     <div>
                         <div class="flex justify-between text-xs text-slate-400 mb-1">
                             <label>Schnittbreite (ae): <span id="val-ae-factor" class="text-white font-mono ml-1">0.50</span> × D</label>
@@ -393,7 +398,7 @@
                     "suitable_materials": ["stahl_c45", "alu_wrought", "rostfrei", "titan"]
                 },
                 "tool_kugel_10": {
-                    "name": "Kugelfräser D10 (Formenbau)",
+                    "name": "VHM Kugelfräser D10",
                     "type": "Kugelfräser",
                     "geo_type": "ball",
                     "radius": 5.0,
@@ -412,7 +417,7 @@
         let currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0, q: 0, power: 0, fz_eff: 0 };
 
         function loadDatabase() {
-            const saved = localStorage.getItem('cnc_tool_guide_db_deff_v1');
+            const saved = localStorage.getItem('cnc_tool_guide_db_workflow');
             if (saved) {
                 try { 
                     const parsed = JSON.parse(saved);
@@ -423,11 +428,15 @@
                     }
                 } catch (e) { console.error(e); }
             }
-            return JSON.parse(JSON.stringify(defaultDb));
+            const initial = JSON.parse(JSON.stringify(defaultDb));
+            for(let tId in initial.tools) {
+                if(!initial.tools[tId].max_overhang) initial.tools[tId].max_overhang = initial.tools[tId].diameter * 3;
+            }
+            return initial;
         }
 
         function saveDatabase() {
-            localStorage.setItem('cnc_tool_guide_db_deff_v1', JSON.stringify(db));
+            localStorage.setItem('cnc_tool_guide_db_workflow', JSON.stringify(db));
         }
 
         function resetToDefaultData() {
@@ -540,26 +549,122 @@
             }
         }
 
+        // --- NEU: DYNAMISCHER WERKZEUG ADMIN BEREICH ---
+
+        function toggleToolGeoFields() {
+            const geoType = document.getElementById('adm-tool-geotype').value;
+            const radiusContainer = document.getElementById('adm-tool-radius-container');
+            if(geoType === 'shaft') {
+                radiusContainer.classList.add('hidden');
+            } else {
+                radiusContainer.classList.remove('hidden');
+            }
+        }
+
+        function applyVhmUniversal() {
+            for (const [matId, mat] of Object.entries(db.materials)) {
+                const vcInput = document.getElementById(`tool-vc-${matId}`);
+                if(vcInput) {
+                    const name = mat.name.toLowerCase();
+                    if(name.includes('alu')) vcInput.value = 450;
+                    else if(name.includes('rostfrei') || name.includes('inox')) vcInput.value = 120;
+                    else if(name.includes('titan')) vcInput.value = 60;
+                    else if(name.includes('gehärtet')) vcInput.value = 40;
+                    else vcInput.value = 180; // Standard für Stahl/Messing
+                }
+                const suitCheck = document.getElementById(`tool-suit-${matId}`);
+                if(suitCheck) suitCheck.checked = true;
+            }
+        }
+
         function renderToolMatrixInputs() {
             const container = document.getElementById('adm-tool-matrix-container');
             if(!container) return;
             container.innerHTML = '';
             for (const [matId, mat] of Object.entries(db.materials)) {
                 const div = document.createElement('div');
-                div.className = "flex items-center justify-between gap-2 bg-slate-950 p-1.5 rounded border border-slate-800";
+                div.className = "flex items-center justify-between gap-1 bg-slate-900 p-1.5 rounded border border-slate-700";
                 div.innerHTML = `
                     <label class="flex items-center gap-1.5 truncate text-slate-300 cursor-pointer flex-1 text-[11px]">
-                        <input type="checkbox" id="tool-suit-${matId}" checked class="rounded bg-slate-900 border-slate-700 text-emerald-500">
+                        <input type="checkbox" id="tool-suit-${matId}" checked class="rounded bg-slate-800 border-slate-600 text-emerald-500">
                         <span class="truncate">${mat.name}</span>
                     </label>
-                    <div class="flex items-center gap-1">
-                        <span class="text-[9px] text-slate-400">vc:</span>
-                        <input type="number" id="tool-vc-${matId}" value="200" class="w-14 bg-slate-900 border border-slate-700 rounded p-0.5 text-white text-right text-xs">
-                    </div>
+                    <input type="number" id="tool-vc-${matId}" value="200" class="w-12 bg-slate-950 border border-slate-600 rounded p-0.5 text-white text-right text-xs">
                 `;
                 container.appendChild(div);
             }
         }
+
+        function addNewTool() {
+            const geoType = document.getElementById('adm-tool-geotype').value;
+            const d = parseFloat(document.getElementById('adm-tool-d').value);
+            const z = parseInt(document.getElementById('adm-tool-z').value);
+            const radius = parseFloat(document.getElementById('adm-tool-radius').value) || 0;
+            
+            if(isNaN(d) || isNaN(z)) return alert('Bitte Durchmesser und Zähnezahl prüfen.');
+
+            // Automatische Namensgenerierung wenn Feld leer
+            let name = document.getElementById('adm-tool-name').value.trim();
+            if(!name) {
+                if(geoType === 'shaft') name = `VHM Schaftfräser D${d} Z${z}`;
+                if(geoType === 'ball') name = `VHM Kugelfräser D${d} Z${z}`;
+                if(geoType === 'torus') name = `VHM Torusfräser D${d} R${radius} Z${z}`;
+            }
+
+            // Automatische ID generieren (Timestamp)
+            const id = 'tool_' + Date.now();
+            
+            let vcMap = {}; let suitableList = [];
+            for (const matId of Object.keys(db.materials)) {
+                const chk = document.getElementById(`tool-suit-${matId}`);
+                const vcInput = document.getElementById(`tool-vc-${matId}`);
+                if (chk && chk.checked) suitableList.push(matId);
+                vcMap[matId] = vcInput ? parseFloat(vcInput.value) : 200;
+            }
+
+            db.tools[id] = {
+                name,
+                type: geoType === 'ball' ? 'Kugelfräser' : (geoType === 'torus' ? 'Torusfräser' : 'Schaftfräser'),
+                geo_type: geoType,
+                radius: radius,
+                material_schneidstoff: "VHM",
+                diameter: d,
+                z: z,
+                max_overhang: parseFloat(document.getElementById('adm-tool-overhang').value) || (d * 3),
+                vc_per_material: vcMap,
+                suitable_materials: suitableList
+            };
+
+            saveDatabase(); 
+            populateDropdowns(); 
+            document.getElementById('adm-tool-name').value = ''; // Feld wieder leeren
+            alert('Werkzeug erfolgreich gespeichert!');
+        }
+
+        function duplicateTool() {
+            const idToCopy = document.getElementById('del-tool-select').value;
+            const toolToCopy = db.tools[idToCopy];
+            if(!toolToCopy) return alert("Kein Werkzeug ausgewählt.");
+
+            const newId = 'tool_' + Date.now();
+            const newTool = JSON.parse(JSON.stringify(toolToCopy));
+            newTool.name = newTool.name + " (Kopie)";
+            
+            db.tools[newId] = newTool;
+            saveDatabase();
+            populateDropdowns();
+            alert(`Werkzeug kopiert! Es heißt jetzt: "${newTool.name}". Bitte passe die Werte (z.B. Durchmesser) entsprechend an und speichere erneut.`);
+            
+            // Setze den Dropdown auf das neu kopierte Element
+            document.getElementById('del-tool-select').value = newId;
+        }
+
+        function deleteTool() {
+            const id = document.getElementById('del-tool-select').value;
+            delete db.tools[id]; saveDatabase(); populateDropdowns(); alert('Gelöscht!');
+        }
+
+        // --- ENDE DYNAMISCHER WERKZEUG ADMIN ---
 
         function updateSpecs() {
             const machId = document.getElementById('machine-select').value;
@@ -582,7 +687,7 @@
                 if(tool.geo_type === "torus") typeName = `Torusfräser (r=${tool.radius}mm)`;
 
                 document.getElementById('tool-specs').innerHTML = 
-                    `<strong>Typ:</strong> ${typeName} | <strong>Ø:</strong> ${tool.diameter}mm | <strong>Z:</strong> ${tool.z} | <strong>vc:</strong> ${baseVc} m/min`;
+                    `<strong>Typ:</strong> ${typeName} | <strong>Ø:</strong> ${tool.diameter}mm | <strong>Z:</strong> ${tool.z} | <strong>L Max:</strong> ${tool.max_overhang || (tool.diameter*3)}mm | <strong>vc:</strong> ${baseVc} m/min`;
             }
             if(prof) {
                 document.getElementById('profile-specs').innerHTML = 
@@ -677,7 +782,7 @@
             renderFavorites();
         }
 
-        // --- Admin Functions ---
+        // --- Weitere Admin-Funktionen ---
         function addNewMachine() {
             const id = document.getElementById('adm-mach-id').value;
             const name = document.getElementById('adm-mach-name').value;
@@ -725,42 +830,6 @@
             delete db.rigidity[id]; saveDatabase(); populateDropdowns(); alert('Gelöscht!');
         }
 
-        function addNewTool() {
-            const id = document.getElementById('adm-tool-id').value;
-            const name = document.getElementById('adm-tool-name').value;
-            const geoType = document.getElementById('adm-tool-geotype').value;
-            const radius = parseFloat(document.getElementById('adm-tool-radius').value) || 0;
-            if(!id || !name) return alert('Bitte ausfüllen');
-            
-            let vcMap = {}; let suitableList = [];
-            for (const matId of Object.keys(db.materials)) {
-                const chk = document.getElementById(`tool-suit-${matId}`);
-                const vcInput = document.getElementById(`tool-vc-${matId}`);
-                if (chk && chk.checked) suitableList.push(matId);
-                vcMap[matId] = vcInput ? parseFloat(vcInput.value) : 200;
-            }
-
-            db.tools[id] = {
-                name,
-                type: geoType === 'ball' ? 'Kugelfräser' : (geoType === 'torus' ? 'Torusfräser' : 'Schaftfräser'),
-                geo_type: geoType,
-                radius: radius,
-                material_schneidstoff: "VHM",
-                diameter: parseFloat(document.getElementById('adm-tool-d').value),
-                z: parseInt(document.getElementById('adm-tool-z').value),
-                max_overhang: parseFloat(document.getElementById('adm-tool-overhang').value) || 30.0,
-                vc_per_material: vcMap,
-                suitable_materials: suitableList
-            };
-
-            saveDatabase(); populateDropdowns(); alert('Gespeichert!');
-        }
-
-        function deleteTool() {
-            const id = document.getElementById('del-tool-select').value;
-            delete db.tools[id]; saveDatabase(); populateDropdowns(); alert('Gelöscht!');
-        }
-
         function addNewProfile() {
             const id = document.getElementById('adm-prof-id').value;
             const name = document.getElementById('adm-prof-name').value;
@@ -783,6 +852,7 @@
             delete db.profiles[id]; saveDatabase(); populateDropdowns(); alert('Gelöscht!');
         }
 
+        // --- Hauptberechnung ---
         function calculate() {
             const machId = document.getElementById('machine-select').value;
             const toolId = document.getElementById('tool-select').value;
@@ -818,37 +888,33 @@
             const warningBox = document.getElementById('depth-warning');
             if (ap > Lmax) {
                 warningBox.classList.remove('hidden');
-                warningBox.innerText = `⚠️ WARNUNG: Schnitttiefe ap (${ap.toFixed(1)}mm) überschreitet max. Werkzeug-Auskragung (${Lmax}mm)!`;
+                warningBox.innerText = `⚠️ WARNUNG: Schnitttiefe ap (${ap.toFixed(1)}mm) überschreitet max. Auskragung (${Lmax}mm)!`;
             } else {
                 warningBox.classList.add('hidden');
             }
 
-            // --- DEFF BERECHNUNG (KUGEL- & TORUSFRÄSER KOMPENSATION) ---
             let Deff = D;
             let geoInfoText = "";
 
             if (tool.geo_type === "ball") {
-                // Kugelfräser: Deff = 2 * sqrt(ap * (D - ap)) [gilt für ap <= R bzw ap <= D/2]
                 let effectiveAp = Math.min(ap, D / 2);
                 Deff = 2 * Math.sqrt(effectiveAp * (D - effectiveAp));
-                if (Deff < 0.1) Deff = 0.1; // Division durch 0 verhindern
-                geoInfoText = `<div class="text-[10px] text-cyan-400">⚽ Kugelfräser Deff: ${Deff.toFixed(2)} mm (bei ap=${ap.toFixed(1)}mm)</div>`;
+                if (Deff < 0.1) Deff = 0.1;
+                geoInfoText = `<div class="text-[10px] text-cyan-400">⚽ Kugelfräser Deff: ${Deff.toFixed(2)} mm</div>`;
             } else if (tool.geo_type === "torus") {
-                // Vereinfachte Annäherung für Torusfräser mit Eckenradius r
                 let r = tool.radius || 0;
                 if (ap <= r) {
                     Deff = 2 * Math.sqrt(ap * (2 * r - ap));
                     if (Deff < 0.1) Deff = 0.1;
                 } else {
-                    Deff = D - (2 * r) + (2 * Math.sqrt(r * r - Math.pow(r - (ap - r), 2))); // Fallback annäherung
+                    Deff = D - (2 * r) + (2 * Math.sqrt(r * r - Math.pow(r - (ap - r), 2)));
                     if(isNaN(Deff) || Deff <= 0) Deff = D - (2*r);
                 }
-                geoInfoText = `<div class="text-[10px] text-cyan-400">🍩 Torusfräser Deff: ${Deff.toFixed(2)} mm (r=${r}mm)</div>`;
+                geoInfoText = `<div class="text-[10px] text-cyan-400">🍩 Torusfräser Deff: ${Deff.toFixed(2)} mm</div>`;
             } else {
                 geoInfoText = `<div class="text-[10px] text-slate-500">cylindrischer Schaftfräser (Deff = D)</div>`;
             }
 
-            // --- PHYSIKALISCHE KORREKTUREN ---
             const baseVc = tool.vc_per_material ? (tool.vc_per_material[matId] || 200) : 200;
             let effectiveVc = baseVc * profile.vc_factor * rigidity.factor;
             
@@ -884,10 +950,7 @@
             document.getElementById('physics-info').innerHTML = physicsInfoHtml;
 
             const effectiveFz = effectiveFzBase;
-            
-            // WICHTIG: Drehzahl berechnet sich nun über Deff (statt D), falls Kugel-/Torusfräser aktiv!
             const n = (effectiveVc * 1000) / (Math.PI * Deff);
-            
             const vf = effectiveFz * z * n;
             const Q = (ap * ae * vf) / 1000;
             const power_kw = (Q * mat.kc11) / (60 * 1000);
