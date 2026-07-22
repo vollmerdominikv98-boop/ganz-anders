@@ -509,7 +509,6 @@
     </div>
 
     <script>
-        // KOMPLETTE DATENBANK DIREKT IM CODE VERANKERT (SCHUTZ GEGEN NULLED STATE)
         const defaultDb = {
             machines: {
                 "dmg_5achs": { "name": "DMG DMU 75 Monoblock", "max_rpm": 15000, "max_vf": 30000, "max_kw": 18 },
@@ -632,7 +631,6 @@
             }
         }
 
-        // CLOUD-FETCH MIT ANTI-ÜBERSCHREIB-SCHUTZ
         async function fetchDataFromSupabase() {
             if (!supabaseClient) return;
             try {
@@ -642,7 +640,6 @@
                     saveLocalDatabaseBackup();
                     initApp();
                 } else {
-                    // Cloud hat weniger Daten als lokal/default -> Lokalitäts-Stand hochladen
                     pushDataToSupabase();
                 }
             } catch(e) { console.error("Cloud Fetch Error:", e); }
@@ -670,7 +667,6 @@
         }
 
         function loadDatabase() {
-            // Fester Key für stabile Konsistenz
             const saved = localStorage.getItem('toolpilot_master_db');
             if (saved) {
                 try { 
@@ -1358,7 +1354,7 @@
             renderFavorites();
         }
 
-        // --- HAUPTBERECHNUNG INKL. ZERSPANUNGS-GUARDRAILS ---
+        // --- HAUPTBERECHNUNG INKL. OPTIMIERTER PRAXIS-GUARDRAIL ---
         function calculate() {
             const machId = document.getElementById('machine-select').value;
             const matId = document.getElementById('material-select').value;
@@ -1434,6 +1430,7 @@
             let physicsInfoHtml = geoInfoText;
 
             if (physicsActive) {
+                // 1. DYNAMISCHER L/D-SCHWINGUNGSSCHUTZ
                 const ldRatio = Lmax / D;
                 if (ldRatio > 3.0) {
                     const dampFactor = Math.sqrt(3.0 / ldRatio);
@@ -1442,6 +1439,7 @@
                     physicsInfoHtml += `<div class="text-[11px] text-indigo-700 font-semibold">🛡️ L/D Ratio (${ldRatio.toFixed(1)}): -${((1 - dampFactor) * 100).toFixed(0)}% (Biegeschutz)</div>`;
                 }
 
+                // 2. KÜHLUNGS- & THERMIK-BOOST
                 let kv_ae = 1.0;
                 if (ae_factor < 0.5) {
                     kv_ae = Math.min(Math.pow(0.5 / ae_factor, 0.3), 2.2);
@@ -1451,22 +1449,25 @@
                     physicsInfoHtml += `<div class="text-[11px] text-amber-700 font-semibold">🔥 Vollnut Nutfräsen: vc -15% (Hitzeschutz)</div>`;
                 }
 
+                // 3. SCHNITTD RUCK-KORREKTUR
                 let k_ap = 1.0;
                 if (ap_factor > 1.0 && tool.geo_type === "shaft") {
                     k_ap = Math.max(Math.pow(1.0 / ap_factor, 0.25), 0.4);
                     physicsInfoHtml += `<div class="text-[11px] text-amber-700 font-semibold">⚖️ Schnittdruck (ap > 1.0D): -${((1 - k_ap) * 100).toFixed(0)}%</div>`;
                 }
 
+                // 4. RCT (RADIAL CHIP THINNING) - PRAXISBEGRENZT AUF MAX 2.0x
                 let rctFactor = 1.0;
                 if (ae_factor < 0.5) {
                     rctFactor = 1 / Math.sqrt(ae_factor * (2 - ae_factor));
-                    rctFactor = Math.min(rctFactor, 2.8);
+                    rctFactor = Math.min(rctFactor, 2.0); // PRAXIS-CAP
                     physicsInfoHtml += `<div class="text-[11px] text-emerald-700 font-semibold">⚡ RCT Spanmitte: fz +${((rctFactor - 1) * 100).toFixed(0)}%</div>`;
                 }
 
                 effectiveVc = effectiveVc * kv_ae * k_ap;
                 effectiveFzBase = effectiveFzBase * k_ap * rctFactor;
 
+                // 5. MINIMAL-SPANDICKE
                 let hm = effectiveFzBase * Math.sqrt(Math.min(ae / Deff, 1.0));
                 if (hm < 0.005) {
                     effectiveFzBase = 0.005 / Math.sqrt(Math.min(ae / Deff, 1.0));
