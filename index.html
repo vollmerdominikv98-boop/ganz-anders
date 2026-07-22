@@ -11,6 +11,11 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
+        /* Pfeile bei Number-Inputs verfeinern */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            opacity: 0.5;
+        }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 p-4 lg:p-6 min-h-screen">
@@ -311,35 +316,59 @@
                 </div>
             </div>
 
-            <!-- SPALTE 2: DYNAMIK & PHYSIK (NUN DYNAMISCH IN MM GEFÜHRT) -->
+            <!-- SPALTE 2: DYNAMIK & PHYSIK (HYBRID: ZAHLENEINGABE + SCHIEBEREGLER) -->
             <div class="lg:col-span-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                     <span class="text-base font-bold text-slate-900">2. Zustellung & Parameter</span>
                     <button onclick="resetSliders()" class="text-[11px] bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 px-2.5 py-1 rounded-lg transition font-semibold">Reset auf Profil</button>
                 </div>
 
-                <!-- Schieberegler in MM -->
-                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
-                    <div>
-                        <div class="flex justify-between items-baseline text-xs mb-1.5">
-                            <div class="flex items-center gap-1.5">
-                                <label class="font-semibold text-slate-800">Schnitttiefe (ap):</label>
-                                <span id="val-ap-factor" class="text-slate-400 text-[11px] font-mono">(0.00 × D)</span>
+                <!-- Präzise Eingabe + Slider in MM -->
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-5">
+                    
+                    <!-- ap BLOCK -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <label class="font-bold text-xs text-slate-800 block">Schnitttiefe (ap)</label>
+                                <span id="val-ap-factor" class="text-slate-400 text-[10px] font-mono">(0.00 × D)</span>
                             </div>
-                            <span id="val-ap-mm" class="text-emerald-700 font-extrabold text-sm font-mono">-- mm</span>
+                            <div class="flex items-center gap-1 bg-white border border-slate-300 rounded-lg px-2 py-1 shadow-sm focus-within:ring-2 focus-within:ring-emerald-500">
+                                <input type="number" id="input-ap-mm" step="0.1" min="0.1" value="10.0" oninput="syncApFromInput()" class="w-16 text-right font-mono font-bold text-sm text-emerald-800 outline-none">
+                                <span class="text-xs font-bold text-slate-500">mm</span>
+                            </div>
                         </div>
-                        <input type="range" id="slider-ap" min="0.1" max="30.0" step="0.1" value="10.0" oninput="calculate()" class="w-full accent-emerald-600 bg-slate-200 rounded-lg appearance-none h-2 cursor-pointer">
+                        <input type="range" id="slider-ap" min="0.1" max="30.0" step="0.1" value="10.0" oninput="syncApFromSlider()" class="w-full accent-emerald-600 bg-slate-200 rounded-lg appearance-none h-2 cursor-pointer">
+                        <div class="flex gap-1.5 pt-0.5">
+                            <button onclick="setApShortcut(0.5)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">0.5×D</button>
+                            <button onclick="setApShortcut(1.0)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">1.0×D</button>
+                            <button onclick="setApShortcut(1.5)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">1.5×D</button>
+                            <button onclick="setApShortcut(2.0)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">2.0×D</button>
+                        </div>
                     </div>
 
-                    <div>
-                        <div class="flex justify-between items-baseline text-xs mb-1.5">
-                            <div class="flex items-center gap-1.5">
-                                <label class="font-semibold text-slate-800">Schnittbreite (ae):</label>
-                                <span id="val-ae-factor" class="text-slate-400 text-[11px] font-mono">(0.00 × D)</span>
+                    <div class="border-b border-slate-200"></div>
+
+                    <!-- ae BLOCK -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <label class="font-bold text-xs text-slate-800 block">Schnittbreite (ae)</label>
+                                <span id="val-ae-factor" class="text-slate-400 text-[10px] font-mono">(0.00 × D)</span>
                             </div>
-                            <span id="val-ae-mm" class="text-emerald-700 font-extrabold text-sm font-mono">-- mm</span>
+                            <div class="flex items-center gap-1 bg-white border border-slate-300 rounded-lg px-2 py-1 shadow-sm focus-within:ring-2 focus-within:ring-emerald-500">
+                                <input type="number" id="input-ae-mm" step="0.1" min="0.1" value="6.0" oninput="syncAeFromInput()" class="w-16 text-right font-mono font-bold text-sm text-emerald-800 outline-none">
+                                <span class="text-xs font-bold text-slate-500">mm</span>
+                            </div>
                         </div>
-                        <input type="range" id="slider-ae" min="0.1" max="12.0" step="0.1" value="6.0" oninput="calculate()" class="w-full accent-emerald-600 bg-slate-200 rounded-lg appearance-none h-2 cursor-pointer">
+                        <input type="range" id="slider-ae" min="0.1" max="12.0" step="0.1" value="6.0" oninput="syncAeFromSlider()" class="w-full accent-emerald-600 bg-slate-200 rounded-lg appearance-none h-2 cursor-pointer">
+                        <div class="flex gap-1.5 pt-0.5">
+                            <button onclick="setAeShortcut(0.05)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">5% D</button>
+                            <button onclick="setAeShortcut(0.1)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">10% D</button>
+                            <button onclick="setAeShortcut(0.25)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">25% D</button>
+                            <button onclick="setAeShortcut(0.5)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">50% D</button>
+                            <button onclick="setAeShortcut(1.0)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">100% D</button>
+                        </div>
                     </div>
 
                     <div id="depth-warning" class="text-xs font-bold text-rose-600 bg-rose-50 p-2.5 rounded-lg border border-rose-200 mt-1 hidden"></div>
@@ -501,7 +530,7 @@
         let currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0, q: 0, power: 0, fz_eff: 0 };
 
         function loadDatabase() {
-            const saved = localStorage.getItem('toolpilot_db_v2');
+            const saved = localStorage.getItem('toolpilot_db_v3');
             if (saved) {
                 try { 
                     const parsed = JSON.parse(saved);
@@ -516,7 +545,7 @@
         }
 
         function saveDatabase() {
-            localStorage.setItem('toolpilot_db_v2', JSON.stringify(db));
+            localStorage.setItem('toolpilot_db_v3', JSON.stringify(db));
         }
 
         function resetToDefaultData() {
@@ -675,7 +704,7 @@
             resetSliders();
         }
 
-        // SLIDER SKALIERUNG DIREKT IN MILLIMETER (MM)
+        // RESET SLIDERS & INPUTS
         function resetSliders() {
             const toolId = document.getElementById('tool-select').value;
             const profId = document.getElementById('profile-select').value;
@@ -689,17 +718,65 @@
                 const apSlider = document.getElementById('slider-ap');
                 const aeSlider = document.getElementById('slider-ae');
 
-                // Maxima der Schieberegler dynamisch auf mm anpassen
                 apSlider.max = Lmax.toFixed(1);
                 aeSlider.max = D.toFixed(1);
 
-                // Berechnete Standard-Startwerte in mm
-                const targetAp = D * prof.ap_factor;
-                const targetAe = D * prof.ae_factor;
+                const targetAp = (D * prof.ap_factor).toFixed(1);
+                const targetAe = (D * prof.ae_factor).toFixed(1);
 
-                apSlider.value = Math.min(targetAp, Lmax).toFixed(1);
-                aeSlider.value = Math.min(targetAe, D).toFixed(1);
+                document.getElementById('input-ap-mm').value = targetAp;
+                apSlider.value = targetAp;
+
+                document.getElementById('input-ae-mm').value = targetAe;
+                aeSlider.value = targetAe;
             }
+            calculate();
+        }
+
+        // --- SYNCHRONISATIONSLOGIK FÜR TIPPEN & SLIDER ---
+        function syncApFromSlider() {
+            const val = parseFloat(document.getElementById('slider-ap').value) || 0.1;
+            document.getElementById('input-ap-mm').value = val.toFixed(1);
+            calculate();
+        }
+
+        function syncApFromInput() {
+            const val = parseFloat(document.getElementById('input-ap-mm').value) || 0.1;
+            document.getElementById('slider-ap').value = val;
+            calculate();
+        }
+
+        function syncAeFromSlider() {
+            const val = parseFloat(document.getElementById('slider-ae').value) || 0.1;
+            document.getElementById('input-ae-mm').value = val.toFixed(1);
+            calculate();
+        }
+
+        function syncAeFromInput() {
+            const val = parseFloat(document.getElementById('input-ae-mm').value) || 0.1;
+            document.getElementById('slider-ae').value = val;
+            calculate();
+        }
+
+        function setApShortcut(factor) {
+            const toolId = document.getElementById('tool-select').value;
+            const tool = db.tools[toolId];
+            if(!tool) return;
+
+            const val = (tool.diameter * factor).toFixed(1);
+            document.getElementById('input-ap-mm').value = val;
+            document.getElementById('slider-ap').value = val;
+            calculate();
+        }
+
+        function setAeShortcut(factor) {
+            const toolId = document.getElementById('tool-select').value;
+            const tool = db.tools[toolId];
+            if(!tool) return;
+
+            const val = (tool.diameter * factor).toFixed(1);
+            document.getElementById('input-ae-mm').value = val;
+            document.getElementById('slider-ae').value = val;
             calculate();
         }
 
@@ -898,14 +975,16 @@
             if(db.tools[fav.tool_id]) document.getElementById('tool-select').value = fav.tool_id;
             if(fav.rigidity_id && db.rigidity[fav.rigidity_id]) document.getElementById('rigidity-select').value = fav.rigidity_id;
             
-            // Setze ap/ae mm Werte aus dem Favorit (oder berechne aus Faktor)
             const tool = db.tools[fav.tool_id];
             if(tool) {
                 const D = tool.diameter;
                 const apVal = fav.ap_mm !== undefined ? fav.ap_mm : (fav.ap_factor !== undefined ? fav.ap_factor * D : D);
                 const aeVal = fav.ae_mm !== undefined ? fav.ae_mm : (fav.ae_factor !== undefined ? fav.ae_factor * D : D * 0.5);
 
+                document.getElementById('input-ap-mm').value = apVal.toFixed(1);
                 document.getElementById('slider-ap').value = apVal.toFixed(1);
+
+                document.getElementById('input-ae-mm').value = aeVal.toFixed(1);
                 document.getElementById('slider-ae').value = aeVal.toFixed(1);
             }
 
@@ -919,8 +998,8 @@
 
             if(!title) { alert('Bitte einen Titel vergeben'); return; }
 
-            const ap_mm = parseFloat(document.getElementById('slider-ap').value);
-            const ae_mm = parseFloat(document.getElementById('slider-ae').value);
+            const ap_mm = parseFloat(document.getElementById('input-ap-mm').value) || 0.1;
+            const ae_mm = parseFloat(document.getElementById('input-ae-mm').value) || 0.1;
 
             const newFav = {
                 id: 'fav_' + Date.now(),
@@ -1019,7 +1098,7 @@
             delete db.profiles[id]; saveDatabase(); populateDropdowns(); alert('Gelöscht!');
         }
 
-        // --- HAUPTBERECHNUNG (RECHNET MIT MM & BACKEND-FAKTOREN) ---
+        // --- HAUPTBERECHNUNG ---
         function calculate() {
             const machId = document.getElementById('machine-select').value;
             const matId = document.getElementById('material-select').value;
@@ -1047,19 +1126,15 @@
             const z = tool.z;
             const Lmax = tool.max_overhang || (D * 3);
 
-            // Werte direkt in mm vom Slider auslesen
-            const ap = parseFloat(document.getElementById('slider-ap').value) || 0.1;
-            const ae = parseFloat(document.getElementById('slider-ae').value) || 0.1;
+            // Werte aus den Eingabefeldern lesen
+            const ap = parseFloat(document.getElementById('input-ap-mm').value) || 0.1;
+            const ae = parseFloat(document.getElementById('input-ae-mm').value) || 0.1;
 
-            // Faktoren intern für physikalische Formeln berechnen
             const ap_factor = ap / D;
             const ae_factor = ae / D;
 
-            // UI-Label aktualisieren (mm groß, x D klein als Zusatzinfo)
-            document.getElementById('val-ap-mm').innerText = ap.toFixed(1) + " mm";
+            // Zusatzanzeige Faktor
             document.getElementById('val-ap-factor').innerText = `(${ap_factor.toFixed(2)} × D)`;
-            
-            document.getElementById('val-ae-mm').innerText = ae.toFixed(1) + " mm";
             document.getElementById('val-ae-factor').innerText = `(${ae_factor.toFixed(2)} × D)`;
 
             // Kollisionswarnung Lmax
