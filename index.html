@@ -33,7 +33,7 @@
                             <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Lokaler Modus
                         </span>
                     </div>
-                    <p class="text-xs text-slate-500 font-medium">Herstellerunabhängiger CNC-Schnittwertoptimierer mit Echtzeit-Cloud-Sync</p>
+                    <p class="text-xs text-slate-500 font-medium">Herstellerunabhängiger CNC-Schnittwertoptimierer mit Praxis-Guardrails</p>
                 </div>
             </div>
             <div class="flex gap-2.5 w-full sm:w-auto">
@@ -46,16 +46,14 @@
             </div>
         </header>
 
-        <!-- ADMIN BEREICH (STRUKTURIERT & SKALIERBAR MIT TABS) -->
+        <!-- ADMIN BEREICH -->
         <div id="admin-panel" class="hidden bg-white p-6 rounded-2xl border border-emerald-300 shadow-md space-y-5">
             
-            <!-- ADMIN HEADER & TAB NAV -->
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 pb-4">
                 <div>
                     <h2 class="text-lg font-bold text-slate-900">Admin-Konsole</h2>
                     <p class="text-xs text-slate-500">Zentrale Verwaltung für Werkzeuge, Maschinen, Materialien und Cloud-Sync</p>
                 </div>
-                <!-- TAB BUTTONS -->
                 <div class="flex flex-wrap gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
                     <button onclick="switchAdminTab('tools')" id="tab-btn-tools" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-white text-emerald-800 shadow-sm">🔧 Werkzeuge</button>
                     <button onclick="switchAdminTab('machines')" id="tab-btn-machines" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition">🏭 Maschinen</button>
@@ -68,8 +66,6 @@
             <!-- TAB 1: WERKZEUGE -->
             <div id="admin-tab-tools" class="space-y-6">
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    
-                    <!-- FRÄSER-FORMULAR (LINKS) -->
                     <div class="lg:col-span-5 bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
                         <div class="flex justify-between items-center border-b border-slate-200 pb-2">
                             <h3 id="adm-tool-form-title" class="font-bold text-xs uppercase tracking-wider text-slate-800">Neues Werkzeug anlegen</h3>
@@ -81,11 +77,11 @@
                         <div class="grid grid-cols-2 gap-2 text-xs">
                             <div>
                                 <label class="block text-slate-600 mb-1 font-medium">Hersteller</label>
-                                <input type="text" id="adm-tool-brand" placeholder="z.B. PRECITOOL" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-900">
+                                <input type="text" id="adm-tool-brand" placeholder="z.B. YG-1" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-900">
                             </div>
                             <div>
                                 <label class="block text-slate-600 mb-1 font-medium">Produktlinie</label>
-                                <input type="text" id="adm-tool-line" placeholder="z.B. PREMUS GP" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-900">
+                                <input type="text" id="adm-tool-line" placeholder="z.B. X5070" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-900">
                             </div>
                         </div>
 
@@ -100,7 +96,7 @@
                             </div>
                             <div>
                                 <label class="block text-slate-600 mb-1 font-medium">Bezeichnung (optional)</label>
-                                <input type="text" id="adm-tool-name" placeholder="z.B. HPC D10 Z4" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-900">
+                                <input type="text" id="adm-tool-name" placeholder="z.B. Torus D10 R1.0" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-900">
                             </div>
                         </div>
 
@@ -139,7 +135,6 @@
                         </button>
                     </div>
 
-                    <!-- FRÄSER-TABELLE MIT LIVE-SUCHE (RECHTS) -->
                     <div class="lg:col-span-7 space-y-3">
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                             <h3 class="font-bold text-xs uppercase tracking-wider text-slate-800">
@@ -157,9 +152,7 @@
                                         <th class="p-2.5 text-right">Aktionen</th>
                                     </tr>
                                 </thead>
-                                <tbody id="adm-tool-table-body" class="divide-y divide-slate-100">
-                                    <!-- Dynamisch gefüllt -->
-                                </tbody>
+                                <tbody id="adm-tool-table-body" class="divide-y divide-slate-100"></tbody>
                             </table>
                         </div>
                     </div>
@@ -345,7 +338,6 @@
                     <select id="profile-select" class="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 transition" onchange="onMaterialOrProfileChange()"></select>
                 </div>
 
-                <!-- WERKZEUGAUSWAHL BOX -->
                 <div class="space-y-3 bg-slate-50/80 p-4 rounded-xl border border-slate-200">
                     <div class="flex items-center justify-between">
                         <label class="block text-xs font-bold text-slate-900 uppercase tracking-wider">Werkzeugauswahl</label>
@@ -432,25 +424,22 @@
                     <div id="depth-warning" class="text-xs font-bold text-rose-600 bg-rose-50 p-2.5 rounded-lg border border-rose-200 mt-1 hidden"></div>
                 </div>
 
-                <!-- Dynamische Physik Box -->
+                <!-- Dynamische Physik Box mit Guardrail-Infos -->
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
                     <div class="flex items-center justify-between border-b border-slate-200 pb-2">
-                        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Dynamische Physik</h3>
+                        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Praxis-Guardrails & Physik</h3>
                         <label class="flex items-center gap-1.5 cursor-pointer">
                             <input type="checkbox" id="physics-toggle" checked onchange="calculate()" class="rounded border-slate-300 text-emerald-600 focus:ring-0">
                             <span class="text-xs text-slate-600 font-semibold">Aktiv</span>
                         </label>
                     </div>
-                    <div id="physics-info" class="space-y-1.5 font-mono text-xs">
-                        <!-- Dynamisch befüllt -->
-                    </div>
+                    <div id="physics-info" class="space-y-1.5 font-mono text-xs"></div>
                 </div>
             </div>
 
             <!-- SPALTE 3: ERGEBNISSE & FAVORITEN -->
             <div class="lg:col-span-4 flex flex-col space-y-6">
                 
-                <!-- BERECHNETE WERTE -->
                 <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                     <div class="border-b border-slate-100 pb-3">
                         <span class="text-base font-bold text-slate-900">3. Berechnete Schnittdaten</span>
@@ -483,7 +472,6 @@
                     </div>
                 </div>
 
-                <!-- FAVORITEN SPEICHERN -->
                 <div class="bg-white p-5 rounded-2xl border border-emerald-300 shadow-sm space-y-3">
                     <h3 class="text-xs font-bold text-emerald-900 uppercase tracking-wider">Als Praxis-Favorit speichern</h3>
                     <input type="text" id="fav-title" placeholder="Titel z.B. C45 Schruppen stabil" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-slate-900 text-xs focus:ring-2 focus:ring-emerald-500 font-medium">
@@ -517,9 +505,7 @@
                 </h2>
                 <span class="text-xs text-slate-400 font-medium">Mit 1 Klick wiederherstellen</span>
             </div>
-            <div id="favorites-container" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                <!-- Wird dynamisch gefüllt -->
-            </div>
+            <div id="favorites-container" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
         </div>
 
     </div>
@@ -565,21 +551,6 @@
                     "vc_per_material": { "stahl_c45": 180, "stahl_1200": 110, "rostfrei": 90, "alu_wrought": 400 },
                     "suitable_materials": ["stahl_c45", "stahl_1200", "rostfrei", "alu_wrought"],
                     "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal", "planfraesen"]
-                },
-                "yg1_x5070_d10_r10": {
-                    "name": "X5070 Torusfräser D10 R1.0 Z4",
-                    "brand": "YG-1",
-                    "line": "X5070",
-                    "type": "Torusfräser",
-                    "geo_type": "torus",
-                    "radius": 1.0,
-                    "material_schneidstoff": "VHM",
-                    "diameter": 10.0,
-                    "z": 4,
-                    "max_overhang": 30.0,
-                    "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 },
-                    "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"],
-                    "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal"]
                 }
             },
             favorites: []
@@ -590,7 +561,6 @@
         let db = loadDatabase();
         let currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0, q: 0, power: 0, fz_eff: 0 };
 
-        // --- ADMIN TAB SWITCHING ---
         function switchAdminTab(tabName) {
             const tabs = ['tools', 'machines', 'materials', 'profiles', 'cloud'];
             tabs.forEach(t => {
@@ -613,7 +583,6 @@
             if (tabName === 'profiles') renderAdminProfilesList();
         }
 
-        // --- SUPABASE CLOUD MANAGEMENT ---
         function initSupabase() {
             const url = localStorage.getItem('toolpilot_supabase_url');
             const key = localStorage.getItem('toolpilot_supabase_key');
@@ -699,9 +668,8 @@
                 .subscribe();
         }
 
-        // --- LOKALER SPEICHER / BACKUP ---
         function loadDatabase() {
-            const saved = localStorage.getItem('toolpilot_db_v6');
+            const saved = localStorage.getItem('toolpilot_db_v7');
             if (saved) {
                 try { 
                     const parsed = JSON.parse(saved);
@@ -716,7 +684,7 @@
         }
 
         function saveLocalDatabaseBackup() {
-            localStorage.setItem('toolpilot_db_v6', JSON.stringify(db));
+            localStorage.setItem('toolpilot_db_v7', JSON.stringify(db));
         }
 
         function saveDatabase() {
@@ -811,7 +779,6 @@
             populateBrandDropdown();
         }
 
-        // --- SKALIERBARE WERKZEUG-VERWALTUNG (TABELLE & SUCHE) ---
         function renderAdminToolTable() {
             const tbody = document.getElementById('adm-tool-table-body');
             const searchInput = document.getElementById('adm-tool-search');
@@ -1391,7 +1358,7 @@
             renderFavorites();
         }
 
-        // --- HAUPTBERECHNUNG MIT MASCHINEN-CAPPING ---
+        // --- HAUPTBERECHNUNG INKL. ZERSPANUNGS-GUARDRAILS ---
         function calculate() {
             const machId = document.getElementById('machine-select').value;
             const matId = document.getElementById('material-select').value;
@@ -1466,28 +1433,55 @@
 
             let physicsInfoHtml = geoInfoText;
 
+            // ==========================================
+            // PRAXIS-GUARDRAILS & PHYSIK ENGINE
+            // ==========================================
             if (physicsActive) {
-                let kv_ae = 1.0;
-                if (ae_factor < 0.5) {
-                    kv_ae = Math.min(Math.pow(0.5 / ae_factor, 0.3), 2.5);
-                    physicsInfoHtml += `<div class="text-[11px] text-emerald-700 font-semibold">🌡️ Kühlung (ae < 0.5D): vc +${((kv_ae - 1) * 100).toFixed(0)}%</div>`;
+                
+                // 1. DYNAMISCHER L/D-SCHWINGUNGSSCHUTZ
+                const ldRatio = Lmax / D;
+                if (ldRatio > 3.0) {
+                    const dampFactor = Math.sqrt(3.0 / ldRatio);
+                    effectiveVc *= dampFactor;
+                    effectiveFzBase *= dampFactor;
+                    physicsInfoHtml += `<div class="text-[11px] text-indigo-700 font-semibold">🛡️ L/D Ratio (${ldRatio.toFixed(1)}): -${((1 - dampFactor) * 100).toFixed(0)}% (Biegeschutz)</div>`;
                 }
 
+                // 2. KÜHLUNGS- & THERMIK-BOOST
+                let kv_ae = 1.0;
+                if (ae_factor < 0.5) {
+                    kv_ae = Math.min(Math.pow(0.5 / ae_factor, 0.3), 2.2);
+                    physicsInfoHtml += `<div class="text-[11px] text-emerald-700 font-semibold">🌡️ Kühlung (ae < 0.5D): vc +${((kv_ae - 1) * 100).toFixed(0)}%</div>`;
+                } else if (ae_factor >= 0.95) {
+                    // Vollnut-Thermik-Drosselung
+                    effectiveVc *= 0.85;
+                    physicsInfoHtml += `<div class="text-[11px] text-amber-700 font-semibold">🔥 Vollnut Nutfräsen: vc -15% (Hitzeschutz)</div>`;
+                }
+
+                // 3. SCHNITTD RUCK-KORREKTUR BEI DEUTLICH ERHÖHTEM AP
                 let k_ap = 1.0;
                 if (ap_factor > 1.0 && tool.geo_type === "shaft") {
                     k_ap = Math.max(Math.pow(1.0 / ap_factor, 0.25), 0.4);
                     physicsInfoHtml += `<div class="text-[11px] text-amber-700 font-semibold">⚖️ Schnittdruck (ap > 1.0D): -${((1 - k_ap) * 100).toFixed(0)}%</div>`;
                 }
 
+                // 4. RCT (RADIAL CHIP THINNING)
                 let rctFactor = 1.0;
                 if (ae_factor < 0.5) {
                     rctFactor = 1 / Math.sqrt(ae_factor * (2 - ae_factor));
-                    rctFactor = Math.min(rctFactor, 3.0);
+                    rctFactor = Math.min(rctFactor, 2.8);
                     physicsInfoHtml += `<div class="text-[11px] text-emerald-700 font-semibold">⚡ RCT Spanmitte: fz +${((rctFactor - 1) * 100).toFixed(0)}%</div>`;
                 }
 
                 effectiveVc = effectiveVc * kv_ae * k_ap;
                 effectiveFzBase = effectiveFzBase * k_ap * rctFactor;
+
+                // 5. MINIMAL-SPANDICKE (h_min Schab-Sperre)
+                let hm = effectiveFzBase * Math.sqrt(Math.min(ae / Deff, 1.0));
+                if (hm < 0.005) {
+                    effectiveFzBase = 0.005 / Math.sqrt(Math.min(ae / Deff, 1.0));
+                    physicsInfoHtml += `<div class="text-[11px] text-purple-700 font-semibold">🔪 Schab-Schutz: fz auf hm_min (0.005mm) angehoben</div>`;
+                }
             }
 
             document.getElementById('physics-info').innerHTML = physicsInfoHtml;
@@ -1500,7 +1494,7 @@
             // 2. MASCHINEN-CAPPING (Drehzahl auf Max-RPM der Maschine begrenzen)
             let n_eff = Math.min(n_theo, mach.max_rpm);
             
-            // 3. Vorschub passend zur REELLEN Drehzahl berechnen & ebenfalls deckeln
+            // 3. Tischvorschub passend zur REELLEN Drehzahl
             let vf_eff = effectiveFz * z * n_eff;
             vf_eff = Math.min(vf_eff, mach.max_vf);
 
@@ -1513,7 +1507,6 @@
             const vfEl = document.getElementById('res-vf');
             const powerEl = document.getElementById('res-power');
 
-            // Anzeige mit optischer Warnung bei Maschinen-Limit
             rpmEl.innerText = n_eff.toFixed(0) + " U/min";
             if (n_theo > mach.max_rpm) {
                 rpmEl.className = "text-xl font-black font-mono text-rose-600";
@@ -1535,7 +1528,7 @@
             document.getElementById('res-q').innerText = Q.toFixed(2) + " cm³/min";
 
             powerEl.innerText = power_kw.toFixed(2) + " kW";
-            if (power_kw > mach.max_kw) {
+            if (power_kw > (mach.max_kw * 0.85)) {
                 powerEl.className = "text-base font-bold font-mono text-rose-600 animate-pulse";
             } else {
                 powerEl.className = "text-base font-bold font-mono text-amber-600";
@@ -1570,7 +1563,6 @@ Leistungsbedarf (Pc): ${currentCalculatedResults.power.toFixed(2)} kW
             });
         }
 
-        // INIT CLOUD & APP
         initSupabase();
         initApp();
     </script>
