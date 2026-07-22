@@ -424,7 +424,6 @@
                     <div id="depth-warning" class="text-xs font-bold text-rose-600 bg-rose-50 p-2.5 rounded-lg border border-rose-200 mt-1 hidden"></div>
                 </div>
 
-                <!-- Dynamische Physik Box mit Guardrail-Infos -->
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
                     <div class="flex items-center justify-between border-b border-slate-200 pb-2">
                         <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Praxis-Guardrails & Physik</h3>
@@ -439,7 +438,6 @@
 
             <!-- SPALTE 3: ERGEBNISSE & FAVORITEN -->
             <div class="lg:col-span-4 flex flex-col space-y-6">
-                
                 <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                     <div class="border-b border-slate-100 pb-3">
                         <span class="text-base font-bold text-slate-900">3. Berechnete Schnittdaten</span>
@@ -511,6 +509,7 @@
     </div>
 
     <script>
+        // KOMPLETTE DATENBANK DIREKT IM CODE VERANKERT (SCHUTZ GEGEN NULLED STATE)
         const defaultDb = {
             machines: {
                 "dmg_5achs": { "name": "DMG DMU 75 Monoblock", "max_rpm": 15000, "max_vf": 30000, "max_kw": 18 },
@@ -537,21 +536,21 @@
                 "planfraesen": { "name": "Planfräsen (Face Milling)", "vc_factor": 1.0, "fz_factor": 1.0, "ap_factor": 0.5, "ae_factor": 0.8, "description": "Standard-Flächenbearbeitung" }
             },
             tools: {
-                "premus_gp_d10": {
-                    "name": "PREMUS GP Universal D10 Z4",
-                    "brand": "PRECITOOL",
-                    "line": "PREMUS GP",
-                    "type": "Schaftfräser",
-                    "geo_type": "shaft",
-                    "radius": 0,
-                    "material_schneidstoff": "VHM",
-                    "diameter": 10.0,
-                    "z": 4,
-                    "max_overhang": 30.0,
-                    "vc_per_material": { "stahl_c45": 180, "stahl_1200": 110, "rostfrei": 90, "alu_wrought": 400 },
-                    "suitable_materials": ["stahl_c45", "stahl_1200", "rostfrei", "alu_wrought"],
-                    "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal", "planfraesen"]
-                }
+                "yg1_x5070_d1_r01": { "name": "X5070 Torusfräser D1 R0.1 Z2", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.1, "material_schneidstoff": "VHM", "diameter": 1, "z": 2, "max_overhang": 3, "vc_per_material": { "stahl_c45": 140, "stahl_1200": 110, "gehaertet_55hrc": 90, "gehaertet_60hrc": 70, "gehaertet_65hrc": 50 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schlichten", "hsc_trochoidal"] },
+                "yg1_x5070_d2_r02": { "name": "X5070 Torusfräser D2 R0.2 Z2", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.2, "material_schneidstoff": "VHM", "diameter": 2, "z": 2, "max_overhang": 5, "vc_per_material": { "stahl_c45": 150, "stahl_1200": 120, "gehaertet_55hrc": 100, "gehaertet_60hrc": 80, "gehaertet_65hrc": 55 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schlichten", "hsc_trochoidal"] },
+                "yg1_x5070_d3_r02": { "name": "X5070 Torusfräser D3 R0.2 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.2, "material_schneidstoff": "VHM", "diameter": 3, "z": 4, "max_overhang": 8, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal"] },
+                "yg1_x5070_d4_r03": { "name": "X5070 Torusfräser D4 R0.3 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.3, "material_schneidstoff": "VHM", "diameter": 4, "z": 4, "max_overhang": 10, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal"] },
+                "yg1_x5070_d5_r05": { "name": "X5070 Torusfräser D5 R0.5 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.5, "material_schneidstoff": "VHM", "diameter": 5, "z": 4, "max_overhang": 13, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal"] },
+                "yg1_x5070_d6_r05": { "name": "X5070 Torusfräser D6 R0.5 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.5, "material_schneidstoff": "VHM", "diameter": 6, "z": 4, "max_overhang": 18, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal"] },
+                "yg1_x5070_d8_r05": { "name": "X5070 Torusfräser D8 R0.5 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.5, "material_schneidstoff": "VHM", "diameter": 8, "z": 4, "max_overhang": 24, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal"] },
+                "yg1_x5070_d10_r10": { "name": "X5070 Torusfräser D10 R1.0 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 1, "material_schneidstoff": "VHM", "diameter": 10, "z": 4, "max_overhang": 30, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal"] },
+                "yg1_x5070_d12_r10": { "name": "X5070 Torusfräser D12 R1.0 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 1, "material_schneidstoff": "VHM", "diameter": 12, "z": 4, "max_overhang": 36, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal"] },
+                "premus_gp_d6": { "name": "PREMUS GP Universal D6 Z4", "brand": "PRECITOOL", "line": "PREMUS GP", "type": "Schaftfräser", "geo_type": "shaft", "radius": 0, "material_schneidstoff": "VHM", "diameter": 6, "z": 4, "max_overhang": 19, "vc_per_material": { "stahl_c45": 180, "stahl_1200": 110, "rostfrei": 90, "alu_wrought": 400 }, "suitable_materials": ["stahl_c45", "stahl_1200", "rostfrei", "alu_wrought"], "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal", "planfraesen"] },
+                "premus_gp_d8": { "name": "PREMUS GP Universal D8 Z4", "brand": "PRECITOOL", "line": "PREMUS GP", "type": "Schaftfräser", "geo_type": "shaft", "radius": 0, "material_schneidstoff": "VHM", "diameter": 8, "z": 4, "max_overhang": 25, "vc_per_material": { "stahl_c45": 180, "stahl_1200": 110, "rostfrei": 90, "alu_wrought": 400 }, "suitable_materials": ["stahl_c45", "stahl_1200", "rostfrei", "alu_wrought"], "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal", "planfraesen"] },
+                "premus_gp_d10": { "name": "PREMUS GP Universal D10 Z4", "brand": "PRECITOOL", "line": "PREMUS GP", "type": "Schaftfräser", "geo_type": "shaft", "radius": 0, "material_schneidstoff": "VHM", "diameter": 10, "z": 4, "max_overhang": 30, "vc_per_material": { "stahl_c45": 180, "stahl_1200": 110, "rostfrei": 90, "alu_wrought": 400 }, "suitable_materials": ["stahl_c45", "stahl_1200", "rostfrei", "alu_wrought"], "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal", "planfraesen"] },
+                "premus_gp_d12": { "name": "PREMUS GP Universal D12 Z4", "brand": "PRECITOOL", "line": "PREMUS GP", "type": "Schaftfräser", "geo_type": "shaft", "radius": 0, "material_schneidstoff": "VHM", "diameter": 12, "z": 4, "max_overhang": 36, "vc_per_material": { "stahl_c45": 180, "stahl_1200": 110, "rostfrei": 90, "alu_wrought": 400 }, "suitable_materials": ["stahl_c45", "stahl_1200", "rostfrei", "alu_wrought"], "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal", "planfraesen"] },
+                "premus_gp_d16": { "name": "PREMUS GP Universal D16 Z4", "brand": "PRECITOOL", "line": "PREMUS GP", "type": "Schaftfräser", "geo_type": "shaft", "radius": 0, "material_schneidstoff": "VHM", "diameter": 16, "z": 4, "max_overhang": 42, "vc_per_material": { "stahl_c45": 180, "stahl_1200": 110, "rostfrei": 90, "alu_wrought": 400 }, "suitable_materials": ["stahl_c45", "stahl_1200", "rostfrei", "alu_wrought"], "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal", "planfraesen"] },
+                "premus_gp_d20": { "name": "PREMUS GP Universal D20 Z4", "brand": "PRECITOOL", "line": "PREMUS GP", "type": "Schaftfräser", "geo_type": "shaft", "radius": 0, "material_schneidstoff": "VHM", "diameter": 20, "z": 4, "max_overhang": 52, "vc_per_material": { "stahl_c45": 180, "stahl_1200": 110, "rostfrei": 90, "alu_wrought": 400 }, "suitable_materials": ["stahl_c45", "stahl_1200", "rostfrei", "alu_wrought"], "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal", "planfraesen"] }
             },
             favorites: []
         };
@@ -633,15 +632,17 @@
             }
         }
 
+        // CLOUD-FETCH MIT ANTI-ÜBERSCHREIB-SCHUTZ
         async function fetchDataFromSupabase() {
             if (!supabaseClient) return;
             try {
                 const { data, error } = await supabaseClient.from('app_state').select('data').eq('id', 'global_db').single();
-                if (data && data.data) {
+                if (data && data.data && data.data.tools && Object.keys(data.data.tools).length >= Object.keys(db.tools || {}).length) {
                     db = data.data;
                     saveLocalDatabaseBackup();
                     initApp();
                 } else {
+                    // Cloud hat weniger Daten als lokal/default -> Lokalitäts-Stand hochladen
                     pushDataToSupabase();
                 }
             } catch(e) { console.error("Cloud Fetch Error:", e); }
@@ -659,7 +660,7 @@
             supabaseClient
                 .channel('db_changes')
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_state', filter: 'id=eq.global_db' }, payload => {
-                    if (payload.new && payload.data) {
+                    if (payload.new && payload.new.data) {
                         db = payload.new.data;
                         saveLocalDatabaseBackup();
                         initApp();
@@ -669,13 +670,12 @@
         }
 
         function loadDatabase() {
-            const saved = localStorage.getItem('toolpilot_db_v7');
+            // Fester Key für stabile Konsistenz
+            const saved = localStorage.getItem('toolpilot_master_db');
             if (saved) {
                 try { 
                     const parsed = JSON.parse(saved);
-                    if (parsed && parsed.tools && parsed.materials) {
-                        if (!parsed.machines) parsed.machines = defaultDb.machines;
-                        if (!parsed.rigidity) parsed.rigidity = defaultDb.rigidity;
+                    if (parsed && parsed.tools && Object.keys(parsed.tools).length > 2) {
                         return parsed;
                     }
                 } catch (e) { console.error(e); }
@@ -684,7 +684,7 @@
         }
 
         function saveLocalDatabaseBackup() {
-            localStorage.setItem('toolpilot_db_v7', JSON.stringify(db));
+            localStorage.setItem('toolpilot_master_db', JSON.stringify(db));
         }
 
         function saveDatabase() {
@@ -1433,12 +1433,7 @@
 
             let physicsInfoHtml = geoInfoText;
 
-            // ==========================================
-            // PRAXIS-GUARDRAILS & PHYSIK ENGINE
-            // ==========================================
             if (physicsActive) {
-                
-                // 1. DYNAMISCHER L/D-SCHWINGUNGSSCHUTZ
                 const ldRatio = Lmax / D;
                 if (ldRatio > 3.0) {
                     const dampFactor = Math.sqrt(3.0 / ldRatio);
@@ -1447,25 +1442,21 @@
                     physicsInfoHtml += `<div class="text-[11px] text-indigo-700 font-semibold">🛡️ L/D Ratio (${ldRatio.toFixed(1)}): -${((1 - dampFactor) * 100).toFixed(0)}% (Biegeschutz)</div>`;
                 }
 
-                // 2. KÜHLUNGS- & THERMIK-BOOST
                 let kv_ae = 1.0;
                 if (ae_factor < 0.5) {
                     kv_ae = Math.min(Math.pow(0.5 / ae_factor, 0.3), 2.2);
                     physicsInfoHtml += `<div class="text-[11px] text-emerald-700 font-semibold">🌡️ Kühlung (ae < 0.5D): vc +${((kv_ae - 1) * 100).toFixed(0)}%</div>`;
                 } else if (ae_factor >= 0.95) {
-                    // Vollnut-Thermik-Drosselung
                     effectiveVc *= 0.85;
                     physicsInfoHtml += `<div class="text-[11px] text-amber-700 font-semibold">🔥 Vollnut Nutfräsen: vc -15% (Hitzeschutz)</div>`;
                 }
 
-                // 3. SCHNITTD RUCK-KORREKTUR BEI DEUTLICH ERHÖHTEM AP
                 let k_ap = 1.0;
                 if (ap_factor > 1.0 && tool.geo_type === "shaft") {
                     k_ap = Math.max(Math.pow(1.0 / ap_factor, 0.25), 0.4);
                     physicsInfoHtml += `<div class="text-[11px] text-amber-700 font-semibold">⚖️ Schnittdruck (ap > 1.0D): -${((1 - k_ap) * 100).toFixed(0)}%</div>`;
                 }
 
-                // 4. RCT (RADIAL CHIP THINNING)
                 let rctFactor = 1.0;
                 if (ae_factor < 0.5) {
                     rctFactor = 1 / Math.sqrt(ae_factor * (2 - ae_factor));
@@ -1476,7 +1467,6 @@
                 effectiveVc = effectiveVc * kv_ae * k_ap;
                 effectiveFzBase = effectiveFzBase * k_ap * rctFactor;
 
-                // 5. MINIMAL-SPANDICKE (h_min Schab-Sperre)
                 let hm = effectiveFzBase * Math.sqrt(Math.min(ae / Deff, 1.0));
                 if (hm < 0.005) {
                     effectiveFzBase = 0.005 / Math.sqrt(Math.min(ae / Deff, 1.0));
@@ -1488,13 +1478,8 @@
 
             const effectiveFz = effectiveFzBase;
             
-            // 1. Theoretische Drehzahl
             let n_theo = (effectiveVc * 1000) / (Math.PI * Deff);
-            
-            // 2. MASCHINEN-CAPPING (Drehzahl auf Max-RPM der Maschine begrenzen)
             let n_eff = Math.min(n_theo, mach.max_rpm);
-            
-            // 3. Tischvorschub passend zur REELLEN Drehzahl
             let vf_eff = effectiveFz * z * n_eff;
             vf_eff = Math.min(vf_eff, mach.max_vf);
 
