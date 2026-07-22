@@ -11,7 +11,6 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
-        /* Pfeile bei Number-Inputs verfeinern */
         input[type=number]::-webkit-inner-spin-button, 
         input[type=number]::-webkit-outer-spin-button { 
             opacity: 0.5;
@@ -47,7 +46,20 @@
 
         <!-- ADMIN BEREICH -->
         <div id="admin-panel" class="hidden bg-white p-6 rounded-2xl border border-emerald-300 shadow-md space-y-6">
-            <h2 class="text-lg font-bold text-emerald-900 border-b border-slate-100 pb-3">Admin-Konsole: Lokale Datenbank-Verwaltung</h2>
+            
+            <!-- TOP BAR FÜR EXPORT & IMPORT -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 pb-4">
+                <h2 class="text-lg font-bold text-emerald-900">Admin-Konsole: Lokale Datenbank-Verwaltung</h2>
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <button onclick="exportDatabaseJSON()" class="flex-1 sm:flex-initial bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm">
+                        💾 DB Exportieren (.json)
+                    </button>
+                    <label class="flex-1 sm:flex-initial bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm">
+                        📂 DB Importieren
+                        <input type="file" id="import-json-file" accept=".json" onchange="importDatabaseJSON(event)" class="hidden">
+                    </label>
+                </div>
+            </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 border-b border-slate-200 pb-6 items-start">
                 
@@ -316,14 +328,13 @@
                 </div>
             </div>
 
-            <!-- SPALTE 2: DYNAMIK & PHYSIK (HYBRID: ZAHLENEINGABE + SCHIEBEREGLER) -->
+            <!-- SPALTE 2: DYNAMIK & PHYSIK -->
             <div class="lg:col-span-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                     <span class="text-base font-bold text-slate-900">2. Zustellung & Parameter</span>
                     <button onclick="resetSliders()" class="text-[11px] bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 px-2.5 py-1 rounded-lg transition font-semibold">Reset auf Profil</button>
                 </div>
 
-                <!-- Präzise Eingabe + Slider in MM -->
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-5">
                     
                     <!-- ap BLOCK -->
@@ -548,6 +559,39 @@
             localStorage.setItem('toolpilot_db_v3', JSON.stringify(db));
         }
 
+        function exportDatabaseJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", `toolpilot_db_export_${Date.now()}.json`);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+        }
+
+        function importDatabaseJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedDb = JSON.parse(e.target.result);
+                    if (importedDb && importedDb.tools && importedDb.materials) {
+                        db = importedDb;
+                        saveDatabase();
+                        initApp();
+                        alert("Datenbank erfolgreich importiert!");
+                    } else {
+                        alert("Ungültiges Dateiformat.");
+                    }
+                } catch (err) {
+                    alert("Fehler beim Lesen der JSON-Datei.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
         function resetToDefaultData() {
             if(confirm("Datenbank auf Werkseinstellungen zurücksetzen?")) {
                 db = JSON.parse(JSON.stringify(defaultDb));
@@ -704,7 +748,6 @@
             resetSliders();
         }
 
-        // RESET SLIDERS & INPUTS
         function resetSliders() {
             const toolId = document.getElementById('tool-select').value;
             const profId = document.getElementById('profile-select').value;
@@ -733,7 +776,6 @@
             calculate();
         }
 
-        // --- SYNCHRONISATIONSLOGIK FÜR TIPPEN & SLIDER ---
         function syncApFromSlider() {
             const val = parseFloat(document.getElementById('slider-ap').value) || 0.1;
             document.getElementById('input-ap-mm').value = val.toFixed(1);
@@ -1126,18 +1168,15 @@
             const z = tool.z;
             const Lmax = tool.max_overhang || (D * 3);
 
-            // Werte aus den Eingabefeldern lesen
             const ap = parseFloat(document.getElementById('input-ap-mm').value) || 0.1;
             const ae = parseFloat(document.getElementById('input-ae-mm').value) || 0.1;
 
             const ap_factor = ap / D;
             const ae_factor = ae / D;
 
-            // Zusatzanzeige Faktor
             document.getElementById('val-ap-factor').innerText = `(${ap_factor.toFixed(2)} × D)`;
             document.getElementById('val-ae-factor').innerText = `(${ae_factor.toFixed(2)} × D)`;
 
-            // Kollisionswarnung Lmax
             const warningBox = document.getElementById('depth-warning');
             if (ap > Lmax) {
                 warningBox.classList.remove('hidden');
