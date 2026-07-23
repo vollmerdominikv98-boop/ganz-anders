@@ -20,7 +20,7 @@
 <body class="bg-slate-100 text-slate-800 p-4 lg:p-6 min-h-screen">
     <div class="max-w-[1500px] mx-auto space-y-6">
         
-        <!-- HEADER (CLEAN & MINIMAL) -->
+        <!-- HEADER -->
         <header class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-md shadow-emerald-200">
@@ -31,14 +31,14 @@
                 </div>
             </div>
             <div>
-                <button onclick="toggleAdmin()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2 shadow-sm">
+                <button onclick="toggleAdmin()" class="bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2 shadow-sm">
                     ⚙️ Admin-Konsole
                 </button>
             </div>
         </header>
 
         <!-- ADMIN BEREICH -->
-        <div id="admin-panel" class="hidden bg-white p-6 rounded-2xl border border-emerald-300 shadow-md space-y-5">
+        <div id="admin-panel" class="hidden bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
             
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 pb-4">
                 <div>
@@ -121,7 +121,7 @@
                             <div id="adm-tool-matrix-container" class="grid grid-cols-2 gap-2 text-xs"></div>
                         </div>
 
-                        <button onclick="saveToolFromForm()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-2.5 rounded-xl text-xs font-bold transition shadow-sm">
+                        <button onclick="saveToolFromForm()" class="w-full bg-slate-800 hover:bg-slate-900 text-white p-2.5 rounded-xl text-xs font-bold transition shadow-sm">
                             💾 Werkzeug Speichern
                         </button>
                     </div>
@@ -131,7 +131,7 @@
                             <h3 class="font-bold text-xs uppercase tracking-wider text-slate-800">
                                 Werkzeugstamm (<span id="adm-tool-count">0</span>)
                             </h3>
-                            <input type="text" id="adm-tool-search" placeholder="🔍 Werkzeug suchen..." oninput="renderAdminToolTable()" class="w-full sm:w-64 bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-emerald-500">
+                            <input type="text" id="adm-tool-search" placeholder="🔍 Werkzeug suchen..." oninput="renderAdminToolTable()" class="w-full sm:w-64 bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-slate-500">
                         </div>
 
                         <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm max-h-[550px] overflow-y-auto bg-white">
@@ -177,7 +177,7 @@
                                 <input type="number" step="0.5" id="adm-mach-kw" value="18" class="w-full bg-white border border-slate-300 rounded-lg p-1.5">
                             </div>
                         </div>
-                        <button onclick="addNewMachine()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-2 rounded-lg text-xs font-bold transition">Maschine Speichern</button>
+                        <button onclick="addNewMachine()" class="w-full bg-slate-800 hover:bg-slate-900 text-white p-2 rounded-lg text-xs font-bold transition">Maschine Speichern</button>
                     </div>
 
                     <div class="space-y-3">
@@ -204,7 +204,7 @@
                             <label class="block text-slate-600 mb-1 text-xs font-medium">Spez. Schnittkraft kc1.1 (N/mm²)</label>
                             <input type="number" id="adm-mat-kc11" value="3400" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
                         </div>
-                        <button onclick="addNewMaterial()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-2 rounded-lg text-xs font-bold transition">Material Hinzufügen</button>
+                        <button onclick="addNewMaterial()" class="w-full bg-slate-800 hover:bg-slate-900 text-white p-2 rounded-lg text-xs font-bold transition">Material Hinzufügen</button>
                     </div>
 
                     <div class="space-y-3">
@@ -249,7 +249,7 @@
                             <label class="block text-slate-600 mb-1 text-xs font-medium">Beschreibung</label>
                             <input type="text" id="adm-prof-desc" placeholder="Kurzbeschreibung" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
                         </div>
-                        <button onclick="addNewProfile()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-2 rounded-lg text-xs font-bold transition">Profil Hinzufügen</button>
+                        <button onclick="addNewProfile()" class="w-full bg-slate-800 hover:bg-slate-900 text-white p-2 rounded-lg text-xs font-bold transition">Profil Hinzufügen</button>
                     </div>
 
                     <div class="space-y-3">
@@ -261,9 +261,9 @@
 
             <!-- TAB 5: CLOUD & BACKUP -->
             <div id="admin-tab-cloud" class="hidden space-y-4">
-                <div class="bg-emerald-50/60 p-4 rounded-xl border border-emerald-200 space-y-3">
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
                     <div class="flex justify-between items-center">
-                        <h3 class="font-bold text-emerald-900 text-xs uppercase tracking-wider">Supabase Cloud-Verbindung</h3>
+                        <h3 class="font-bold text-slate-900 text-xs uppercase tracking-wider">Supabase Cloud-Verbindung</h3>
                         <span id="supabase-conn-text" class="text-[11px] font-bold text-slate-500">Nicht verbunden</span>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
@@ -276,7 +276,7 @@
                             <input type="password" id="supabase-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..." class="w-full bg-white border border-slate-300 rounded-lg p-2 font-mono">
                         </div>
                     </div>
-                    <button onclick="saveSupabaseConfig()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition shadow-sm">
+                    <button onclick="saveSupabaseConfig()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold transition shadow-sm">
                         🔗 Mit Supabase verbinden & Sync starten
                     </button>
                 </div>
@@ -316,17 +316,17 @@
                 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1.5">Maschine</label>
-                    <select id="machine-select" class="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 transition" onchange="calculate()"></select>
+                    <select id="machine-select" class="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-slate-400 transition" onchange="calculate()"></select>
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1.5">Werkstoff</label>
-                    <select id="material-select" class="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 transition" onchange="onMaterialOrProfileChange()"></select>
+                    <select id="material-select" class="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-slate-400 transition" onchange="onMaterialOrProfileChange()"></select>
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1.5">Bearbeitungsprofil</label>
-                    <select id="profile-select" class="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 transition" onchange="onMaterialOrProfileChange()"></select>
+                    <select id="profile-select" class="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-slate-400 transition" onchange="onMaterialOrProfileChange()"></select>
                 </div>
 
                 <div class="space-y-3 bg-slate-50/80 p-4 rounded-xl border border-slate-200">
@@ -337,34 +337,34 @@
                     <div class="grid grid-cols-2 gap-2.5">
                         <div>
                             <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Hersteller</label>
-                            <select id="brand-select" class="w-full h-9 bg-white border border-slate-200 rounded-lg px-2.5 text-slate-800 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500" onchange="onBrandChange()"></select>
+                            <select id="brand-select" class="w-full h-9 bg-white border border-slate-200 rounded-lg px-2.5 text-slate-800 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-slate-400" onchange="onBrandChange()"></select>
                         </div>
                         <div>
                             <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Produktlinie</label>
-                            <select id="line-select" class="w-full h-9 bg-white border border-slate-200 rounded-lg px-2.5 text-slate-800 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500" onchange="onLineChange()"></select>
+                            <select id="line-select" class="w-full h-9 bg-white border border-slate-200 rounded-lg px-2.5 text-slate-800 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-slate-400" onchange="onLineChange()"></select>
                         </div>
                     </div>
 
                     <div>
                         <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Modell</label>
-                        <select id="tool-select" class="w-full h-10 bg-white border border-slate-300 rounded-xl px-3 text-slate-900 text-xs font-bold shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" onchange="onToolChange()"></select>
+                        <select id="tool-select" class="w-full h-10 bg-white border border-slate-300 rounded-xl px-3 text-slate-900 text-xs font-bold shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-400" onchange="onToolChange()"></select>
                     </div>
 
                     <!-- NACHSCHLIFF / IST-MASS INTEGRATION -->
                     <div class="pt-2 border-t border-slate-200 space-y-2">
                         <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" id="regrind-toggle" onchange="toggleRegrindFields()" class="rounded border-slate-300 text-emerald-600 focus:ring-0">
+                            <input type="checkbox" id="regrind-toggle" onchange="toggleRegrindFields()" class="rounded border-slate-300 text-slate-800 focus:ring-0">
                             <span class="text-xs font-semibold text-slate-800">Nachgeschliffenes Werkzeug (Ist-Maß)</span>
                         </label>
 
                         <div id="regrind-container" class="hidden grid grid-cols-2 gap-2 pt-1">
                             <div>
                                 <label class="block text-[10px] font-bold text-slate-500 mb-0.5 uppercase tracking-wider">Ist-Ø D (mm)</label>
-                                <input type="number" id="input-d-ist" step="0.01" min="0.1" value="7.85" oninput="calculate()" class="w-full bg-amber-50/60 border border-amber-300 rounded-lg p-1.5 text-amber-900 text-xs font-mono font-bold focus:ring-1 focus:ring-amber-500 outline-none">
+                                <input type="number" id="input-d-ist" step="0.01" min="0.1" value="7.85" oninput="calculate()" class="w-full bg-slate-100 border border-slate-300 rounded-lg p-1.5 text-slate-900 text-xs font-mono font-bold focus:ring-1 focus:ring-slate-500 outline-none">
                             </div>
                             <div id="regrind-r-box">
                                 <label class="block text-[10px] font-bold text-slate-500 mb-0.5 uppercase tracking-wider">Ist-Radius R (mm)</label>
-                                <input type="number" id="input-r-ist" step="0.01" min="0.0" value="0.50" oninput="calculate()" class="w-full bg-amber-50/60 border border-amber-300 rounded-lg p-1.5 text-amber-900 text-xs font-mono font-bold focus:ring-1 focus:ring-amber-500 outline-none">
+                                <input type="number" id="input-r-ist" step="0.01" min="0.0" value="0.50" oninput="calculate()" class="w-full bg-slate-100 border border-slate-300 rounded-lg p-1.5 text-slate-900 text-xs font-mono font-bold focus:ring-1 focus:ring-slate-500 outline-none">
                             </div>
                         </div>
                     </div>
@@ -372,7 +372,7 @@
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1.5">Werkzeugaufnahme</label>
-                    <select id="holder-select" class="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 transition" onchange="calculate()">
+                    <select id="holder-select" class="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-slate-400 transition" onchange="calculate()">
                         <option value="schrumpf">Hydrodehn-Spannfutter</option>
                         <option value="spannzange">Spannzange</option>
                         <option value="weldon">Weldon Spannfutter</option>
@@ -381,7 +381,7 @@
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1.5">Steifigkeit / Stabilität</label>
-                    <select id="rigidity-select" class="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 transition" onchange="calculate()"></select>
+                    <select id="rigidity-select" class="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-slate-400 transition" onchange="calculate()"></select>
                 </div>
             </div>
 
@@ -401,12 +401,12 @@
                                 <label class="font-bold text-xs text-slate-800 block">Schnitttiefe (ap)</label>
                                 <span id="val-ap-factor" class="text-slate-400 text-[10px] font-mono">(0.00 × D)</span>
                             </div>
-                            <div class="flex items-center gap-1 bg-white border border-slate-300 rounded-lg px-2 py-1 shadow-sm focus-within:ring-2 focus-within:ring-emerald-500">
-                                <input type="number" id="input-ap-mm" step="0.01" min="0.01" value="0.03" oninput="syncApFromInput()" class="w-16 text-right font-mono font-bold text-sm text-emerald-800 outline-none">
+                            <div class="flex items-center gap-1 bg-white border border-slate-300 rounded-lg px-2 py-1 shadow-sm focus-within:ring-2 focus-within:ring-slate-400">
+                                <input type="number" id="input-ap-mm" step="0.01" min="0.01" value="0.03" oninput="syncApFromInput()" class="w-16 text-right font-mono font-bold text-sm text-slate-900 outline-none">
                                 <span class="text-xs font-bold text-slate-500">mm</span>
                             </div>
                         </div>
-                        <input type="range" id="slider-ap" min="0.01" max="30.0" step="0.01" value="0.03" oninput="syncApFromSlider()" class="w-full accent-emerald-600 bg-slate-200 rounded-lg appearance-none h-2 cursor-pointer">
+                        <input type="range" id="slider-ap" min="0.01" max="30.0" step="0.01" value="0.03" oninput="syncApFromSlider()" class="w-full accent-slate-800 bg-slate-200 rounded-lg appearance-none h-2 cursor-pointer">
                         <div class="flex gap-1.5 pt-0.5">
                             <button onclick="setApShortcut(0.01)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">0.01mm</button>
                             <button onclick="setApShortcut(0.03)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">0.03mm</button>
@@ -425,12 +425,12 @@
                                 <label class="font-bold text-xs text-slate-800 block">Schnittbreite (ae)</label>
                                 <span id="val-ae-factor" class="text-slate-400 text-[10px] font-mono">(0.00 × D)</span>
                             </div>
-                            <div class="flex items-center gap-1 bg-white border border-slate-300 rounded-lg px-2 py-1 shadow-sm focus-within:ring-2 focus-within:ring-emerald-500">
-                                <input type="number" id="input-ae-mm" step="0.01" min="0.01" value="0.10" oninput="syncAeFromInput()" class="w-16 text-right font-mono font-bold text-sm text-emerald-800 outline-none">
+                            <div class="flex items-center gap-1 bg-white border border-slate-300 rounded-lg px-2 py-1 shadow-sm focus-within:ring-2 focus-within:ring-slate-400">
+                                <input type="number" id="input-ae-mm" step="0.01" min="0.01" value="0.10" oninput="syncAeFromInput()" class="w-16 text-right font-mono font-bold text-sm text-slate-900 outline-none">
                                 <span class="text-xs font-bold text-slate-500">mm</span>
                             </div>
                         </div>
-                        <input type="range" id="slider-ae" min="0.01" max="12.0" step="0.01" value="0.10" oninput="syncAeFromSlider()" class="w-full accent-emerald-600 bg-slate-200 rounded-lg appearance-none h-2 cursor-pointer">
+                        <input type="range" id="slider-ae" min="0.01" max="12.0" step="0.01" value="0.10" oninput="syncAeFromSlider()" class="w-full accent-slate-800 bg-slate-200 rounded-lg appearance-none h-2 cursor-pointer">
                         <div class="flex gap-1.5 pt-0.5">
                             <button onclick="setAeShortcut(0.05)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">0.05mm</button>
                             <button onclick="setAeShortcut(0.1)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">0.10mm</button>
@@ -446,7 +446,7 @@
                     <div class="flex items-center justify-between border-b border-slate-200 pb-2">
                         <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Praxis-Guardrails & Physik</h3>
                         <label class="flex items-center gap-1.5 cursor-pointer">
-                            <input type="checkbox" id="physics-toggle" checked onchange="calculate()" class="rounded border-slate-300 text-emerald-600 focus:ring-0">
+                            <input type="checkbox" id="physics-toggle" checked onchange="calculate()" class="rounded border-slate-300 text-slate-800 focus:ring-0">
                             <span class="text-xs text-slate-600 font-semibold">Aktiv</span>
                         </label>
                     </div>
@@ -454,7 +454,7 @@
                 </div>
             </div>
 
-            <!-- SPALTE 3: ERGEBNISSE & FAVORITEN -->
+            <!-- SPALTE 3: ERGEBNISSE & FAVORITEN-SPEICHERUNG -->
             <div class="lg:col-span-4 flex flex-col space-y-6">
                 <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                     <div class="border-b border-slate-100 pb-3 flex justify-between items-center">
@@ -470,14 +470,14 @@
                                 <span class="text-xs font-semibold text-slate-600 block">Drehzahl (n):</span>
                                 <span id="res-vc-eff" class="text-[10px] text-slate-500 font-mono font-medium">vc(eff): -- m/min</span>
                             </div>
-                            <span id="res-rpm" class="text-xl font-black font-mono text-emerald-700">-- U/min</span>
+                            <span id="res-rpm" class="text-xl font-black font-mono text-slate-900">-- U/min</span>
                         </div>
                         <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex justify-between items-center">
                             <div>
                                 <span class="text-xs font-semibold text-slate-600 block">Tischvorschub (vf):</span>
                                 <span id="res-fz-eff" class="text-[10px] text-slate-500 font-mono font-medium">fz(eff): -- mm</span>
                             </div>
-                            <span id="res-vf" class="text-xl font-black font-mono text-emerald-700">-- mm/min</span>
+                            <span id="res-vf" class="text-xl font-black font-mono text-slate-900">-- mm/min</span>
                         </div>
                         <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
                             <span class="text-xs font-semibold text-slate-600">Zustellung (ap / ae):</span>
@@ -485,23 +485,24 @@
                         </div>
                         <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
                             <span class="text-xs font-semibold text-slate-600">Zeitspanvolumen (Q):</span>
-                            <span id="res-q" class="text-base font-bold font-mono text-emerald-700">-- cm³/min</span>
+                            <span id="res-q" class="text-base font-bold font-mono text-slate-900">-- cm³/min</span>
                         </div>
                         <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
                             <span class="text-xs font-semibold text-slate-600">Antriebsleistung (Pc):</span>
-                            <span id="res-power" class="text-base font-bold font-mono text-amber-600">-- kW</span>
+                            <span id="res-power" class="text-base font-bold font-mono text-slate-800">-- kW</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-emerald-300 shadow-sm space-y-3">
-                    <h3 class="text-xs font-bold text-emerald-900 uppercase tracking-wider">Als Praxis-Favorit speichern</h3>
-                    <input type="text" id="fav-title" placeholder="Titel z.B. C45 Schruppen stabil" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-slate-900 text-xs focus:ring-2 focus:ring-emerald-500 font-medium">
+                <!-- CLEANE, UNTERFÜHRTE FAVORITEN-BOX (PASSEND ZUM APP-LOOK) -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                    <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Aktuelles Setup als Favorit speichern</h3>
+                    <input type="text" id="fav-title" placeholder="Titel z.B. C45 Schruppen stabil" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-slate-900 text-xs focus:ring-2 focus:ring-slate-400 font-medium outline-none">
                     
                     <div class="grid grid-cols-2 gap-2">
                         <div>
                             <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Bewertung</label>
-                            <select id="fav-rating" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-slate-900 text-xs font-medium">
+                            <select id="fav-rating" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-slate-900 text-xs font-medium outline-none">
                                 <option value="5">⭐⭐⭐⭐⭐</option>
                                 <option value="4">⭐⭐⭐⭐</option>
                                 <option value="3">⭐⭐⭐</option>
@@ -509,25 +510,37 @@
                         </div>
                         <div>
                             <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Notiz</label>
-                            <input type="text" id="fav-feedback" placeholder="z.B. Läuft super" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-slate-900 text-xs font-medium">
+                            <input type="text" id="fav-feedback" placeholder="z.B. Läuft super" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-slate-900 text-xs font-medium outline-none">
                         </div>
                     </div>
-                    <button onclick="saveCurrentAsFavorite()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-2.5 rounded-xl text-xs font-bold transition shadow-sm">
+                    <button onclick="saveCurrentAsFavorite()" class="w-full bg-slate-800 hover:bg-slate-900 text-white p-2.5 rounded-xl text-xs font-bold transition shadow-sm">
                         💾 Favorit übernehmen
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- PRAXIS-FAVORITEN LISTE -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <div class="flex justify-between items-center mb-3 border-b border-slate-100 pb-2">
-                <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    ⭐ Gespeicherte Praxis-Favoriten
-                </h2>
-                <span class="text-xs text-slate-400 font-medium">Mit 1 Klick wiederherstellen</span>
+        <!-- UNTERER BEREICH: FAVORITEN & VERLAUF -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-3">
+                <div class="flex gap-2">
+                    <button onclick="switchBottomTab('favorites')" id="bottom-tab-fav" class="px-4 py-2 rounded-xl text-xs font-bold transition bg-slate-800 text-white shadow-sm">⭐ Gespeicherte Favoriten</button>
+                    <button onclick="switchBottomTab('history')" id="bottom-tab-hist" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-50 border border-slate-200 transition">🕒 Berechnungsverlauf (<span id="history-count">0</span>)</button>
+                </div>
+                <span id="bottom-tab-info" class="text-xs text-slate-400 font-medium">Mit 1 Klick wiederherstellen</span>
             </div>
-            <div id="favorites-container" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+
+            <!-- TAB CONTAINER: FAVORITEN -->
+            <div id="tab-content-favorites" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+
+            <!-- TAB CONTAINER: VERLAUF (HISTORY) -->
+            <div id="tab-content-history" class="hidden space-y-3">
+                <div class="flex justify-between items-center">
+                    <p class="text-xs text-slate-500">Automatischer Verlauf deiner letzten Berechnungen. Kann direkt geladen oder bewertet werden.</p>
+                    <button onclick="clearHistory()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1 rounded-lg font-semibold transition">Verlauf leeren</button>
+                </div>
+                <div id="history-container" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+            </div>
         </div>
 
     </div>
@@ -581,7 +594,8 @@
                 "premus_gp_d16": { "name": "PREMUS GP Universal D16 Z4", "brand": "PRECITOOL", "line": "PREMUS GP", "type": "Schaftfräser", "geo_type": "shaft", "radius": 0, "material_schneidstoff": "VHM", "diameter": 16, "z": 4, "max_overhang": 42, "vc_per_material": { "stahl_c45": 180, "stahl_1200": 110, "rostfrei": 90, "alu_wrought": 400 }, "suitable_materials": ["stahl_c45", "stahl_1200", "rostfrei", "alu_wrought"], "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal", "planfraesen"] },
                 "premus_gp_d20": { "name": "PREMUS GP Universal D20 Z4", "brand": "PRECITOOL", "line": "PREMUS GP", "type": "Schaftfräser", "geo_type": "shaft", "radius": 0, "material_schneidstoff": "VHM", "diameter": 20, "z": 4, "max_overhang": 52, "vc_per_material": { "stahl_c45": 180, "stahl_1200": 110, "rostfrei": 90, "alu_wrought": 400 }, "suitable_materials": ["stahl_c45", "stahl_1200", "rostfrei", "alu_wrought"], "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal", "planfraesen"] }
             },
-            favorites: []
+            favorites: [],
+            history: []
         };
 
         let supabaseClient = null;
@@ -597,7 +611,7 @@
                 if (tabEl && btnEl) {
                     if (t === tabName) {
                         tabEl.classList.remove('hidden');
-                        btnEl.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition bg-white text-emerald-800 shadow-sm";
+                        btnEl.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition bg-white text-slate-900 shadow-sm";
                     } else {
                         tabEl.classList.add('hidden');
                         btnEl.className = "px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition";
@@ -609,6 +623,28 @@
             if (tabName === 'machines') renderAdminMachinesList();
             if (tabName === 'materials') renderAdminMaterialsList();
             if (tabName === 'profiles') renderAdminProfilesList();
+        }
+
+        function switchBottomTab(tab) {
+            const btnFav = document.getElementById('bottom-tab-fav');
+            const btnHist = document.getElementById('bottom-tab-hist');
+            const contentFav = document.getElementById('tab-content-favorites');
+            const contentHist = document.getElementById('tab-content-history');
+            const infoText = document.getElementById('bottom-tab-info');
+
+            if (tab === 'favorites') {
+                btnFav.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-slate-800 text-white shadow-sm";
+                btnHist.className = "px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-50 border border-slate-200 transition";
+                contentFav.classList.remove('hidden');
+                contentHist.classList.add('hidden');
+                infoText.innerText = "Mit 1 Klick wiederherstellen";
+            } else {
+                btnHist.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-slate-800 text-white shadow-sm";
+                btnFav.className = "px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-50 border border-slate-200 transition";
+                contentHist.classList.remove('hidden');
+                contentFav.classList.add('hidden');
+                infoText.innerText = "Automatisch gespeicherte Berechnungen";
+            }
         }
 
         function initSupabase() {
@@ -650,6 +686,7 @@
                 const { data, error } = await supabaseClient.from('app_state').select('data').eq('id', 'global_db').single();
                 if (data && data.data && data.data.tools && Object.keys(data.data.tools).length >= Object.keys(db.tools || {}).length) {
                     db = data.data;
+                    if(!db.history) db.history = [];
                     saveLocalDatabaseBackup();
                     initApp();
                 } else {
@@ -672,6 +709,7 @@
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_state', filter: 'id=eq.global_db' }, payload => {
                     if (payload.new && payload.new.data) {
                         db = payload.new.data;
+                        if(!db.history) db.history = [];
                         saveLocalDatabaseBackup();
                         initApp();
                     }
@@ -685,6 +723,7 @@
                 try { 
                     const parsed = JSON.parse(saved);
                     if (parsed && parsed.tools && Object.keys(parsed.tools).length > 2) {
+                        if(!parsed.history) parsed.history = [];
                         return parsed;
                     }
                 } catch (e) { console.error(e); }
@@ -723,6 +762,7 @@
                     const importedDb = JSON.parse(e.target.result);
                     if (importedDb && importedDb.tools && importedDb.materials) {
                         db = importedDb;
+                        if(!db.history) db.history = [];
                         saveDatabase();
                         initApp();
                         alert("Datenbank erfolgreich importiert & synchronisiert!");
@@ -749,6 +789,7 @@
             populateDropdowns();
             resetSliders(); 
             renderFavorites();
+            renderHistory();
             renderAdminToolTable();
         }
 
@@ -834,8 +875,8 @@
                     </td>
                     <td class="p-2.5">${geoBadge}</td>
                     <td class="p-2.5 text-right space-x-1">
-                        <button onclick="editToolFromAdmin('${id}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] px-2 py-1 rounded font-semibold border border-emerald-200 transition">✏️ Bearbeiten</button>
-                        <button onclick="duplicateToolAdmin('${id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] px-2 py-1 rounded font-semibold border border-slate-300 transition">📋 Kopieren</button>
+                        <button onclick="editToolFromAdmin('${id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] px-2 py-1 rounded font-semibold border border-slate-200 transition">✏️ Bearbeiten</button>
+                        <button onclick="duplicateToolAdmin('${id}')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 text-[11px] px-2 py-1 rounded font-semibold border border-slate-200 transition">📋 Kopieren</button>
                         <button onclick="deleteToolAdmin('${id}')" class="bg-rose-50 hover:bg-rose-100 text-rose-700 text-[11px] px-2 py-1 rounded border border-rose-200 transition">🗑️</button>
                     </td>
                 `;
@@ -1264,7 +1305,7 @@
                 const div = document.createElement('div');
                 div.className = "flex items-center gap-1.5";
                 div.innerHTML = `
-                    <input type="checkbox" id="tool-prof-${profId}" checked class="rounded border-slate-300 text-emerald-600">
+                    <input type="checkbox" id="tool-prof-${profId}" checked class="rounded border-slate-300 text-slate-800">
                     <label for="tool-prof-${profId}" class="text-slate-700 cursor-pointer text-[11px] font-medium truncate" title="${p.name}">${p.name}</label>
                 `;
                 container.appendChild(div);
@@ -1280,7 +1321,7 @@
                 div.className = "flex items-center justify-between gap-1 bg-white p-1.5 rounded-lg border border-slate-300";
                 div.innerHTML = `
                     <label class="flex items-center gap-1.5 truncate text-slate-700 cursor-pointer flex-1 text-[11px]">
-                        <input type="checkbox" id="tool-suit-${matId}" checked class="rounded border-slate-300 text-emerald-600">
+                        <input type="checkbox" id="tool-suit-${matId}" checked class="rounded border-slate-300 text-slate-800">
                         <span class="truncate font-medium">${mat.name}</span>
                     </label>
                     <input type="number" id="tool-vc-${matId}" value="200" class="w-12 bg-slate-50 border border-slate-300 rounded p-0.5 text-slate-900 text-right text-xs font-mono">
@@ -1328,7 +1369,7 @@
         }
 
         function renderFavorites() {
-            const container = document.getElementById('favorites-container');
+            const container = document.getElementById('tab-content-favorites');
             container.innerHTML = '';
             if (!db.favorites || db.favorites.length === 0) {
                 container.innerHTML = `<div class="text-xs text-slate-400 italic col-span-4">Noch keine Praxis-Favoriten gespeichert.</div>`;
@@ -1337,7 +1378,7 @@
 
             db.favorites.forEach(fav => {
                 const card = document.createElement('div');
-                card.className = "bg-slate-50 p-3.5 rounded-xl border border-slate-200 hover:border-emerald-500 transition flex flex-col justify-between space-y-2 shadow-sm";
+                card.className = "bg-slate-50 p-3.5 rounded-xl border border-slate-200 hover:border-slate-400 transition flex flex-col justify-between space-y-2 shadow-sm";
                 card.innerHTML = `
                     <div>
                         <div class="flex justify-between items-start">
@@ -1350,12 +1391,138 @@
                         </div>
                     </div>
                     <div class="flex gap-2 pt-1">
-                        <button onclick="loadFavorite('${fav.id}')" class="flex-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs py-1 rounded-lg border border-emerald-300 font-semibold transition">Laden</button>
+                        <button onclick="loadFavorite('${fav.id}')" class="flex-1 bg-white hover:bg-slate-100 text-slate-800 text-xs py-1 rounded-lg border border-slate-200 font-semibold transition">Laden</button>
                         <button onclick="deleteFavorite('${fav.id}')" class="bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs px-2.5 rounded-lg border border-rose-200 transition">🗑️</button>
                     </div>
                 `;
                 container.appendChild(card);
             });
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('history-container');
+            const countEl = document.getElementById('history-count');
+            if(!container) return;
+
+            if(!db.history) db.history = [];
+            countEl.innerText = db.history.length;
+            container.innerHTML = '';
+
+            if (db.history.length === 0) {
+                container.innerHTML = `<div class="text-xs text-slate-400 italic col-span-4">Noch kein Verlauf aufgezeichnet. Starte eine Berechnung!</div>`;
+                return;
+            }
+
+            db.history.slice(-12).reverse().forEach(item => {
+                const card = document.createElement('div');
+                card.className = "bg-slate-50 p-3.5 rounded-xl border border-slate-200 hover:border-slate-400 transition flex flex-col justify-between space-y-2 shadow-sm";
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start">
+                            <span class="font-bold text-slate-900 text-xs truncate">${item.tool_name || 'Berechnung'}</span>
+                            <span class="text-[9px] text-slate-400 font-mono">${item.time}</span>
+                        </div>
+                        <div class="text-[10px] text-slate-500 mt-1 truncate">${item.mat_name} | ${item.prof_name}</div>
+                        <div class="text-[10px] text-slate-700 mt-2 space-y-0.5 font-mono">
+                            <div>n: <strong class="text-slate-900">${item.rpm} U/min</strong> | vf: <strong class="text-slate-900">${item.vf} mm/min</strong></div>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 pt-1">
+                        <button onclick="loadHistoryItem('${item.id}')" class="flex-1 bg-white hover:bg-slate-100 text-slate-800 text-xs py-1 rounded-lg border border-slate-200 font-semibold transition">Laden</button>
+                        <button onclick="promoteHistoryToFavorite('${item.id}')" class="bg-slate-800 hover:bg-slate-900 text-white text-xs px-2.5 py-1 rounded-lg font-semibold transition" title="Als Favorit speichern">⭐</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function pushToHistory(data) {
+            if(!db.history) db.history = [];
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+            const historyItem = {
+                id: 'hist_' + Date.now(),
+                time: timeStr,
+                tool_id: data.tool_id,
+                tool_name: data.tool_name,
+                mat_id: data.mat_id,
+                mat_name: data.mat_name,
+                prof_id: data.prof_id,
+                prof_name: data.prof_name,
+                mach_id: data.mach_id,
+                rigidity_id: data.rigidity_id,
+                ap: data.ap,
+                ae: data.ae,
+                rpm: data.rpm.toFixed(0),
+                vf: data.vf.toFixed(0)
+            };
+
+            // Duplikate des letzten Eintrags vermeiden
+            const last = db.history[db.history.length - 1];
+            if(last && last.tool_id === historyItem.tool_id && last.rpm === historyItem.rpm && last.vf === historyItem.vf && last.ap === historyItem.ap && last.ae === historyItem.ae) {
+                return;
+            }
+
+            db.history.push(historyItem);
+            if(db.history.length > 50) db.history.shift(); // Max 50 Einträge
+            saveDatabase();
+            renderHistory();
+        }
+
+        function loadHistoryItem(id) {
+            const item = db.history.find(h => h.id === id);
+            if(!item) return;
+
+            if(db.machines[item.mach_id]) document.getElementById('machine-select').value = item.mach_id;
+            if(db.materials[item.mat_id]) document.getElementById('material-select').value = item.mat_id;
+            if(db.profiles[item.prof_id]) document.getElementById('profile-select').value = item.prof_id;
+            
+            onMaterialOrProfileChange();
+
+            if(db.tools[item.tool_id]) document.getElementById('tool-select').value = item.tool_id;
+            if(item.rigidity_id && db.rigidity[item.rigidity_id]) document.getElementById('rigidity-select').value = item.rigidity_id;
+
+            document.getElementById('input-ap-mm').value = item.ap;
+            document.getElementById('slider-ap').value = item.ap;
+            document.getElementById('input-ae-mm').value = item.ae;
+            document.getElementById('slider-ae').value = item.ae;
+
+            calculate();
+        }
+
+        function promoteHistoryToFavorite(id) {
+            const item = db.history.find(h => h.id === id);
+            if(!item) return;
+
+            const newFav = {
+                id: 'fav_' + Date.now(),
+                title: `${item.tool_name} (${item.prof_name})`,
+                tool_id: item.tool_id,
+                material_id: item.mat_id,
+                profile_id: item.prof_id,
+                rigidity_id: item.rigidity_id,
+                ap_mm: parseFloat(item.ap),
+                ae_mm: parseFloat(item.ae),
+                rating: 5,
+                feedback: "Aus Verlauf übernommen",
+                rpm: parseFloat(item.rpm),
+                feed_rate_vf: parseFloat(item.vf)
+            };
+
+            db.favorites.push(newFav);
+            saveDatabase();
+            renderFavorites();
+            switchBottomTab('favorites');
+            alert('Erfolgreich zu den Favoriten übernommen!');
+        }
+
+        function clearHistory() {
+            if(confirm("Verlauf wirklich leeren?")) {
+                db.history = [];
+                saveDatabase();
+                renderHistory();
+            }
         }
 
         function loadFavorite(favId) {
@@ -1416,6 +1583,7 @@
             document.getElementById('fav-title').value = '';
             document.getElementById('fav-feedback').value = '';
             renderFavorites();
+            switchBottomTab('favorites');
         }
 
         function deleteFavorite(favId) {
@@ -1603,7 +1771,7 @@
                 rpmEl.className = "text-xl font-black font-mono text-rose-600";
                 rpmEl.title = `Gekappt! Theoretisch nötig: ${n_theo.toFixed(0)} U/min`;
             } else {
-                rpmEl.className = "text-xl font-black font-mono text-emerald-700";
+                rpmEl.className = "text-xl font-black font-mono text-slate-900";
                 rpmEl.title = "";
             }
 
@@ -1613,7 +1781,7 @@
             if (effectiveFz * z * n_theo > mach.max_vf) {
                 vfEl.className = "text-xl font-black font-mono text-rose-600";
             } else {
-                vfEl.className = "text-xl font-black font-mono text-emerald-700";
+                vfEl.className = "text-xl font-black font-mono text-slate-900";
             }
 
             document.getElementById('res-apae').innerText = ap.toFixed(2) + " / " + ae.toFixed(2) + " mm";
@@ -1623,8 +1791,24 @@
             if (power_kw > (mach.max_kw * 0.85)) {
                 powerEl.className = "text-base font-bold font-mono text-rose-600 animate-pulse";
             } else {
-                powerEl.className = "text-base font-bold font-mono text-amber-600";
+                powerEl.className = "text-base font-bold font-mono text-slate-800";
             }
+
+            // In den Verlauf schreiben
+            pushToHistory({
+                tool_id: toolId,
+                tool_name: tool.name,
+                mat_id: matId,
+                mat_name: mat.name,
+                prof_id: profId,
+                prof_name: profile.name,
+                mach_id: machId,
+                rigidity_id: rigId,
+                ap: ap.toFixed(2),
+                ae: ae.toFixed(2),
+                rpm: n_eff,
+                vf: vf_eff
+            });
         }
 
         function exportDataReport() {
