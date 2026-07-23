@@ -453,7 +453,7 @@
                 </div>
             </div>
 
-            <!-- SPALTE 3: ERGEBNISSE -->
+            <!-- SPALTE 3: ERGEBNISSE & BESTÄTIGEN-BUTTON -->
             <div class="lg:col-span-4 flex flex-col space-y-6">
                 <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                     <div class="border-b border-slate-100 pb-3">
@@ -488,6 +488,11 @@
                             <span id="res-power" class="text-base font-bold font-mono text-slate-800">-- kW</span>
                         </div>
                     </div>
+
+                    <!-- BESTÄTIGEN BUTTON (MANUELLE ÜBERNAHME IN DEN VERLAUF) -->
+                    <button onclick="confirmAndPushToHistory()" class="w-full bg-slate-900 hover:bg-slate-800 text-white p-3 rounded-xl text-xs font-bold transition shadow-sm flex items-center justify-center gap-2">
+                        ✔ Bestätigen & in Verlauf übernehmen
+                    </button>
                 </div>
             </div>
         </div>
@@ -519,7 +524,7 @@
                 <!-- TAB CONTAINER: VERLAUF (HISTORY) -->
                 <div id="tab-content-history" class="hidden space-y-3">
                     <div class="flex justify-between items-center">
-                        <p class="text-xs text-slate-500">Automatischer Verlauf der letzten 30 Berechnungen. Hier kannst du direkt Sterne vergeben, Notizen machen oder als Favorit speichern.</p>
+                        <p class="text-xs text-slate-500">Manuell bestätigter Verlauf (max. 30 Einträge). Hier kannst du direkt Sterne vergeben, Notizen machen oder als Favorit speichern.</p>
                         <button onclick="clearHistory()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1 rounded-lg font-semibold transition">Verlauf leeren</button>
                     </div>
                     <div id="history-container" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
@@ -1421,7 +1426,7 @@
             container.innerHTML = '';
 
             if (db.history.length === 0) {
-                container.innerHTML = `<div class="text-xs text-slate-400 italic col-span-4">Noch kein Verlauf aufgezeichnet. Starte eine Berechnung!</div>`;
+                container.innerHTML = `<div class="text-xs text-slate-400 italic col-span-4">Noch kein Verlauf aufgezeichnet. Klicke oben auf "Bestätigen", um Setups hier zu sichern!</div>`;
                 return;
             }
 
@@ -1460,7 +1465,24 @@
             });
         }
 
-        function pushToHistory(data) {
+        // Manuelles Bestätigen und in den Verlauf übernehmen
+        function confirmAndPushToHistory() {
+            const machId = document.getElementById('machine-select').value;
+            const matId = document.getElementById('material-select').value;
+            const profId = document.getElementById('profile-select').value;
+            const toolId = document.getElementById('tool-select').value;
+            const rigId = document.getElementById('rigidity-select').value;
+            
+            const mach = db.machines[machId];
+            const mat = db.materials[matId];
+            const profile = db.profiles[profId];
+            const tool = db.tools[toolId];
+
+            if(!mach || !tool || !mat || !profile) return alert("Bitte wähle alle Konfigurationsparameter aus.");
+
+            const ap = parseFloat(document.getElementById('input-ap-mm').value) || 0.01;
+            const ae = parseFloat(document.getElementById('input-ae-mm').value) || 0.01;
+
             if(!db.history) db.history = [];
             const now = new Date();
             const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -1468,36 +1490,32 @@
             const historyItem = {
                 id: 'hist_' + Date.now(),
                 time: timeStr,
-                tool_id: data.tool_id,
-                tool_name: data.tool_name,
-                mat_id: data.mat_id,
-                mat_name: data.mat_name,
-                prof_id: data.prof_id,
-                prof_name: data.prof_name,
-                mach_id: data.mach_id,
-                rigidity_id: data.rigidity_id,
-                ap: data.ap,
-                ae: data.ae,
-                rpm: data.rpm.toFixed(0),
-                vf: data.vf.toFixed(0),
+                tool_id: toolId,
+                tool_name: tool.name,
+                mat_id: matId,
+                mat_name: mat.name,
+                prof_id: profId,
+                prof_name: profile.name,
+                mach_id: machId,
+                rigidity_id: rigId,
+                ap: ap.toFixed(2),
+                ae: ae.toFixed(2),
+                rpm: currentCalculatedResults.rpm.toFixed(0),
+                vf: currentCalculatedResults.vf.toFixed(0),
                 rating: 5,
                 note: ""
             };
 
-            const last = db.history[db.history.length - 1];
-            if(last && last.tool_id === historyItem.tool_id && last.rpm === historyItem.rpm && last.vf === historyItem.vf && last.ap === historyItem.ap && last.ae === historyItem.ae) {
-                return;
-            }
-
             db.history.push(historyItem);
             
-            // Limit auf genau 30 Einträge (FIFO)
             if(db.history.length > 30) {
                 db.history.shift();
             }
 
             saveDatabase();
             renderHistory();
+            switchBottomTab('history');
+            alert("Setup erfolgreich im Verlauf gespeichert!");
         }
 
         function loadHistoryItem(id) {
@@ -1801,21 +1819,6 @@
             } else {
                 powerEl.className = "text-base font-bold font-mono text-slate-800";
             }
-
-            pushToHistory({
-                tool_id: toolId,
-                tool_name: tool.name,
-                mat_id: matId,
-                mat_name: mat.name,
-                prof_id: profId,
-                prof_name: profile.name,
-                mach_id: machId,
-                rigidity_id: rigId,
-                ap: ap.toFixed(2),
-                ae: ae.toFixed(2),
-                rpm: n_eff,
-                vf: vf_eff
-            });
         }
 
         initSupabase();
