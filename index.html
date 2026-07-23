@@ -1473,7 +1473,7 @@
             });
         }
 
-        // Manuelles Bestätigen und in den Verlauf übernehmen
+        // Manuelles Bestätigen und in den Verlauf übernehmen (speichert jetzt auch Maschinen- & Aufnahmedaten)
         function confirmAndPushToHistory() {
             const machId = document.getElementById('machine-select').value;
             const matId = document.getElementById('material-select').value;
@@ -1580,6 +1580,7 @@
                 material_id: item.mat_id,
                 profile_id: item.prof_id,
                 rigidity_id: item.rigidity_id,
+                machine_id: item.mach_id,
                 ap_mm: parseFloat(item.ap),
                 ae_mm: parseFloat(item.ae),
                 rating: rating,
