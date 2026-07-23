@@ -299,7 +299,7 @@
 
                 <div class="pt-2 flex justify-between items-center border-t border-slate-100">
                     <span class="text-xs text-slate-400">Werkseinstellungen wiederherstellen?</span>
-                    <button onclick="resetToDefaultData()" class="bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300 text-xs px-3 py-1.5 rounded-lg font-semibold transition">🔄 auf Werkseinstellungen zurücksetzen</button>
+                    <button onclick="resetToDefaultData()" class="bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300 text-xs px-3 py-1.5 rounded-lg font-semibold transition">🔄 Auf Werkseinstellungen zurücksetzen</button>
                 </div>
             </div>
 
@@ -519,7 +519,7 @@
                 <!-- TAB CONTAINER: VERLAUF (HISTORY) -->
                 <div id="tab-content-history" class="hidden space-y-3">
                     <div class="flex justify-between items-center">
-                        <p class="text-xs text-slate-500">Automatischer Verlauf deiner letzten Berechnungen. Hier kannst du direkt Sterne vergeben, Notizen machen oder als Favorit speichern.</p>
+                        <p class="text-xs text-slate-500">Automatischer Verlauf der letzten 30 Berechnungen. Hier kannst du direkt Sterne vergeben, Notizen machen oder als Favorit speichern.</p>
                         <button onclick="clearHistory()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1 rounded-lg font-semibold transition">Verlauf leeren</button>
                     </div>
                     <div id="history-container" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
@@ -683,6 +683,7 @@
                 if (data && data.data && data.data.tools && Object.keys(data.data.tools).length >= Object.keys(db.tools || {}).length) {
                     db = data.data;
                     if(!db.history) db.history = [];
+                    if(!db.favorites) db.favorites = [];
                     saveLocalDatabaseBackup();
                     initApp();
                 } else {
@@ -706,6 +707,7 @@
                     if (payload.new && payload.new.data) {
                         db = payload.new.data;
                         if(!db.history) db.history = [];
+                        if(!db.favorites) db.favorites = [];
                         saveLocalDatabaseBackup();
                         initApp();
                     }
@@ -720,6 +722,7 @@
                     const parsed = JSON.parse(saved);
                     if (parsed && parsed.tools && Object.keys(parsed.tools).length > 2) {
                         if(!parsed.history) parsed.history = [];
+                        if(!parsed.favorites) parsed.favorites = [];
                         return parsed;
                     }
                 } catch (e) { console.error(e); }
@@ -759,6 +762,7 @@
                     if (importedDb && importedDb.tools && importedDb.materials) {
                         db = importedDb;
                         if(!db.history) db.history = [];
+                        if(!db.favorites) db.favorites = [];
                         saveDatabase();
                         initApp();
                         alert("Datenbank erfolgreich importiert & synchronisiert!");
@@ -1421,7 +1425,7 @@
                 return;
             }
 
-            db.history.slice(-12).reverse().forEach(item => {
+            db.history.slice(-30).reverse().forEach(item => {
                 const card = document.createElement('div');
                 card.className = "bg-slate-50 p-3.5 rounded-xl border border-slate-200 hover:border-slate-400 transition flex flex-col justify-between space-y-3 shadow-sm";
                 card.innerHTML = `
@@ -1486,7 +1490,12 @@
             }
 
             db.history.push(historyItem);
-            if(db.history.length > 50) db.history.shift();
+            
+            // Limit auf genau 30 Einträge (FIFO)
+            if(db.history.length > 30) {
+                db.history.shift();
+            }
+
             saveDatabase();
             renderHistory();
         }
@@ -1524,6 +1533,8 @@
 
             item.rating = rating;
             item.note = note;
+
+            if(!db.favorites) db.favorites = [];
 
             const newFav = {
                 id: 'fav_' + Date.now(),
