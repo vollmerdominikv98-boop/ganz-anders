@@ -376,7 +376,7 @@
 
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-5">
                     
-                    <!-- ap BLOCK (MIT 0.01 mm FEINSCHRITTEN) -->
+                    <!-- ap BLOCK -->
                     <div class="space-y-2">
                         <div class="flex justify-between items-center">
                             <div>
@@ -400,7 +400,7 @@
 
                     <div class="border-b border-slate-200"></div>
 
-                    <!-- ae BLOCK (MIT 0.01 mm FEINSCHRITTEN) -->
+                    <!-- ae BLOCK -->
                     <div class="space-y-2">
                         <div class="flex justify-between items-center">
                             <div>
@@ -536,20 +536,21 @@
             },
             profiles: {
                 "schruppen": { "name": "Schruppen (Roughing)", "vc_factor": 0.85, "fz_factor": 1.20, "ap_factor": 1.0, "ae_factor": 0.7, "description": "Hohes Spanvolumen, reduziertes vc, hoher Vorschub" },
-                "schlichten": { "name": "Schlichten (Finishing)", "vc_factor": 1.20, "fz_factor": 0.50, "ap_factor": 0.05, "ae_factor": 0.05, "description": "Hohe Oberflächengüte, hohes vc, feiner Vorschub" },
+                "schlichten": { "name": "Schlichten Standard (Weiche Werkstoffe)", "vc_factor": 1.20, "fz_factor": 0.60, "ap_factor": 0.1, "ae_factor": 0.1, "description": "Hohe Oberflächengüte bei ungehärteten Stählen / Alu" },
+                "schlichten_gehaertet": { "name": "Schlichten Gehärtet (Fine Finishing 50-65 HRC)", "vc_factor": 1.10, "fz_factor": 0.35, "ap_factor": 0.03, "ae_factor": 0.02, "description": "Feinschlichten gehärteter Stähle, minimale Schnittkräfte" },
                 "hsc_trochoidal": { "name": "HSC / Trochoidal (kleines ae)", "vc_factor": 1.40, "fz_factor": 1.0, "ap_factor": 0.8, "ae_factor": 0.08, "description": "Geringe radiale Eintauchtiefe, ideal für RCT" },
                 "planfraesen": { "name": "Planfräsen (Face Milling)", "vc_factor": 1.0, "fz_factor": 1.0, "ap_factor": 0.5, "ae_factor": 0.8, "description": "Standard-Flächenbearbeitung" }
             },
             tools: {
-                "yg1_x5070_d1_r01": { "name": "X5070 Torusfräser D1 R0.1 Z2", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.1, "material_schneidstoff": "VHM", "diameter": 1, "z": 2, "max_overhang": 3, "vc_per_material": { "stahl_c45": 140, "stahl_1200": 110, "gehaertet_55hrc": 90, "gehaertet_60hrc": 70, "gehaertet_65hrc": 50 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schlichten", "hsc_trochoidal"] },
-                "yg1_x5070_d2_r02": { "name": "X5070 Torusfräser D2 R0.2 Z2", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.2, "material_schneidstoff": "VHM", "diameter": 2, "z": 2, "max_overhang": 5, "vc_per_material": { "stahl_c45": 150, "stahl_1200": 120, "gehaertet_55hrc": 100, "gehaertet_60hrc": 80, "gehaertet_65hrc": 55 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schlichten", "hsc_trochoidal"] },
-                "yg1_x5070_d3_r02": { "name": "X5070 Torusfräser D3 R0.2 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.2, "material_schneidstoff": "VHM", "diameter": 3, "z": 4, "max_overhang": 8, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal"] },
-                "yg1_x5070_d4_r03": { "name": "X5070 Torusfräser D4 R0.3 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.3, "material_schneidstoff": "VHM", "diameter": 4, "z": 4, "max_overhang": 10, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal"] },
-                "yg1_x5070_d5_r05": { "name": "X5070 Torusfräser D5 R0.5 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.5, "material_schneidstoff": "VHM", "diameter": 5, "z": 4, "max_overhang": 13, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal"] },
-                "yg1_x5070_d6_r05": { "name": "X5070 Torusfräser D6 R0.5 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.5, "material_schneidstoff": "VHM", "diameter": 6, "z": 4, "max_overhang": 18, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal"] },
-                "yg1_x5070_d8_r05": { "name": "X5070 Torusfräser D8 R0.5 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.5, "material_schneidstoff": "VHM", "diameter": 8, "z": 4, "max_overhang": 24, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal"] },
-                "yg1_x5070_d10_r10": { "name": "X5070 Torusfräser D10 R1.0 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 1, "material_schneidstoff": "VHM", "diameter": 10, "z": 4, "max_overhang": 30, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal"] },
-                "yg1_x5070_d12_r10": { "name": "X5070 Torusfräser D12 R1.0 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 1, "material_schneidstoff": "VHM", "diameter": 12, "z": 4, "max_overhang": 36, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal"] },
+                "yg1_x5070_d1_r01": { "name": "X5070 Torusfräser D1 R0.1 Z2", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.1, "material_schneidstoff": "VHM", "diameter": 1, "z": 2, "max_overhang": 3, "vc_per_material": { "stahl_c45": 140, "stahl_1200": 110, "gehaertet_55hrc": 90, "gehaertet_60hrc": 70, "gehaertet_65hrc": 50 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schlichten", "schlichten_gehaertet", "hsc_trochoidal"] },
+                "yg1_x5070_d2_r02": { "name": "X5070 Torusfräser D2 R0.2 Z2", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.2, "material_schneidstoff": "VHM", "diameter": 2, "z": 2, "max_overhang": 5, "vc_per_material": { "stahl_c45": 150, "stahl_1200": 120, "gehaertet_55hrc": 100, "gehaertet_60hrc": 80, "gehaertet_65hrc": 55 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schlichten", "schlichten_gehaertet", "hsc_trochoidal"] },
+                "yg1_x5070_d3_r02": { "name": "X5070 Torusfräser D3 R0.2 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.2, "material_schneidstoff": "VHM", "diameter": 3, "z": 4, "max_overhang": 8, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "schlichten_gehaertet", "hsc_trochoidal"] },
+                "yg1_x5070_d4_r03": { "name": "X5070 Torusfräser D4 R0.3 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.3, "material_schneidstoff": "VHM", "diameter": 4, "z": 4, "max_overhang": 10, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "schlichten_gehaertet", "hsc_trochoidal"] },
+                "yg1_x5070_d5_r05": { "name": "X5070 Torusfräser D5 R0.5 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.5, "material_schneidstoff": "VHM", "diameter": 5, "z": 4, "max_overhang": 13, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "schlichten_gehaertet", "hsc_trochoidal"] },
+                "yg1_x5070_d6_r05": { "name": "X5070 Torusfräser D6 R0.5 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.5, "material_schneidstoff": "VHM", "diameter": 6, "z": 4, "max_overhang": 18, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "schlichten_gehaertet", "hsc_trochoidal"] },
+                "yg1_x5070_d8_r05": { "name": "X5070 Torusfräser D8 R0.5 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.5, "material_schneidstoff": "VHM", "diameter": 8, "z": 4, "max_overhang": 24, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "schlichten_gehaertet", "hsc_trochoidal"] },
+                "yg1_x5070_d10_r10": { "name": "X5070 Torusfräser D10 R1.0 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 1, "material_schneidstoff": "VHM", "diameter": 10, "z": 4, "max_overhang": 30, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "schlichten_gehaertet", "hsc_trochoidal"] },
+                "yg1_x5070_d12_r10": { "name": "X5070 Torusfräser D12 R1.0 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 1, "material_schneidstoff": "VHM", "diameter": 12, "z": 4, "max_overhang": 36, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "schlichten_gehaertet", "hsc_trochoidal"] },
                 "premus_gp_d6": { "name": "PREMUS GP Universal D6 Z4", "brand": "PRECITOOL", "line": "PREMUS GP", "type": "Schaftfräser", "geo_type": "shaft", "radius": 0, "material_schneidstoff": "VHM", "diameter": 6, "z": 4, "max_overhang": 19, "vc_per_material": { "stahl_c45": 180, "stahl_1200": 110, "rostfrei": 90, "alu_wrought": 400 }, "suitable_materials": ["stahl_c45", "stahl_1200", "rostfrei", "alu_wrought"], "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal", "planfraesen"] },
                 "premus_gp_d8": { "name": "PREMUS GP Universal D8 Z4", "brand": "PRECITOOL", "line": "PREMUS GP", "type": "Schaftfräser", "geo_type": "shaft", "radius": 0, "material_schneidstoff": "VHM", "diameter": 8, "z": 4, "max_overhang": 25, "vc_per_material": { "stahl_c45": 180, "stahl_1200": 110, "rostfrei": 90, "alu_wrought": 400 }, "suitable_materials": ["stahl_c45", "stahl_1200", "rostfrei", "alu_wrought"], "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal", "planfraesen"] },
                 "premus_gp_d10": { "name": "PREMUS GP Universal D10 Z4", "brand": "PRECITOOL", "line": "PREMUS GP", "type": "Schaftfräser", "geo_type": "shaft", "radius": 0, "material_schneidstoff": "VHM", "diameter": 10, "z": 4, "max_overhang": 30, "vc_per_material": { "stahl_c45": 180, "stahl_1200": 110, "rostfrei": 90, "alu_wrought": 400 }, "suitable_materials": ["stahl_c45", "stahl_1200", "rostfrei", "alu_wrought"], "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal", "planfraesen"] },
@@ -1364,7 +1365,7 @@
             renderFavorites();
         }
 
-        // --- HAUPTBERECHNUNG MIT SCHLICHT-ANPASSUNG ---
+        // --- HAUPTBERECHNUNG SOWIE GUARDRAILS INKL. NEUEM SCHLICHTEN-GEHÄRTET PROFIL ---
         function calculate() {
             const machId = document.getElementById('machine-select').value;
             const matId = document.getElementById('material-select').value;
@@ -1466,12 +1467,15 @@
                     physicsInfoHtml += `<div class="text-[11px] text-amber-700 font-semibold">⚖️ Schnittdruck (ap > 1.0D): -${((1 - k_ap) * 100).toFixed(0)}%</div>`;
                 }
 
-                // 4. RCT (RADIAL CHIP THINNING) - beim Schlichten sanfter kappen
+                // 4. RCT (RADIAL CHIP THINNING)
                 let rctFactor = 1.0;
                 if (ae_factor < 0.5) {
                     rctFactor = 1 / Math.sqrt(ae_factor * (2 - ae_factor));
-                    // Beim Schlichten begrenzen wir RCT auf max 1.3x für feine Oberflächen
-                    const maxRct = (profId === 'schlichten') ? 1.3 : 2.0;
+                    
+                    let maxRct = 2.0;
+                    if (profId === 'schlichten_gehaertet') maxRct = 1.10; // Extrem strikt beim Hartschlichten
+                    else if (profId === 'schlichten') maxRct = 1.25;
+
                     rctFactor = Math.min(rctFactor, maxRct);
                     physicsInfoHtml += `<div class="text-[11px] text-emerald-700 font-semibold">⚡ RCT Spanmitte: fz +${((rctFactor - 1) * 100).toFixed(0)}%</div>`;
                 }
@@ -1479,10 +1483,16 @@
                 effectiveVc = effectiveVc * kv_ae * k_ap;
                 effectiveFzBase = effectiveFzBase * k_ap * rctFactor;
 
-                // 5. MINIMAL-SPANDICKE
+                // 5. SCHLICHT-DÄMPFUNG BEI MASSIVEM VC-DROP (D_eff Kollaps am Torus/Kugel)
+                if ((profId === 'schlichten_gehaertet' || profId === 'schlichten') && Deff < (D * 0.15)) {
+                    effectiveFzBase *= 0.65; // Sanfte fz-Anpassung
+                    physicsInfoHtml += `<div class="text-[11px] text-cyan-800 font-semibold">✨ Torus-Feinschlichten (Deff < 15%D): fz geglättet</div>`;
+                }
+
+                // 6. MINIMAL-SPANDICKE
                 let hm = effectiveFzBase * Math.sqrt(Math.min(ae / Deff, 1.0));
-                if (hm < 0.003 && profId !== 'schlichten') {
-                    effectiveFzBase = 0.003 / Math.sqrt(Math.min(ae / Deff, 1.0));
+                if (hm < 0.0025 && profId !== 'schlichten_gehaertet') {
+                    effectiveFzBase = 0.0025 / Math.sqrt(Math.min(ae / Deff, 1.0));
                     physicsInfoHtml += `<div class="text-[11px] text-purple-700 font-semibold">🔪 Schab-Schutz: fz angehoben</div>`;
                 }
             }
