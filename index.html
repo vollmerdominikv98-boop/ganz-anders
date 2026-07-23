@@ -361,13 +361,13 @@
                     </div>
                 </div>
 
-                <!-- NEU: WERKZEUGAUFNAHME / SPANNFUTTER SELEKTOR -->
+                <!-- WERKZEUGAUFNAHME SELEKTOR (PURISTISCH & SCHLANK) -->
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Werkzeugaufnahme / Futter</label>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Werkzeugaufnahme</label>
                     <select id="holder-select" class="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 transition" onchange="calculate()">
-                        <option value="schrumpf">🔥 Schrumpffutter / Hydrodehn (Präzision & Dämpfung)</option>
-                        <option value="spannzange">🧲 ER-Spannzange / Präzisionszange (Standard)</option>
-                        <option value="weldon">🔒 Weldon / Seitenspannfutter (Formschluss)</option>
+                        <option value="schrumpf">Hydrodehn-Spannfutter</option>
+                        <option value="spannzange">Spannzange</option>
+                        <option value="weldon">Weldon Spannfutter</option>
                     </select>
                 </div>
 
@@ -1382,7 +1382,7 @@
             const profId = document.getElementById('profile-select').value;
             const toolId = document.getElementById('tool-select').value;
             const rigId = document.getElementById('rigidity-select').value;
-            const holderType = document.getElementById('holder-select').value; // Futter-Typ
+            const holderType = document.getElementById('holder-select').value; 
             const physicsActive = document.getElementById('physics-toggle').checked;
             
             const mach = db.machines[machId];
@@ -1428,7 +1428,7 @@
                 let effectiveAp = Math.min(ap, D / 2);
                 Deff = 2 * Math.sqrt(effectiveAp * (D - effectiveAp));
                 if (Deff < 0.1) Deff = 0.1;
-                geoInfoText = `<div class="text-[11px] text-cyan-800 font-semibold">⚽ Kugelfräser Deff: ${Deff.toFixed(2)} mm</div>`;
+                geoInfoText = `<div class="text-[11px] text-cyan-800 font-semibold">[Geometrie] Kugelfräser Deff: ${Deff.toFixed(2)} mm</div>`;
             } else if (tool.geo_type === "torus") {
                 let r = tool.radius || 0;
                 if (ap <= r) {
@@ -1438,9 +1438,9 @@
                     Deff = D - (2 * r) + (2 * Math.sqrt(r * r - Math.pow(r - (ap - r), 2)));
                     if(isNaN(Deff) || Deff <= 0) Deff = D - (2*r);
                 }
-                geoInfoText = `<div class="text-[11px] text-cyan-800 font-semibold">🍩 Torusfräser Deff: ${Deff.toFixed(2)} mm</div>`;
+                geoInfoText = `<div class="text-[11px] text-cyan-800 font-semibold">[Geometrie] Torusfräser Deff: ${Deff.toFixed(2)} mm</div>`;
             } else {
-                geoInfoText = `<div class="text-[11px] text-slate-500">Zylindrischer Schaftfräser (Deff = D)</div>`;
+                geoInfoText = `<div class="text-[11px] text-slate-500">[Geometrie] Zylindrischer Schaftfräser (Deff = D)</div>`;
             }
 
             const baseVc = tool.vc_per_material ? (tool.vc_per_material[matId] || 200) : 200;
@@ -1453,16 +1453,16 @@
 
             if (physicsActive) {
 
-                // 0. WERKZEUGAUFNAHME / FUTTER-EINFLUSS
+                // WERKZEUGAUFNAHME / FUTTER-EINFLUSS
                 if (holderType === 'spannzange') {
-                    effectiveVc *= 0.90; // -10% vc wegen erhöhten Mikrovibrationen
-                    physicsInfoHtml += `<div class="text-[11px] text-amber-800 font-semibold">🧲 ER-Spannzange: vc -10% (Rundlauf & Schwingungsschutz)</div>`;
+                    effectiveVc *= 0.90; 
+                    physicsInfoHtml += `<div class="text-[11px] text-amber-800 font-semibold">[Aufnahme: Spannzange] vc -10% (Rundlauf-Kompensation)</div>`;
                 } else if (holderType === 'weldon') {
-                    effectiveVc *= 0.85; // -15% vc wegen Formschluss-Unwucht
+                    effectiveVc *= 0.85; 
                     if (D <= 3.0) effectiveFzBase *= 0.85;
-                    physicsInfoHtml += `<div class="text-[11px] text-rose-700 font-semibold">🔒 Weldon-Futter: vc -15% (Unwucht-Drosselung)</div>`;
+                    physicsInfoHtml += `<div class="text-[11px] text-rose-700 font-semibold">[Aufnahme: Weldon] vc -15% (Unwucht-Drosselung)</div>`;
                 } else {
-                    physicsInfoHtml += `<div class="text-[11px] text-emerald-700 font-semibold">🔥 Schrumpf-/Hydrodehn: 100% Dynamik freigeschaltet</div>`;
+                    physicsInfoHtml += `<div class="text-[11px] text-emerald-700 font-semibold">[Aufnahme: Hydrodehn] 100% Dynamik freigeschaltet</div>`;
                 }
 
                 // 1. DYNAMISCHER L/D-SCHWINGUNGSSCHUTZ
@@ -1471,24 +1471,24 @@
                     const dampFactor = Math.sqrt(3.0 / ldRatio);
                     effectiveVc *= dampFactor;
                     effectiveFzBase *= dampFactor;
-                    physicsInfoHtml += `<div class="text-[11px] text-indigo-700 font-semibold">🛡️ L/D Ratio (${ldRatio.toFixed(1)}): -${((1 - dampFactor) * 100).toFixed(0)}% (Biegeschutz)</div>`;
+                    physicsInfoHtml += `<div class="text-[11px] text-indigo-700 font-semibold">[Biegeschutz] L/D Ratio (${ldRatio.toFixed(1)}): -${((1 - dampFactor) * 100).toFixed(0)}%</div>`;
                 }
 
                 // 2. KÜHLUNGS- & THERMIK-BOOST
                 let kv_ae = 1.0;
                 if (ae_factor < 0.5) {
                     kv_ae = Math.min(Math.pow(0.5 / ae_factor, 0.3), 2.2);
-                    physicsInfoHtml += `<div class="text-[11px] text-emerald-700 font-semibold">🌡️ Kühlung (ae < 0.5D): vc +${((kv_ae - 1) * 100).toFixed(0)}%</div>`;
+                    physicsInfoHtml += `<div class="text-[11px] text-emerald-700 font-semibold">[Thermik] Kühlbonus (ae < 0.5D): vc +${((kv_ae - 1) * 100).toFixed(0)}%</div>`;
                 } else if (ae_factor >= 0.95) {
                     effectiveVc *= 0.85;
-                    physicsInfoHtml += `<div class="text-[11px] text-amber-700 font-semibold">🔥 Vollnut Nutfräsen: vc -15% (Hitzeschutz)</div>`;
+                    physicsInfoHtml += `<div class="text-[11px] text-amber-700 font-semibold">[Thermik] Vollnut-Eingriff: vc -15% (Hitzeschutz)</div>`;
                 }
 
                 // 3. SCHNITTD RUCK-KORREKTUR
                 let k_ap = 1.0;
                 if (ap_factor > 1.0 && tool.geo_type === "shaft") {
                     k_ap = Math.max(Math.pow(1.0 / ap_factor, 0.25), 0.4);
-                    physicsInfoHtml += `<div class="text-[11px] text-amber-700 font-semibold">⚖️ Schnittdruck (ap > 1.0D): -${((1 - k_ap) * 100).toFixed(0)}%</div>`;
+                    physicsInfoHtml += `<div class="text-[11px] text-amber-700 font-semibold">[Schnittdruck] ap > 1.0D: -${((1 - k_ap) * 100).toFixed(0)}%</div>`;
                 }
 
                 // 4. RCT (RADIAL CHIP THINNING)
@@ -1501,7 +1501,7 @@
                     else if (profId === 'schlichten') maxRct = 1.25;
 
                     rctFactor = Math.min(rctFactor, maxRct);
-                    physicsInfoHtml += `<div class="text-[11px] text-emerald-700 font-semibold">⚡ RCT Spanmitte: fz +${((rctFactor - 1) * 100).toFixed(0)}%</div>`;
+                    physicsInfoHtml += `<div class="text-[11px] text-emerald-700 font-semibold">[Spanmittendünnung] RCT fz +${((rctFactor - 1) * 100).toFixed(0)}%</div>`;
                 }
 
                 effectiveVc = effectiveVc * kv_ae * k_ap;
@@ -1510,14 +1510,14 @@
                 // 5. SCHLICHT-DÄMPFUNG BEI MASSIVEM VC-DROP
                 if ((profId === 'schlichten_gehaertet' || profId === 'schlichten') && Deff < (D * 0.15)) {
                     effectiveFzBase *= 0.65;
-                    physicsInfoHtml += `<div class="text-[11px] text-cyan-800 font-semibold">✨ Torus-Feinschlichten (Deff < 15%D): fz geglättet</div>`;
+                    physicsInfoHtml += `<div class="text-[11px] text-cyan-800 font-semibold">[Feinschlichten] Deff < 15%D: fz geglättet</div>`;
                 }
 
                 // 6. MINIMAL-SPANDICKE
                 let hm = effectiveFzBase * Math.sqrt(Math.min(ae / Deff, 1.0));
                 if (hm < 0.0025 && profId !== 'schlichten_gehaertet') {
                     effectiveFzBase = 0.0025 / Math.sqrt(Math.min(ae / Deff, 1.0));
-                    physicsInfoHtml += `<div class="text-[11px] text-purple-700 font-semibold">🔪 Schab-Schutz: fz angehoben</div>`;
+                    physicsInfoHtml += `<div class="text-[11px] text-purple-700 font-semibold">[Schab-Schutz] fz angehoben auf hm_min</div>`;
                 }
             }
 
