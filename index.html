@@ -20,30 +20,18 @@
 <body class="bg-slate-100 text-slate-800 p-4 lg:p-6 min-h-screen">
     <div class="max-w-[1500px] mx-auto space-y-6">
         
-        <!-- HEADER -->
+        <!-- HEADER (CLEAN & MINIMAL) -->
         <header class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-md shadow-emerald-200">
                     CP
                 </div>
                 <div>
-                    <div class="flex items-center gap-2">
-                        <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">CNCPilot</h1>
-                        <span class="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                            cncpilot.site
-                        </span>
-                        <span id="cloud-status-badge" class="bg-slate-100 text-slate-600 border border-slate-200 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
-                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Lokaler Modus
-                        </span>
-                    </div>
-                    <p class="text-xs text-slate-500 font-medium">Herstellerunabhängiger CNC-Schnittwertoptimierer mit Praxis-Guardrails</p>
+                    <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 leading-none">CNCPilot</h1>
                 </div>
             </div>
-            <div class="flex gap-2.5 w-full sm:w-auto">
-                <button onclick="exportDataReport()" class="flex-1 sm:flex-initial bg-slate-50 hover:bg-slate-100 text-slate-700 px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold transition flex items-center justify-center gap-2 shadow-sm">
-                    📋 Bericht kopieren
-                </button>
-                <button onclick="toggleAdmin()" class="flex-1 sm:flex-initial bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2 shadow-sm">
+            <div>
+                <button onclick="toggleAdmin()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2 shadow-sm">
                     ⚙️ Admin-Konsole
                 </button>
             </div>
@@ -344,7 +332,6 @@
                 <div class="space-y-3 bg-slate-50/80 p-4 rounded-xl border border-slate-200">
                     <div class="flex items-center justify-between">
                         <label class="block text-xs font-bold text-slate-900 uppercase tracking-wider">Werkzeugauswahl</label>
-                        <span class="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">Gefiltert</span>
                     </div>
 
                     <div class="grid grid-cols-2 gap-2.5">
@@ -470,8 +457,11 @@
             <!-- SPALTE 3: ERGEBNISSE & FAVORITEN -->
             <div class="lg:col-span-4 flex flex-col space-y-6">
                 <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-                    <div class="border-b border-slate-100 pb-3">
+                    <div class="border-b border-slate-100 pb-3 flex justify-between items-center">
                         <span class="text-base font-bold text-slate-900">3. Berechnete Schnittdaten</span>
+                        <button onclick="exportDataReport()" class="text-[11px] bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 px-2.5 py-1 rounded-lg transition font-semibold flex items-center gap-1">
+                            📋 Bericht
+                        </button>
                     </div>
                     
                     <div class="grid grid-cols-1 gap-2.5">
@@ -546,7 +536,6 @@
         const DEFAULT_SUPABASE_URL = "https://emqwigtqiqlnvasuzrig.supabase.co";
         const DEFAULT_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVtcXdpZ3RxaXFsbnZhc3V6cmlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5Mjg5MTgsImV4cCI6MjA4NzUwNDkxOH0.1_HqL3uYf_Z1sB3M6nE0Q0v2s3R1_4v5X6Z7s8Q9a0";
 
-        // PASSWORT FÜR DEN ADMIN-BEREICH (kannst du hier anpassen)
         const ADMIN_PASSWORD = "cnc2026";
 
         const defaultDb = {
@@ -634,15 +623,11 @@
                 try {
                     supabaseClient = window.supabase.createClient(url, key);
                     isCloudActive = true;
-                    updateCloudStatusUI(true, "Verbunden mit Cloud");
                     fetchDataFromSupabase();
                     listenToSupabaseRealtime();
                 } catch(e) {
                     console.error(e);
-                    updateCloudStatusUI(false, "Verbindungsfehler");
                 }
-            } else {
-                updateCloudStatusUI(false, "Lokaler Modus");
             }
         }
 
@@ -657,21 +642,6 @@
 
             initSupabase();
             alert("Supabase Konfiguration gespeichert!");
-        }
-
-        function updateCloudStatusUI(connected, text) {
-            const badge = document.getElementById('cloud-status-badge');
-            const connText = document.getElementById('supabase-conn-text');
-            
-            if (connected) {
-                badge.className = "bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1";
-                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span> Cloud-Sync Aktiv`;
-                if (connText) { connText.innerText = text; connText.className = "text-[11px] font-bold text-emerald-700"; }
-            } else {
-                badge.className = "bg-slate-100 text-slate-600 border border-slate-200 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1";
-                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Lokaler Modus`;
-                if (connText) { connText.innerText = text; connText.className = "text-[11px] font-bold text-slate-500"; }
-            }
         }
 
         async function fetchDataFromSupabase() {
