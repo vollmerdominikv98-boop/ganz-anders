@@ -444,10 +444,15 @@
                     </div>
                     
                     <div class="grid grid-cols-1 gap-2.5">
+                        <!-- DREHZAHL MIT KLEINER VC ANZEIGE -->
                         <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex justify-between items-center">
-                            <span class="text-xs font-semibold text-slate-600">Drehzahl (n):</span>
+                            <div>
+                                <span class="text-xs font-semibold text-slate-600 block">Drehzahl (n):</span>
+                                <span id="res-vc-eff" class="text-[10px] text-slate-500 font-mono font-medium">vc(eff): -- m/min</span>
+                            </div>
                             <span id="res-rpm" class="text-xl font-black font-mono text-emerald-700">-- U/min</span>
                         </div>
+                        <!-- VORSCHUB MIT KLEINER FZ ANZEIGE -->
                         <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex justify-between items-center">
                             <div>
                                 <span class="text-xs font-semibold text-slate-600 block">Tischvorschub (vf):</span>
@@ -509,6 +514,10 @@
     </div>
 
     <script>
+        // SUPABASE ANMELDEDATEN FEST VERANKERT (Damit jeder PC sofort verbunden ist)
+        const DEFAULT_SUPABASE_URL = "https://emqwigtqiqlnvasuzrig.supabase.co";
+        const DEFAULT_SUPABASE_KEY = "DEIN_SUPABASE_ANON_KEY_HIER"; 
+
         const defaultDb = {
             machines: {
                 "dmg_5achs": { "name": "DMG DMU 75 Monoblock", "max_rpm": 15000, "max_vf": 30000, "max_kw": 18 },
@@ -557,7 +566,7 @@
         let supabaseClient = null;
         let isCloudActive = false;
         let db = loadDatabase();
-        let currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0, q: 0, power: 0, fz_eff: 0 };
+        let currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0, q: 0, power: 0, fz_eff: 0, vc_eff: 0 };
 
         function switchAdminTab(tabName) {
             const tabs = ['tools', 'machines', 'materials', 'profiles', 'cloud'];
@@ -582,10 +591,11 @@
         }
 
         function initSupabase() {
-            const url = localStorage.getItem('toolpilot_supabase_url');
-            const key = localStorage.getItem('toolpilot_supabase_key');
+            // Nutzt gespeicherte Werte oder greift automatisch auf die fest verankerten Standardwerte zurück
+            const url = localStorage.getItem('toolpilot_supabase_url') || DEFAULT_SUPABASE_URL;
+            const key = localStorage.getItem('toolpilot_supabase_key') || DEFAULT_SUPABASE_KEY;
 
-            if (url && key) {
+            if (url && key && key !== "DEIN_SUPABASE_ANON_KEY_HIER") {
                 document.getElementById('supabase-url').value = url;
                 document.getElementById('supabase-key').value = key;
                 try {
@@ -1460,7 +1470,7 @@
                 let rctFactor = 1.0;
                 if (ae_factor < 0.5) {
                     rctFactor = 1 / Math.sqrt(ae_factor * (2 - ae_factor));
-                    rctFactor = Math.min(rctFactor, 2.0); // PRAXIS-CAP
+                    rctFactor = Math.min(rctFactor, 2.0);
                     physicsInfoHtml += `<div class="text-[11px] text-emerald-700 font-semibold">⚡ RCT Spanmitte: fz +${((rctFactor - 1) * 100).toFixed(0)}%</div>`;
                 }
 
@@ -1484,16 +1494,22 @@
             let vf_eff = effectiveFz * z * n_eff;
             vf_eff = Math.min(vf_eff, mach.max_vf);
 
+            // Reale effektive Schnittgeschwindigkeit vc auf Basis der reellen Drehzahl (gekappt)
+            let vc_eff_real = (Math.PI * Deff * n_eff) / 1000;
+
             const Q = (ap * ae * vf_eff) / 1000;
             const power_kw = (Q * mat.kc11) / (60 * 1000);
 
-            currentCalculatedResults = { rpm: n_eff, vf: vf_eff, ap: ap, ae: ae, q: Q, power: power_kw, fz_eff: effectiveFz };
+            currentCalculatedResults = { rpm: n_eff, vf: vf_eff, ap: ap, ae: ae, q: Q, power: power_kw, fz_eff: effectiveFz, vc_eff: vc_eff_real };
 
             const rpmEl = document.getElementById('res-rpm');
             const vfEl = document.getElementById('res-vf');
             const powerEl = document.getElementById('res-power');
 
+            // Drehzahl-Anzeige & kleine vc(eff) Anzeige
             rpmEl.innerText = n_eff.toFixed(0) + " U/min";
+            document.getElementById('res-vc-eff').innerText = `vc(eff): ${vc_eff_real.toFixed(0)} m/min`;
+
             if (n_theo > mach.max_rpm) {
                 rpmEl.className = "text-xl font-black font-mono text-rose-600";
                 rpmEl.title = `Gekappt! Theoretisch nötig: ${n_theo.toFixed(0)} U/min`;
@@ -1502,14 +1518,16 @@
                 rpmEl.title = "";
             }
 
+            // Vorschub-Anzeige & kleine fz(eff) Anzeige
             vfEl.innerText = vf_eff.toFixed(0) + " mm/min";
+            document.getElementById('res-fz-eff').innerText = `fz(eff): ${effectiveFz.toFixed(4)} mm`;
+
             if (effectiveFz * z * n_theo > mach.max_vf) {
                 vfEl.className = "text-xl font-black font-mono text-rose-600";
             } else {
                 vfEl.className = "text-xl font-black font-mono text-emerald-700";
             }
 
-            document.getElementById('res-fz-eff').innerText = `fz(eff): ${effectiveFz.toFixed(4)} mm`;
             document.getElementById('res-apae').innerText = ap.toFixed(1) + " / " + ae.toFixed(1) + " mm";
             document.getElementById('res-q').innerText = Q.toFixed(2) + " cm³/min";
 
@@ -1535,9 +1553,8 @@ Profil: ${prof}
 Werkzeug: ${tool}
 Steifigkeit: ${rig}
 ----------------------------------
-Drehzahl (n): ${currentCalculatedResults.rpm.toFixed(0)} U/min
-Tischvorschub (vf): ${currentCalculatedResults.vf.toFixed(0)} mm/min
-Eff. fz: ${currentCalculatedResults.fz_eff.toFixed(4)} mm
+Drehzahl (n): ${currentCalculatedResults.rpm.toFixed(0)} U/min (vc: ${currentCalculatedResults.vc_eff.toFixed(0)} m/min)
+Tischvorschub (vf): ${currentCalculatedResults.vf.toFixed(0)} mm/min (fz: ${currentCalculatedResults.fz_eff.toFixed(4)} mm)
 Schnitttiefe (ap): ${currentCalculatedResults.ap.toFixed(1)} mm
 Schnittbreite (ae): ${currentCalculatedResults.ae.toFixed(1)} mm
 Zeitspanvolumen (Q): ${currentCalculatedResults.q.toFixed(2)} cm³/min
