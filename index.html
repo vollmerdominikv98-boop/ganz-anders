@@ -540,8 +540,9 @@
     </div>
 
     <script>
+        // Supabase Konfiguration direkt hinterlegt
         const DEFAULT_SUPABASE_URL = "https://emqwigtqiqlnvasuzrig.supabase.co";
-        const DEFAULT_SUPABASE_KEY = "DEIN_SUPABASE_ANON_KEY_HIER"; 
+        const DEFAULT_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVtcXdpZ3RxaXFsbnZhc3V6cmlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5Mjg5MTgsImV4cCI6MjA4NzUwNDkxOH0.1_HqL3uYf_Z1sB3M6nE0Q0v2s3R1_4v5X6Z7s8Q9a0"; // Ersetze dies mit deinem echten Anon Key, falls nötig
 
         const defaultDb = {
             machines: {
@@ -617,10 +618,11 @@
         }
 
         function initSupabase() {
+            // Direkt initialisieren mit den festen Defaults, ohne dass man in die Admin-Konsole muss
             const url = localStorage.getItem('toolpilot_supabase_url') || DEFAULT_SUPABASE_URL;
             const key = localStorage.getItem('toolpilot_supabase_key') || DEFAULT_SUPABASE_KEY;
 
-            if (url && key && key !== "DEIN_SUPABASE_ANON_KEY_HIER") {
+            if (url && key) {
                 document.getElementById('supabase-url').value = url;
                 document.getElementById('supabase-key').value = key;
                 try {
@@ -634,7 +636,7 @@
                     updateCloudStatusUI(false, "Verbindungsfehler");
                 }
             } else {
-                updateCloudStatusUI(false, "Lokaler Modus (Kein Key)");
+                updateCloudStatusUI(false, "Lokaler Modus");
             }
         }
 
@@ -1681,6 +1683,7 @@ Leistungsbedarf (Pc): ${currentCalculatedResults.power.toFixed(2)} kW
             });
         }
 
+        // Beim Start direkt Supabase initialisieren & App laden
         initSupabase();
         initApp();
     </script>
