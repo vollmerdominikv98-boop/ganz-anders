@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ToolPilot - CNC Cut Optimizer</title>
+    <title>CNCPilot - CNC Cut Optimizer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -24,11 +24,14 @@
         <header class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-md shadow-emerald-200">
-                    TP
+                    CP
                 </div>
                 <div>
                     <div class="flex items-center gap-2">
-                        <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">ToolPilot</h1>
+                        <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">CNCPilot</h1>
+                        <span class="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                            cncpilot.site
+                        </span>
                         <span id="cloud-status-badge" class="bg-slate-100 text-slate-600 border border-slate-200 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
                             <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Lokaler Modus
                         </span>
@@ -540,9 +543,11 @@
     </div>
 
     <script>
-        // Supabase Konfiguration direkt hinterlegt
         const DEFAULT_SUPABASE_URL = "https://emqwigtqiqlnvasuzrig.supabase.co";
-        const DEFAULT_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVtcXdpZ3RxaXFsbnZhc3V6cmlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5Mjg5MTgsImV4cCI6MjA4NzUwNDkxOH0.1_HqL3uYf_Z1sB3M6nE0Q0v2s3R1_4v5X6Z7s8Q9a0"; // Ersetze dies mit deinem echten Anon Key, falls nötig
+        const DEFAULT_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVtcXdpZ3RxaXFsbnZhc3V6cmlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5Mjg5MTgsImV4cCI6MjA4NzUwNDkxOH0.1_HqL3uYf_Z1sB3M6nE0Q0v2s3R1_4v5X6Z7s8Q9a0";
+
+        // PASSWORT FÜR DEN ADMIN-BEREICH (kannst du hier anpassen)
+        const ADMIN_PASSWORD = "cnc2026";
 
         const defaultDb = {
             machines: {
@@ -618,13 +623,14 @@
         }
 
         function initSupabase() {
-            // Direkt initialisieren mit den festen Defaults, ohne dass man in die Admin-Konsole muss
             const url = localStorage.getItem('toolpilot_supabase_url') || DEFAULT_SUPABASE_URL;
             const key = localStorage.getItem('toolpilot_supabase_key') || DEFAULT_SUPABASE_KEY;
 
             if (url && key) {
-                document.getElementById('supabase-url').value = url;
-                document.getElementById('supabase-key').value = key;
+                const urlInput = document.getElementById('supabase-url');
+                const keyInput = document.getElementById('supabase-key');
+                if(urlInput) urlInput.value = url;
+                if(keyInput) keyInput.value = key;
                 try {
                     supabaseClient = window.supabase.createClient(url, key);
                     isCloudActive = true;
@@ -731,7 +737,7 @@
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
             const dlAnchor = document.createElement('a');
             dlAnchor.setAttribute("href", dataStr);
-            dlAnchor.setAttribute("download", `toolpilot_db_export_${Date.now()}.json`);
+            dlAnchor.setAttribute("download", `cncpilot_db_export_${Date.now()}.json`);
             document.body.appendChild(dlAnchor);
             dlAnchor.click();
             dlAnchor.remove();
@@ -777,8 +783,18 @@
         }
 
         function toggleAdmin() {
-            document.getElementById('admin-panel').classList.toggle('hidden');
-            renderAdminToolTable();
+            const panel = document.getElementById('admin-panel');
+            if (panel.classList.contains('hidden')) {
+                const pwd = prompt("Bitte Admin-Passwort eingeben:");
+                if (pwd === ADMIN_PASSWORD) {
+                    panel.classList.remove('hidden');
+                    renderAdminToolTable();
+                } else if (pwd !== null) {
+                    alert("Falsches Passwort!");
+                }
+            } else {
+                panel.classList.add('hidden');
+            }
         }
 
         function populateDropdowns() {
@@ -1464,7 +1480,6 @@
                 return;
             }
 
-            // NACHSCHLIFF-ABFRAGE: Ist-Maß vs. Nenn-Maß
             let D = tool.diameter;
             let R = tool.radius || 0;
 
@@ -1526,14 +1541,11 @@
             let physicsInfoHtml = geoInfoText;
 
             if (physicsActive) {
-
-                // NACHSCHLIFF-DROSSUNG (vc -10% wegen Thermik/Beschichtung)
                 if (isRegrind) {
                     effectiveVc *= 0.90;
                     physicsInfoHtml += `<div class="text-[11px] text-amber-800 font-semibold">[Nachschliff] Ist-Ø ${D.toFixed(2)}mm / vc -10% (Beschichtungsschutz)</div>`;
                 }
 
-                // WERKZEUGAUFNAHME / FUTTER-EINFLUSS
                 if (holderType === 'spannzange') {
                     effectiveVc *= 0.90; 
                     physicsInfoHtml += `<div class="text-[11px] text-amber-800 font-semibold">[Aufnahme: Spannzange] vc -10% (Rundlauf-Kompensation)</div>`;
@@ -1545,7 +1557,6 @@
                     physicsInfoHtml += `<div class="text-[11px] text-emerald-700 font-semibold">[Aufnahme: Hydrodehn] 100% Dynamik freigeschaltet</div>`;
                 }
 
-                // 1. DYNAMISCHER L/D-SCHWINGUNGSSCHUTZ
                 const ldRatio = Lmax / D;
                 if (ldRatio > 3.0) {
                     const dampFactor = Math.sqrt(3.0 / ldRatio);
@@ -1554,7 +1565,6 @@
                     physicsInfoHtml += `<div class="text-[11px] text-indigo-700 font-semibold">[Biegeschutz] L/D Ratio (${ldRatio.toFixed(1)}): -${((1 - dampFactor) * 100).toFixed(0)}%</div>`;
                 }
 
-                // 2. KÜHLUNGS- & THERMIK-BOOST
                 let kv_ae = 1.0;
                 if (ae_factor < 0.5) {
                     kv_ae = Math.min(Math.pow(0.5 / ae_factor, 0.3), 2.2);
@@ -1564,18 +1574,15 @@
                     physicsInfoHtml += `<div class="text-[11px] text-amber-700 font-semibold">[Thermik] Vollnut-Eingriff: vc -15% (Hitzeschutz)</div>`;
                 }
 
-                // 3. SCHNITTD RUCK-KORREKTUR
                 let k_ap = 1.0;
                 if (ap_factor > 1.0 && tool.geo_type === "shaft") {
                     k_ap = Math.max(Math.pow(1.0 / ap_factor, 0.25), 0.4);
                     physicsInfoHtml += `<div class="text-[11px] text-amber-700 font-semibold">[Schnittdruck] ap > 1.0D: -${((1 - k_ap) * 100).toFixed(0)}%</div>`;
                 }
 
-                // 4. RCT (RADIAL CHIP THINNING)
                 let rctFactor = 1.0;
                 if (ae_factor < 0.5) {
                     rctFactor = 1 / Math.sqrt(ae_factor * (2 - ae_factor));
-                    
                     let maxRct = 2.0;
                     if (profId === 'schlichten_gehaertet') maxRct = 1.10; 
                     else if (profId === 'schlichten') maxRct = 1.25;
@@ -1587,13 +1594,11 @@
                 effectiveVc = effectiveVc * kv_ae * k_ap;
                 effectiveFzBase = effectiveFzBase * k_ap * rctFactor;
 
-                // 5. SCHLICHT-DÄMPFUNG BEI MASSIVEM VC-DROP
                 if ((profId === 'schlichten_gehaertet' || profId === 'schlichten') && Deff < (D * 0.15)) {
                     effectiveFzBase *= 0.65;
                     physicsInfoHtml += `<div class="text-[11px] text-cyan-800 font-semibold">[Feinschlichten] Deff < 15%D: fz geglättet</div>`;
                 }
 
-                // 6. MINIMAL-SPANDICKE
                 let hm = effectiveFzBase * Math.sqrt(Math.min(ae / Deff, 1.0));
                 if (hm < 0.0025 && profId !== 'schlichten_gehaertet') {
                     effectiveFzBase = 0.0025 / Math.sqrt(Math.min(ae / Deff, 1.0));
@@ -1661,7 +1666,7 @@
             const holder = document.getElementById('holder-select').options[document.getElementById('holder-select').selectedIndex].text;
             const isRegrind = document.getElementById('regrind-toggle').checked ? "JA (Nachgeschliffen)" : "NEIN (Neuzustand)";
 
-            const report = `--- TOOLPILOT BERICHT ---
+            const report = `--- CNCPILOT BERICHT ---
 Maschine: ${mach}
 Werkstoff: ${mat}
 Profil: ${prof}
@@ -1683,7 +1688,6 @@ Leistungsbedarf (Pc): ${currentCalculatedResults.power.toFixed(2)} kW
             });
         }
 
-        // Beim Start direkt Supabase initialisieren & App laden
         initSupabase();
         initApp();
     </script>
