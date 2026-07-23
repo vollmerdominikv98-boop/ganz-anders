@@ -359,9 +359,27 @@
                         <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Modell</label>
                         <select id="tool-select" class="w-full h-10 bg-white border border-slate-300 rounded-xl px-3 text-slate-900 text-xs font-bold shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" onchange="onToolChange()"></select>
                     </div>
+
+                    <!-- NACHSCHLIFF / IST-MASS INTEGRATION -->
+                    <div class="pt-2 border-t border-slate-200 space-y-2">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="regrind-toggle" onchange="toggleRegrindFields()" class="rounded border-slate-300 text-emerald-600 focus:ring-0">
+                            <span class="text-xs font-semibold text-slate-800">Nachgeschliffenes Werkzeug (Ist-Maß)</span>
+                        </label>
+
+                        <div id="regrind-container" class="hidden grid grid-cols-2 gap-2 pt-1">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 mb-0.5 uppercase tracking-wider">Ist-Ø D (mm)</label>
+                                <input type="number" id="input-d-ist" step="0.01" min="0.1" value="7.85" oninput="calculate()" class="w-full bg-amber-50/60 border border-amber-300 rounded-lg p-1.5 text-amber-900 text-xs font-mono font-bold focus:ring-1 focus:ring-amber-500 outline-none">
+                            </div>
+                            <div id="regrind-r-box">
+                                <label class="block text-[10px] font-bold text-slate-500 mb-0.5 uppercase tracking-wider">Ist-Radius R (mm)</label>
+                                <input type="number" id="input-r-ist" step="0.01" min="0.0" value="0.50" oninput="calculate()" class="w-full bg-amber-50/60 border border-amber-300 rounded-lg p-1.5 text-amber-900 text-xs font-mono font-bold focus:ring-1 focus:ring-amber-500 outline-none">
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- WERKZEUGAUFNAHME SELEKTOR (PURISTISCH & SCHLANK) -->
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1.5">Werkzeugaufnahme</label>
                     <select id="holder-select" class="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 transition" onchange="calculate()">
@@ -1116,7 +1134,37 @@
         }
 
         function onToolChange() {
+            const toolId = document.getElementById('tool-select').value;
+            const tool = db.tools[toolId];
+            if(tool) {
+                document.getElementById('input-d-ist').value = tool.diameter.toFixed(2);
+                document.getElementById('input-r-ist').value = (tool.radius || 0).toFixed(2);
+            }
             resetSliders();
+        }
+
+        function toggleRegrindFields() {
+            const active = document.getElementById('regrind-toggle').checked;
+            const container = document.getElementById('regrind-container');
+            const toolId = document.getElementById('tool-select').value;
+            const tool = db.tools[toolId];
+
+            if(active) {
+                container.classList.remove('hidden');
+                if(tool) {
+                    document.getElementById('input-d-ist').value = tool.diameter.toFixed(2);
+                    document.getElementById('input-r-ist').value = (tool.radius || 0).toFixed(2);
+                }
+                const rBox = document.getElementById('regrind-r-box');
+                if(tool && tool.geo_type === 'shaft') {
+                    rBox.classList.add('hidden');
+                } else {
+                    rBox.classList.remove('hidden');
+                }
+            } else {
+                container.classList.add('hidden');
+            }
+            calculate();
         }
 
         function resetSliders() {
@@ -1126,7 +1174,10 @@
             const prof = db.profiles[profId];
 
             if(tool && prof) {
-                const D = tool.diameter;
+                let D = tool.diameter;
+                if(document.getElementById('regrind-toggle').checked) {
+                    D = parseFloat(document.getElementById('input-d-ist').value) || D;
+                }
                 const Lmax = tool.max_overhang || (D * 3);
 
                 const apSlider = document.getElementById('slider-ap');
@@ -1176,8 +1227,13 @@
             const tool = db.tools[toolId];
             if(!tool) return;
 
+            let D = tool.diameter;
+            if(document.getElementById('regrind-toggle').checked) {
+                D = parseFloat(document.getElementById('input-d-ist').value) || D;
+            }
+
             let val = value;
-            if(value >= 0.5) val = tool.diameter * value;
+            if(value >= 0.5) val = D * value;
 
             document.getElementById('input-ap-mm').value = val.toFixed(2);
             document.getElementById('slider-ap').value = val.toFixed(2);
@@ -1189,8 +1245,13 @@
             const tool = db.tools[toolId];
             if(!tool) return;
 
+            let D = tool.diameter;
+            if(document.getElementById('regrind-toggle').checked) {
+                D = parseFloat(document.getElementById('input-d-ist').value) || D;
+            }
+
             let val = value;
-            if(value >= 0.5) val = tool.diameter * value;
+            if(value >= 0.5) val = D * value;
 
             document.getElementById('input-ae-mm').value = val.toFixed(2);
             document.getElementById('slider-ae').value = val.toFixed(2);
@@ -1375,7 +1436,7 @@
             renderFavorites();
         }
 
-        // --- HAUPTBERECHNUNG MIT FUTTER- & LOGIK-GUARDRAILS ---
+        // --- HAUPTBERECHNUNG MIT NACHSCHLIFF-KOMPENSATION ---
         function calculate() {
             const machId = document.getElementById('machine-select').value;
             const matId = document.getElementById('material-select').value;
@@ -1384,6 +1445,7 @@
             const rigId = document.getElementById('rigidity-select').value;
             const holderType = document.getElementById('holder-select').value; 
             const physicsActive = document.getElementById('physics-toggle').checked;
+            const isRegrind = document.getElementById('regrind-toggle').checked;
             
             const mach = db.machines[machId];
             const mat = db.materials[matId];
@@ -1400,7 +1462,17 @@
                 return;
             }
 
-            const D = tool.diameter;
+            // NACHSCHLIFF-ABFRAGE: Ist-Maß vs. Nenn-Maß
+            let D = tool.diameter;
+            let R = tool.radius || 0;
+
+            if (isRegrind) {
+                const customD = parseFloat(document.getElementById('input-d-ist').value);
+                const customR = parseFloat(document.getElementById('input-r-ist').value);
+                if (!isNaN(customD) && customD > 0) D = customD;
+                if (!isNaN(customR) && customR >= 0) R = customR;
+            }
+
             const z = tool.z;
             const Lmax = tool.max_overhang || (D * 3);
 
@@ -1430,7 +1502,7 @@
                 if (Deff < 0.1) Deff = 0.1;
                 geoInfoText = `<div class="text-[11px] text-cyan-800 font-semibold">[Geometrie] Kugelfräser Deff: ${Deff.toFixed(2)} mm</div>`;
             } else if (tool.geo_type === "torus") {
-                let r = tool.radius || 0;
+                let r = R;
                 if (ap <= r) {
                     Deff = 2 * Math.sqrt(ap * (2 * r - ap));
                     if (Deff < 0.1) Deff = 0.1;
@@ -1452,6 +1524,12 @@
             let physicsInfoHtml = geoInfoText;
 
             if (physicsActive) {
+
+                // NACHSCHLIFF-DROSSUNG (vc -10% wegen Thermik/Beschichtung)
+                if (isRegrind) {
+                    effectiveVc *= 0.90;
+                    physicsInfoHtml += `<div class="text-[11px] text-amber-800 font-semibold">[Nachschliff] Ist-Ø ${D.toFixed(2)}mm / vc -10% (Beschichtungsschutz)</div>`;
+                }
 
                 // WERKZEUGAUFNAHME / FUTTER-EINFLUSS
                 if (holderType === 'spannzange') {
@@ -1579,12 +1657,14 @@
             const rig = db.rigidity[document.getElementById('rigidity-select').value]?.name || 'Unbekannt';
             const prof = db.profiles[document.getElementById('profile-select').value]?.name || 'Unbekannt';
             const holder = document.getElementById('holder-select').options[document.getElementById('holder-select').selectedIndex].text;
+            const isRegrind = document.getElementById('regrind-toggle').checked ? "JA (Nachgeschliffen)" : "NEIN (Neuzustand)";
 
             const report = `--- TOOLPILOT BERICHT ---
 Maschine: ${mach}
 Werkstoff: ${mat}
 Profil: ${prof}
 Werkzeug: ${tool}
+Nachschliff: ${isRegrind}
 Aufnahme: ${holder}
 Steifigkeit: ${rig}
 ----------------------------------
