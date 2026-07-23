@@ -1473,7 +1473,7 @@
             });
         }
 
-        // Manuelles Bestätigen und in den Verlauf übernehmen (speichert jetzt auch Maschinen- & Aufnahmedaten)
+        // Manuelles Bestätigen und in den Verlauf übernehmen
         function confirmAndPushToHistory() {
             const machId = document.getElementById('machine-select').value;
             const matId = document.getElementById('material-select').value;
@@ -1608,7 +1608,6 @@
             const fav = db.favorites.find(f => f.id === favId);
             if(!fav) return;
 
-            // Maschine und Aufnahme jetzt direkt mitladen
             if(fav.machine_id && db.machines[fav.machine_id]) {
                 document.getElementById('machine-select').value = fav.machine_id;
             }
@@ -1656,7 +1655,7 @@
             renderFavorites();
         }
 
-        // --- HAUPTBERECHNUNG MIT NACHSCHLIFF-KOMPENSATION ---
+        // --- HAUPTBERECHNUNG MIT KORRIGIERTER TORUS-PHYSIK ---
         function calculate() {
             const machId = document.getElementById('machine-select').value;
             const matId = document.getElementById('material-select').value;
@@ -1723,12 +1722,13 @@
             } else if (tool.geo_type === "torus") {
                 let r = R;
                 if (ap <= r) {
-                    Deff = 2 * Math.sqrt(ap * (2 * r - ap));
-                    if (Deff < 0.1) Deff = 0.1;
+                    // Korrekte mathematische Zunahme von Deff mit steigendem ap im Radiusbereich
+                    Deff = D - (2 * r) + (2 * Math.sqrt(ap * (2 * r - ap)));
                 } else {
-                    Deff = D - (2 * r) + (2 * Math.sqrt(r * r - Math.pow(r - (ap - r), 2)));
-                    if(isNaN(Deff) || Deff <= 0) Deff = D - (2*r);
+                    Deff = D; // Ab Schafttiefe gilt der volle Nenndurchmesser
                 }
+                if (Deff > D) Deff = D;
+                if (Deff < 0.1) Deff = 0.1;
                 geoInfoText = `<div class="text-[11px] text-cyan-800 font-semibold">[Geometrie] Torusfräser Deff: ${Deff.toFixed(2)} mm</div>`;
             } else {
                 geoInfoText = `<div class="text-[11px] text-slate-500">[Geometrie] Zylindrischer Schaftfräser (Deff = D)</div>`;
