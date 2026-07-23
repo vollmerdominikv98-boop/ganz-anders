@@ -299,7 +299,7 @@
 
                 <div class="pt-2 flex justify-between items-center border-t border-slate-100">
                     <span class="text-xs text-slate-400">Werkseinstellungen wiederherstellen?</span>
-                    <button onclick="resetToDefaultData()" class="bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300 text-xs px-3 py-1.5 rounded-lg font-semibold transition">🔄 Auf Werkseinstellungen zurücksetzen</button>
+                    <button onclick="resetToDefaultData()" class="bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300 text-xs px-3 py-1.5 rounded-lg font-semibold transition">🔄 auf Werkseinstellungen zurücksetzen</button>
                 </div>
             </div>
 
@@ -453,7 +453,7 @@
                 </div>
             </div>
 
-            <!-- SPALTE 3: ERGEBNISSE & FAVORITEN-SPEICHERUNG -->
+            <!-- SPALTE 3: ERGEBNISSE -->
             <div class="lg:col-span-4 flex flex-col space-y-6">
                 <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                     <div class="border-b border-slate-100 pb-3">
@@ -489,58 +489,41 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- FAVORITEN-SPEICHERUNG (HIER INTEGRIERT) -->
-                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-                    <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Aktuelles Setup als Favorit speichern</h3>
-                    <input type="text" id="fav-title" placeholder="Titel z.B. C45 Schruppen stabil" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-slate-900 text-xs focus:ring-2 focus:ring-slate-400 font-medium outline-none">
-                    
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Bewertung</label>
-                            <select id="fav-rating" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-slate-900 text-xs font-medium outline-none">
-                                <option value="5">⭐⭐⭐⭐⭐</option>
-                                <option value="4">⭐⭐⭐⭐</option>
-                                <option value="3">⭐⭐⭐</option>
-                                <option value="2">⭐⭐</option>
-                                <option value="1">⭐</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Notiz</label>
-                            <input type="text" id="fav-feedback" placeholder="z.B. Läuft super" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-slate-900 text-xs font-medium outline-none">
-                        </div>
-                    </div>
-                    <button onclick="saveCurrentAsFavorite()" class="w-full bg-slate-800 hover:bg-slate-900 text-white p-2.5 rounded-xl text-xs font-bold transition shadow-sm">
-                        💾 Favorit übernehmen
-                    </button>
-                </div>
             </div>
         </div>
 
-        <!-- UNTERER BEREICH: FAVORITEN & VERLAUF -->
+        <!-- UNTERER BEREICH: EIN- / AUSBLENDHBAR (FAVORITEN & VERLAUF) -->
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-3">
-                <div class="flex gap-2">
+                <div class="flex gap-2 items-center">
                     <button onclick="switchBottomTab('favorites')" id="bottom-tab-fav" class="px-4 py-2 rounded-xl text-xs font-bold transition bg-slate-800 text-white shadow-sm">⭐ Gespeicherte Favoriten</button>
                     <button onclick="switchBottomTab('history')" id="bottom-tab-hist" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-50 border border-slate-200 transition">🕒 Berechnungsverlauf (<span id="history-count">0</span>)</button>
                 </div>
-                <!-- SUCHFELD FÜR FAVORITEN -->
-                <div id="favorites-search-wrapper" class="w-full sm:w-64">
-                    <input type="text" id="fav-search-input" placeholder="🔍 Favoriten durchsuchen..." oninput="renderFavorites()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:ring-1 focus:ring-slate-400 outline-none">
+                <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                    <!-- SUCHFELD FÜR FAVORITEN -->
+                    <div id="favorites-search-wrapper" class="w-full sm:w-64">
+                        <input type="text" id="fav-search-input" placeholder="🔍 Favoriten durchsuchen..." oninput="renderFavorites()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:ring-1 focus:ring-slate-400 outline-none">
+                    </div>
+                    <!-- BUTTON ZUM EIN- UND AUSBLENDEN -->
+                    <button onclick="toggleBottomSection()" id="toggle-section-btn" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-xl font-semibold transition whitespace-nowrap">
+                        ▲ Ausblenden
+                    </button>
                 </div>
             </div>
 
-            <!-- TAB CONTAINER: FAVORITEN -->
-            <div id="tab-content-favorites" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+            <!-- INHALTS-WRAPPER FÜR DAS AUSBLENDER-FEATURE -->
+            <div id="bottom-section-content" class="space-y-4">
+                <!-- TAB CONTAINER: FAVORITEN -->
+                <div id="tab-content-favorites" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
 
-            <!-- TAB CONTAINER: VERLAUF (HISTORY) -->
-            <div id="tab-content-history" class="hidden space-y-3">
-                <div class="flex justify-between items-center">
-                    <p class="text-xs text-slate-500">Automatischer Verlauf deiner letzten Berechnungen. Hier kannst du direkt Sterne vergeben oder als Favorit speichern.</p>
-                    <button onclick="clearHistory()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1 rounded-lg font-semibold transition">Verlauf leeren</button>
+                <!-- TAB CONTAINER: VERLAUF (HISTORY) -->
+                <div id="tab-content-history" class="hidden space-y-3">
+                    <div class="flex justify-between items-center">
+                        <p class="text-xs text-slate-500">Automatischer Verlauf deiner letzten Berechnungen. Hier kannst du direkt Sterne vergeben, Notizen machen oder als Favorit speichern.</p>
+                        <button onclick="clearHistory()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1 rounded-lg font-semibold transition">Verlauf leeren</button>
+                    </div>
+                    <div id="history-container" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
                 </div>
-                <div id="history-container" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
             </div>
         </div>
 
@@ -631,7 +614,6 @@
             const btnHist = document.getElementById('bottom-tab-hist');
             const contentFav = document.getElementById('tab-content-favorites');
             const contentHist = document.getElementById('tab-content-history');
-            const infoText = document.getElementById('bottom-tab-info');
             const searchWrapper = document.getElementById('favorites-search-wrapper');
 
             if (tab === 'favorites') {
@@ -640,14 +622,24 @@
                 contentFav.classList.remove('hidden');
                 contentHist.classList.add('hidden');
                 searchWrapper.classList.remove('hidden');
-                infoText.innerText = "Mit 1 Klick wiederherstellen";
             } else {
                 btnHist.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-slate-800 text-white shadow-sm";
                 btnFav.className = "px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-50 border border-slate-200 transition";
                 contentHist.classList.remove('hidden');
                 contentFav.classList.add('hidden');
                 searchWrapper.classList.add('hidden');
-                infoText.innerText = "Automatisch gespeicherter Verlauf";
+            }
+        }
+
+        function toggleBottomSection() {
+            const content = document.getElementById('bottom-section-content');
+            const btn = document.getElementById('toggle-section-btn');
+            if(content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                btn.innerText = "▲ Ausblenden";
+            } else {
+                content.classList.add('hidden');
+                btn.innerText = "▼ Einblenden";
             }
         }
 
@@ -1552,7 +1544,7 @@
             saveDatabase();
             renderFavorites();
             switchBottomTab('favorites');
-            alert('Erfolgreich als Favorit übernommen!');
+            alert('Erfolgreich als Favorit gespeichert!');
         }
 
         function clearHistory() {
@@ -1589,39 +1581,6 @@
             }
 
             calculate();
-        }
-
-        function saveCurrentAsFavorite() {
-            const title = document.getElementById('fav-title').value;
-            const rating = parseInt(document.getElementById('fav-rating').value);
-            const feedback = document.getElementById('fav-feedback').value;
-
-            if(!title) { alert('Bitte einen Titel vergeben'); return; }
-
-            const ap_mm = parseFloat(document.getElementById('input-ap-mm').value) || 0.01;
-            const ae_mm = parseFloat(document.getElementById('input-ae-mm').value) || 0.01;
-
-            const newFav = {
-                id: 'fav_' + Date.now(),
-                title, 
-                tool_id: document.getElementById('tool-select').value, 
-                material_id: document.getElementById('material-select').value, 
-                profile_id: document.getElementById('profile-select').value, 
-                rigidity_id: document.getElementById('rigidity-select').value,
-                ap_mm: ap_mm,
-                ae_mm: ae_mm,
-                rating, feedback,
-                rpm: currentCalculatedResults.rpm,
-                feed_rate_vf: currentCalculatedResults.vf
-            };
-
-            db.favorites.push(newFav);
-            saveDatabase();
-            alert('Als Favorit gespeichert!');
-            document.getElementById('fav-title').value = '';
-            document.getElementById('fav-feedback').value = '';
-            renderFavorites();
-            switchBottomTab('favorites');
         }
 
         function deleteFavorite(favId) {
