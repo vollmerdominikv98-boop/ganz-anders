@@ -376,7 +376,7 @@
 
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-5">
                     
-                    <!-- ap BLOCK -->
+                    <!-- ap BLOCK (MIT 0.01 mm FEINSCHRITTEN) -->
                     <div class="space-y-2">
                         <div class="flex justify-between items-center">
                             <div>
@@ -384,22 +384,23 @@
                                 <span id="val-ap-factor" class="text-slate-400 text-[10px] font-mono">(0.00 × D)</span>
                             </div>
                             <div class="flex items-center gap-1 bg-white border border-slate-300 rounded-lg px-2 py-1 shadow-sm focus-within:ring-2 focus-within:ring-emerald-500">
-                                <input type="number" id="input-ap-mm" step="0.1" min="0.1" value="10.0" oninput="syncApFromInput()" class="w-16 text-right font-mono font-bold text-sm text-emerald-800 outline-none">
+                                <input type="number" id="input-ap-mm" step="0.01" min="0.01" value="0.03" oninput="syncApFromInput()" class="w-16 text-right font-mono font-bold text-sm text-emerald-800 outline-none">
                                 <span class="text-xs font-bold text-slate-500">mm</span>
                             </div>
                         </div>
-                        <input type="range" id="slider-ap" min="0.1" max="30.0" step="0.1" value="10.0" oninput="syncApFromSlider()" class="w-full accent-emerald-600 bg-slate-200 rounded-lg appearance-none h-2 cursor-pointer">
+                        <input type="range" id="slider-ap" min="0.01" max="30.0" step="0.01" value="0.03" oninput="syncApFromSlider()" class="w-full accent-emerald-600 bg-slate-200 rounded-lg appearance-none h-2 cursor-pointer">
                         <div class="flex gap-1.5 pt-0.5">
-                            <button onclick="setApShortcut(0.5)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">0.5×D</button>
+                            <button onclick="setApShortcut(0.01)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">0.01mm</button>
+                            <button onclick="setApShortcut(0.03)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">0.03mm</button>
+                            <button onclick="setApShortcut(0.05)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">0.05mm</button>
+                            <button onclick="setApShortcut(0.1)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">0.1mm</button>
                             <button onclick="setApShortcut(1.0)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">1.0×D</button>
-                            <button onclick="setApShortcut(1.5)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">1.5×D</button>
-                            <button onclick="setApShortcut(2.0)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">2.0×D</button>
                         </div>
                     </div>
 
                     <div class="border-b border-slate-200"></div>
 
-                    <!-- ae BLOCK -->
+                    <!-- ae BLOCK (MIT 0.01 mm FEINSCHRITTEN) -->
                     <div class="space-y-2">
                         <div class="flex justify-between items-center">
                             <div>
@@ -407,17 +408,16 @@
                                 <span id="val-ae-factor" class="text-slate-400 text-[10px] font-mono">(0.00 × D)</span>
                             </div>
                             <div class="flex items-center gap-1 bg-white border border-slate-300 rounded-lg px-2 py-1 shadow-sm focus-within:ring-2 focus-within:ring-emerald-500">
-                                <input type="number" id="input-ae-mm" step="0.1" min="0.1" value="6.0" oninput="syncAeFromInput()" class="w-16 text-right font-mono font-bold text-sm text-emerald-800 outline-none">
+                                <input type="number" id="input-ae-mm" step="0.01" min="0.01" value="0.10" oninput="syncAeFromInput()" class="w-16 text-right font-mono font-bold text-sm text-emerald-800 outline-none">
                                 <span class="text-xs font-bold text-slate-500">mm</span>
                             </div>
                         </div>
-                        <input type="range" id="slider-ae" min="0.1" max="12.0" step="0.1" value="6.0" oninput="syncAeFromSlider()" class="w-full accent-emerald-600 bg-slate-200 rounded-lg appearance-none h-2 cursor-pointer">
+                        <input type="range" id="slider-ae" min="0.01" max="12.0" step="0.01" value="0.10" oninput="syncAeFromSlider()" class="w-full accent-emerald-600 bg-slate-200 rounded-lg appearance-none h-2 cursor-pointer">
                         <div class="flex gap-1.5 pt-0.5">
-                            <button onclick="setAeShortcut(0.05)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">5% D</button>
-                            <button onclick="setAeShortcut(0.1)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">10% D</button>
-                            <button onclick="setAeShortcut(0.25)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">25% D</button>
+                            <button onclick="setAeShortcut(0.05)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">0.05mm</button>
+                            <button onclick="setAeShortcut(0.1)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">0.10mm</button>
+                            <button onclick="setAeShortcut(0.2)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">0.20mm</button>
                             <button onclick="setAeShortcut(0.5)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">50% D</button>
-                            <button onclick="setAeShortcut(1.0)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">100% D</button>
                         </div>
                     </div>
 
@@ -444,7 +444,6 @@
                     </div>
                     
                     <div class="grid grid-cols-1 gap-2.5">
-                        <!-- DREHZAHL MIT KLEINER VC ANZEIGE -->
                         <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex justify-between items-center">
                             <div>
                                 <span class="text-xs font-semibold text-slate-600 block">Drehzahl (n):</span>
@@ -452,7 +451,6 @@
                             </div>
                             <span id="res-rpm" class="text-xl font-black font-mono text-emerald-700">-- U/min</span>
                         </div>
-                        <!-- VORSCHUB MIT KLEINER FZ ANZEIGE -->
                         <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex justify-between items-center">
                             <div>
                                 <span class="text-xs font-semibold text-slate-600 block">Tischvorschub (vf):</span>
@@ -514,7 +512,6 @@
     </div>
 
     <script>
-        // SUPABASE ANMELDEDATEN FEST VERANKERT (Damit jeder PC sofort verbunden ist)
         const DEFAULT_SUPABASE_URL = "https://emqwigtqiqlnvasuzrig.supabase.co";
         const DEFAULT_SUPABASE_KEY = "DEIN_SUPABASE_ANON_KEY_HIER"; 
 
@@ -539,7 +536,7 @@
             },
             profiles: {
                 "schruppen": { "name": "Schruppen (Roughing)", "vc_factor": 0.85, "fz_factor": 1.20, "ap_factor": 1.0, "ae_factor": 0.7, "description": "Hohes Spanvolumen, reduziertes vc, hoher Vorschub" },
-                "schlichten": { "name": "Schlichten (Finishing)", "vc_factor": 1.20, "fz_factor": 0.50, "ap_factor": 0.2, "ae_factor": 0.1, "description": "Hohe Oberflächengüte, hohes vc, feiner Vorschub" },
+                "schlichten": { "name": "Schlichten (Finishing)", "vc_factor": 1.20, "fz_factor": 0.50, "ap_factor": 0.05, "ae_factor": 0.05, "description": "Hohe Oberflächengüte, hohes vc, feiner Vorschub" },
                 "hsc_trochoidal": { "name": "HSC / Trochoidal (kleines ae)", "vc_factor": 1.40, "fz_factor": 1.0, "ap_factor": 0.8, "ae_factor": 0.08, "description": "Geringe radiale Eintauchtiefe, ideal für RCT" },
                 "planfraesen": { "name": "Planfräsen (Face Milling)", "vc_factor": 1.0, "fz_factor": 1.0, "ap_factor": 0.5, "ae_factor": 0.8, "description": "Standard-Flächenbearbeitung" }
             },
@@ -591,7 +588,6 @@
         }
 
         function initSupabase() {
-            // Nutzt gespeicherte Werte oder greift automatisch auf die fest verankerten Standardwerte zurück
             const url = localStorage.getItem('toolpilot_supabase_url') || DEFAULT_SUPABASE_URL;
             const key = localStorage.getItem('toolpilot_supabase_key') || DEFAULT_SUPABASE_KEY;
 
@@ -1125,11 +1121,11 @@
                 const apSlider = document.getElementById('slider-ap');
                 const aeSlider = document.getElementById('slider-ae');
 
-                apSlider.max = Lmax.toFixed(1);
-                aeSlider.max = D.toFixed(1);
+                apSlider.max = Lmax.toFixed(2);
+                aeSlider.max = D.toFixed(2);
 
-                const targetAp = (D * prof.ap_factor).toFixed(1);
-                const targetAe = (D * prof.ae_factor).toFixed(1);
+                const targetAp = (D * prof.ap_factor).toFixed(2);
+                const targetAe = (D * prof.ae_factor).toFixed(2);
 
                 document.getElementById('input-ap-mm').value = targetAp;
                 apSlider.value = targetAp;
@@ -1141,48 +1137,52 @@
         }
 
         function syncApFromSlider() {
-            const val = parseFloat(document.getElementById('slider-ap').value) || 0.1;
-            document.getElementById('input-ap-mm').value = val.toFixed(1);
+            const val = parseFloat(document.getElementById('slider-ap').value) || 0.01;
+            document.getElementById('input-ap-mm').value = val.toFixed(2);
             calculate();
         }
 
         function syncApFromInput() {
-            const val = parseFloat(document.getElementById('input-ap-mm').value) || 0.1;
+            const val = parseFloat(document.getElementById('input-ap-mm').value) || 0.01;
             document.getElementById('slider-ap').value = val;
             calculate();
         }
 
         function syncAeFromSlider() {
-            const val = parseFloat(document.getElementById('slider-ae').value) || 0.1;
-            document.getElementById('input-ae-mm').value = val.toFixed(1);
+            const val = parseFloat(document.getElementById('slider-ae').value) || 0.01;
+            document.getElementById('input-ae-mm').value = val.toFixed(2);
             calculate();
         }
 
         function syncAeFromInput() {
-            const val = parseFloat(document.getElementById('input-ae-mm').value) || 0.1;
+            const val = parseFloat(document.getElementById('input-ae-mm').value) || 0.01;
             document.getElementById('slider-ae').value = val;
             calculate();
         }
 
-        function setApShortcut(factor) {
+        function setApShortcut(value) {
             const toolId = document.getElementById('tool-select').value;
             const tool = db.tools[toolId];
             if(!tool) return;
 
-            const val = (tool.diameter * factor).toFixed(1);
-            document.getElementById('input-ap-mm').value = val;
-            document.getElementById('slider-ap').value = val;
+            let val = value;
+            if(value >= 0.5) val = tool.diameter * value;
+
+            document.getElementById('input-ap-mm').value = val.toFixed(2);
+            document.getElementById('slider-ap').value = val.toFixed(2);
             calculate();
         }
 
-        function setAeShortcut(factor) {
+        function setAeShortcut(value) {
             const toolId = document.getElementById('tool-select').value;
             const tool = db.tools[toolId];
             if(!tool) return;
 
-            const val = (tool.diameter * factor).toFixed(1);
-            document.getElementById('input-ae-mm').value = val;
-            document.getElementById('slider-ae').value = val;
+            let val = value;
+            if(value >= 0.5) val = tool.diameter * value;
+
+            document.getElementById('input-ae-mm').value = val.toFixed(2);
+            document.getElementById('slider-ae').value = val.toFixed(2);
             calculate();
         }
 
@@ -1316,11 +1316,11 @@
                 const apVal = fav.ap_mm !== undefined ? fav.ap_mm : (fav.ap_factor !== undefined ? fav.ap_factor * D : D);
                 const aeVal = fav.ae_mm !== undefined ? fav.ae_mm : (fav.ae_factor !== undefined ? fav.ae_factor * D : D * 0.5);
 
-                document.getElementById('input-ap-mm').value = apVal.toFixed(1);
-                document.getElementById('slider-ap').value = apVal.toFixed(1);
+                document.getElementById('input-ap-mm').value = apVal.toFixed(2);
+                document.getElementById('slider-ap').value = apVal.toFixed(2);
 
-                document.getElementById('input-ae-mm').value = aeVal.toFixed(1);
-                document.getElementById('slider-ae').value = aeVal.toFixed(1);
+                document.getElementById('input-ae-mm').value = aeVal.toFixed(2);
+                document.getElementById('slider-ae').value = aeVal.toFixed(2);
             }
 
             calculate();
@@ -1333,8 +1333,8 @@
 
             if(!title) { alert('Bitte einen Titel vergeben'); return; }
 
-            const ap_mm = parseFloat(document.getElementById('input-ap-mm').value) || 0.1;
-            const ae_mm = parseFloat(document.getElementById('input-ae-mm').value) || 0.1;
+            const ap_mm = parseFloat(document.getElementById('input-ap-mm').value) || 0.01;
+            const ae_mm = parseFloat(document.getElementById('input-ae-mm').value) || 0.01;
 
             const newFav = {
                 id: 'fav_' + Date.now(),
@@ -1364,7 +1364,7 @@
             renderFavorites();
         }
 
-        // --- HAUPTBERECHNUNG INKL. OPTIMIERTER PRAXIS-GUARDRAIL ---
+        // --- HAUPTBERECHNUNG MIT SCHLICHT-ANPASSUNG ---
         function calculate() {
             const machId = document.getElementById('machine-select').value;
             const matId = document.getElementById('material-select').value;
@@ -1392,8 +1392,8 @@
             const z = tool.z;
             const Lmax = tool.max_overhang || (D * 3);
 
-            const ap = parseFloat(document.getElementById('input-ap-mm').value) || 0.1;
-            const ae = parseFloat(document.getElementById('input-ae-mm').value) || 0.1;
+            const ap = parseFloat(document.getElementById('input-ap-mm').value) || 0.01;
+            const ae = parseFloat(document.getElementById('input-ae-mm').value) || 0.01;
 
             const ap_factor = ap / D;
             const ae_factor = ae / D;
@@ -1404,7 +1404,7 @@
             const warningBox = document.getElementById('depth-warning');
             if (ap > Lmax) {
                 warningBox.classList.remove('hidden');
-                warningBox.innerText = `⚠️ WARNUNG: ap (${ap.toFixed(1)}mm) überschreitet max. Auskragung (${Lmax}mm)!`;
+                warningBox.innerText = `⚠️ WARNUNG: ap (${ap.toFixed(2)}mm) überschreitet max. Auskragung (${Lmax}mm)!`;
             } else {
                 warningBox.classList.add('hidden');
             }
@@ -1466,11 +1466,13 @@
                     physicsInfoHtml += `<div class="text-[11px] text-amber-700 font-semibold">⚖️ Schnittdruck (ap > 1.0D): -${((1 - k_ap) * 100).toFixed(0)}%</div>`;
                 }
 
-                // 4. RCT (RADIAL CHIP THINNING) - PRAXISBEGRENZT AUF MAX 2.0x
+                // 4. RCT (RADIAL CHIP THINNING) - beim Schlichten sanfter kappen
                 let rctFactor = 1.0;
                 if (ae_factor < 0.5) {
                     rctFactor = 1 / Math.sqrt(ae_factor * (2 - ae_factor));
-                    rctFactor = Math.min(rctFactor, 2.0);
+                    // Beim Schlichten begrenzen wir RCT auf max 1.3x für feine Oberflächen
+                    const maxRct = (profId === 'schlichten') ? 1.3 : 2.0;
+                    rctFactor = Math.min(rctFactor, maxRct);
                     physicsInfoHtml += `<div class="text-[11px] text-emerald-700 font-semibold">⚡ RCT Spanmitte: fz +${((rctFactor - 1) * 100).toFixed(0)}%</div>`;
                 }
 
@@ -1479,9 +1481,9 @@
 
                 // 5. MINIMAL-SPANDICKE
                 let hm = effectiveFzBase * Math.sqrt(Math.min(ae / Deff, 1.0));
-                if (hm < 0.005) {
-                    effectiveFzBase = 0.005 / Math.sqrt(Math.min(ae / Deff, 1.0));
-                    physicsInfoHtml += `<div class="text-[11px] text-purple-700 font-semibold">🔪 Schab-Schutz: fz auf hm_min (0.005mm) angehoben</div>`;
+                if (hm < 0.003 && profId !== 'schlichten') {
+                    effectiveFzBase = 0.003 / Math.sqrt(Math.min(ae / Deff, 1.0));
+                    physicsInfoHtml += `<div class="text-[11px] text-purple-700 font-semibold">🔪 Schab-Schutz: fz angehoben</div>`;
                 }
             }
 
@@ -1494,7 +1496,6 @@
             let vf_eff = effectiveFz * z * n_eff;
             vf_eff = Math.min(vf_eff, mach.max_vf);
 
-            // Reale effektive Schnittgeschwindigkeit vc auf Basis der reellen Drehzahl (gekappt)
             let vc_eff_real = (Math.PI * Deff * n_eff) / 1000;
 
             const Q = (ap * ae * vf_eff) / 1000;
@@ -1506,7 +1507,6 @@
             const vfEl = document.getElementById('res-vf');
             const powerEl = document.getElementById('res-power');
 
-            // Drehzahl-Anzeige & kleine vc(eff) Anzeige
             rpmEl.innerText = n_eff.toFixed(0) + " U/min";
             document.getElementById('res-vc-eff').innerText = `vc(eff): ${vc_eff_real.toFixed(0)} m/min`;
 
@@ -1518,7 +1518,6 @@
                 rpmEl.title = "";
             }
 
-            // Vorschub-Anzeige & kleine fz(eff) Anzeige
             vfEl.innerText = vf_eff.toFixed(0) + " mm/min";
             document.getElementById('res-fz-eff').innerText = `fz(eff): ${effectiveFz.toFixed(4)} mm`;
 
@@ -1528,7 +1527,7 @@
                 vfEl.className = "text-xl font-black font-mono text-emerald-700";
             }
 
-            document.getElementById('res-apae').innerText = ap.toFixed(1) + " / " + ae.toFixed(1) + " mm";
+            document.getElementById('res-apae').innerText = ap.toFixed(2) + " / " + ae.toFixed(2) + " mm";
             document.getElementById('res-q').innerText = Q.toFixed(2) + " cm³/min";
 
             powerEl.innerText = power_kw.toFixed(2) + " kW";
@@ -1555,8 +1554,8 @@ Steifigkeit: ${rig}
 ----------------------------------
 Drehzahl (n): ${currentCalculatedResults.rpm.toFixed(0)} U/min (vc: ${currentCalculatedResults.vc_eff.toFixed(0)} m/min)
 Tischvorschub (vf): ${currentCalculatedResults.vf.toFixed(0)} mm/min (fz: ${currentCalculatedResults.fz_eff.toFixed(4)} mm)
-Schnitttiefe (ap): ${currentCalculatedResults.ap.toFixed(1)} mm
-Schnittbreite (ae): ${currentCalculatedResults.ae.toFixed(1)} mm
+Schnitttiefe (ap): ${currentCalculatedResults.ap.toFixed(2)} mm
+Schnittbreite (ae): ${currentCalculatedResults.ae.toFixed(2)} mm
 Zeitspanvolumen (Q): ${currentCalculatedResults.q.toFixed(2)} cm³/min
 Leistungsbedarf (Pc): ${currentCalculatedResults.power.toFixed(2)} kW
 ----------------------------------`;
