@@ -438,7 +438,8 @@
                         </div>
                     </div>
 
-                    <div id="depth-warning" class="text-xs font-bold text-rose-600 bg-rose-50 p-2.5 rounded-lg border border-rose-200 mt-1 hidden"></div>
+                    <!-- Container für Warnungen (Rattergefahr, Tiefenwarnung etc) -->
+                    <div id="calc-warnings" class="space-y-2 mt-3 empty:hidden"></div>
                 </div>
 
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
@@ -1703,11 +1704,22 @@
             document.getElementById('val-ap-factor').innerText = `(${ap_factor.toFixed(2)} × D)`;
             document.getElementById('val-ae-factor').innerText = `(${ae_factor.toFixed(2)} × D)`;
 
-            const warningBox = document.getElementById('depth-warning');
+            // WARNUNGEN SAMMELN
+            const warnings = [];
+
             if (ap > Lmax) {
+                warnings.push(`<div class="text-xs font-bold text-rose-700 bg-rose-50 p-2.5 rounded-xl border border-rose-200 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⚠️</span> <div><strong>KRITISCHE AUSKRAGUNG:</strong> ap (${ap.toFixed(2)} mm) ist tiefer als der Fräser max. einspannen kann (${Lmax} mm)!</div></div>`);
+            }
+            if (ae_factor < 0.04 && profId !== 'hsc_trochoidal') {
+                warnings.push(`<div class="text-xs font-bold text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-300 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⚠️</span> <div><strong>RATTERGEFAHR (Schab-Effekt):</strong> ae (${ae.toFixed(2)} mm) ist extrem gering (< 4% D). Der Fräser reibt eher als er schneidet. <strong>Empfehlung: ae auf mind. ${(D * 0.05).toFixed(2)} mm erhöhen</strong> für einen stabilen Schnitt!</div></div>`);
+            }
+
+            const warningBox = document.getElementById('calc-warnings');
+            if (warnings.length > 0) {
+                warningBox.innerHTML = warnings.join('');
                 warningBox.classList.remove('hidden');
-                warningBox.innerText = `⚠️ WARNUNG: ap (${ap.toFixed(2)}mm) überschreitet max. Auskragung (${Lmax}mm)!`;
             } else {
+                warningBox.innerHTML = '';
                 warningBox.classList.add('hidden');
             }
 
@@ -1722,10 +1734,9 @@
             } else if (tool.geo_type === "torus") {
                 let r = R;
                 if (ap <= r) {
-                    // Korrekte mathematische Zunahme von Deff mit steigendem ap im Radiusbereich
                     Deff = D - (2 * r) + (2 * Math.sqrt(ap * (2 * r - ap)));
                 } else {
-                    Deff = D; // Ab Schafttiefe gilt der volle Nenndurchmesser
+                    Deff = D;
                 }
                 if (Deff > D) Deff = D;
                 if (Deff < 0.1) Deff = 0.1;
@@ -1768,8 +1779,12 @@
                 }
 
                 let kv_ae = 1.0;
-                if (ae_factor < 0.5) {
-                    kv_ae = Math.min(Math.pow(0.5 / ae_factor, 0.3), 2.2);
+                if (ae_factor < 0.04) {
+                    kv_ae = 0.8; 
+                    physicsInfoHtml += `<div class="text-[11px] text-rose-700 font-semibold">[Ratter-Schutz] ae extrem gering (<4%D): Thermik-Boost blockiert & vc gedrosselt!</div>`;
+                } else if (ae_factor < 0.5) {
+                    let effective_ae_for_boost = Math.max(ae_factor, 0.05); 
+                    kv_ae = Math.min(Math.pow(0.5 / effective_ae_for_boost, 0.3), 2.0);
                     physicsInfoHtml += `<div class="text-[11px] text-emerald-700 font-semibold">[Thermik] Kühlbonus (ae < 0.5D): vc +${((kv_ae - 1) * 100).toFixed(0)}%</div>`;
                 } else if (ae_factor >= 0.95) {
                     effectiveVc *= 0.85;
