@@ -1632,7 +1632,6 @@
             const fav = db.favorites.find(f => f.id === favId);
             if(!fav) return;
 
-            // Maschine und Aufnahme jetzt direkt mitladen
             if(fav.machine_id && db.machines[fav.machine_id]) {
                 document.getElementById('machine-select').value = fav.machine_id;
             }
@@ -1877,7 +1876,12 @@
 
             // Tangentialkraft max
             const fc_max = kc_real * ap * h_max * z_force_factor;
-            const f_bend = fc_max * 1.2; // Näherung der kombinierten Vektorkraft (Biegung)
+            
+            // KORREKTUR: Radialkraft (die den Fräser wegbiegt) ist physikalisch ca. 45% der Tangentialkraft
+            const f_bend = fc_max * 0.45; 
+
+            // KORREKTUR: Hebelarm - Die Kraft greift nicht an der Werkzeugspitze, sondern mittig im Span an
+            const Leff = Math.max(Lmax - (ap / 2), Lmax * 0.1);
 
             // Trägheitsmoment (Zylinder, Kerndurchmesser ca. 0.8 * D)
             const D_core = D * 0.8;
@@ -1885,12 +1889,15 @@
             const E_mod = 600000; // VHM E-Modul in N/mm²
             
             // Abdrängung y in mm
-            const deflection_mm = (f_bend * Math.pow(Lmax, 3)) / (3 * E_mod * I_val);
+            const deflection_mm = (f_bend * Math.pow(Leff, 3)) / (3 * E_mod * I_val);
 
-            // Abdrängungs-Warnungen
-            if (deflection_mm > 0.15) {
-                warnings.push(`<div class="text-xs font-bold text-rose-700 bg-rose-50 p-2.5 rounded-xl border border-rose-200 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⚠️</span> <div><strong>WERKZEUGBRUCH-GEFAHR:</strong> Die berechnete Abdrängung beträgt extrem hohe ${deflection_mm.toFixed(2)} mm! Bitte ap oder ae massiv reduzieren.</div></div>`);
-            } else if (deflection_mm > 0.05) {
+            // KORREKTUR WARNGRENZEN: Dynamisch an Fräser-D gekoppelt (Bruch bei 1.5% von D)
+            const limit_break = D * 0.015; 
+            const limit_tol = Math.max(0.04, D * 0.005); 
+
+            if (deflection_mm > limit_break) {
+                warnings.push(`<div class="text-xs font-bold text-rose-700 bg-rose-50 p-2.5 rounded-xl border border-rose-200 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⚠️</span> <div><strong>WERKZEUGBRUCH-GEFAHR:</strong> Die berechnete Abdrängung (${deflection_mm.toFixed(2)} mm) ist kritisch für einen Ø${D}mm Fräser! Bitte ap oder ae massiv reduzieren.</div></div>`);
+            } else if (deflection_mm > limit_tol) {
                 warnings.push(`<div class="text-xs font-bold text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-300 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⚠️</span> <div><strong>TOLERANZ-WARNUNG:</strong> Der Fräser biegt sich unter der Last um ${deflection_mm.toFixed(2)} mm durch. Maßhaltigkeit an Passungen ist gefährdet.</div></div>`);
             }
 
@@ -1957,9 +1964,9 @@
             fcEl.innerText = fc_max.toFixed(0) + " N";
             
             deflEl.innerText = deflection_mm.toFixed(3) + " mm";
-            if (deflection_mm > 0.15) {
+            if (deflection_mm > limit_break) {
                 deflEl.className = "text-base font-bold font-mono text-rose-600 animate-pulse";
-            } else if (deflection_mm > 0.05) {
+            } else if (deflection_mm > limit_tol) {
                 deflEl.className = "text-base font-bold font-mono text-amber-600";
             } else {
                 deflEl.className = "text-base font-bold font-mono text-slate-800";
