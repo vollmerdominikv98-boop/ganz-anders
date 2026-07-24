@@ -28,7 +28,7 @@
                 </div>
                 <div>
                     <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 leading-none">CNCPilot</h1>
-                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Industrial Engine 2.2</span>
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Industrial Engine 2.3</span>
                 </div>
             </div>
             <div>
@@ -268,9 +268,9 @@
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1.5">Werkzeugaufnahme</label>
                     <select id="holder-select" class="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-slate-400 transition" onchange="calculate()">
-                        <option value="schrumpf">Hydrodehn-Spannfutter / Schrumpf (Rundlauf &lt;3&mu;m)</option>
-                        <option value="spannzange">Spannzange ER (Rundlauf ~12&mu;m)</option>
-                        <option value="weldon">Weldon Spannfutter (Rundlauf ~20&mu;m)</option>
+                        <option value="schrumpf">Hydrodehn-Spannfutter / Schrumpf (Rundlauf 3&mu;m)</option>
+                        <option value="spannzange">Spannzange ER (Rundlauf 12&mu;m)</option>
+                        <option value="weldon">Weldon Spannfutter (Rundlauf 20&mu;m)</option>
                     </select>
                 </div>
 
@@ -408,7 +408,7 @@
                             <span class="text-xs font-semibold text-slate-600">Zustellung (ap / ae):</span>
                             <span id="res-apae" class="text-sm font-bold font-mono text-slate-900">-- / -- mm</span>
                         </div>
-                        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex justify-between items-center">
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
                             <span class="text-xs font-semibold text-slate-600">Zeitspanvolumen (Q):</span>
                             <span id="res-q" class="text-base font-bold font-mono text-slate-900">-- cm³/min</span>
                         </div>
@@ -1144,7 +1144,6 @@
             calculate();
         }
 
-        // INDUSTRIE-UPDATE: Dynamische Profile in den Slindern
         function resetSliders() {
             const toolId = document.getElementById('tool-select').value;
             const profId = document.getElementById('profile-select').value;
@@ -1646,7 +1645,7 @@
             }
         }
 
-        // --- HAUPTBERECHNUNG MIT INDUSTRIE-PHYSIK V2.2 (Inkl. Rundlauf & Halter-Physik) ---
+        // --- HAUPTBERECHNUNG MIT INDUSTRIE-PHYSIK V2.3 (Inkl. Thermik-Falle & ap>D Korrektur) ---
         function calculate() {
             const machId = document.getElementById('machine-select').value;
             const matId = document.getElementById('material-select').value;
@@ -1691,8 +1690,11 @@
             const ap = parseFloat(document.getElementById('input-ap-mm').value) || 0.01;
             const ae = parseFloat(document.getElementById('input-ae-mm').value) || 0.01;
 
-            document.getElementById('val-ap-factor').innerText = `(${(ap/D).toFixed(2)} × D)`;
-            document.getElementById('val-ae-factor').innerText = `(${(ae/D).toFixed(2)} × D)`;
+            const ap_factor = ap / D;
+            const ae_factor = ae / D;
+
+            document.getElementById('val-ap-factor').innerText = `(${ap_factor.toFixed(2)} × D)`;
+            document.getElementById('val-ae-factor').innerText = `(${ae_factor.toFixed(2)} × D)`;
 
             const warnings = [];
 
@@ -1732,16 +1734,14 @@
 
             let physicsInfoHtml = geoInfoText;
 
-            // --- WERKZEUGHALTER RUNDLAUF-PHYSIK ---
-            let runout_mm = 0.003; // Schrumpf / Hydrodehn
+            let runout_mm = 0.003; 
             if (holderType === 'spannzange') runout_mm = 0.012;
             else if (holderType === 'weldon') runout_mm = 0.020;
 
             physicsInfoHtml += `<div class="text-[11px] text-slate-600">[Aufnahme] Rundlauffehler: ±${runout_mm * 1000} &mu;m</div>`;
 
-            // Wenn der Rundlauffehler in der Größenordnung des Vorschubs liegt -> Warnung
             if (effectiveFzBase < runout_mm * 1.5 && profId.includes('schlichten')) {
-                warnings.push(`<div class="text-xs font-bold text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-300 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⚠️</span> <div><strong>RUNDLAUF-RISIKO:</strong> Gewählter Zahnvorschub ($f_z = ${effectiveFzBase.toFixed(4)}$ mm) ist zu nah am Rundlauffehler des Halters (${runout_mm} mm). Einzelner Zahn wird überlastet!</div></div>`);
+                warnings.push(`<div class="text-xs font-bold text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-300 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⚠️</span> <div><strong>RUNDLAUF-RISIKO:</strong> Gewählter Zahnvorschub ist zu nah am Rundlauffehler des Halters (${runout_mm} mm). Einzelner Zahn wird überlastet!</div></div>`);
             }
 
             let ae_ratio = Math.min(ae / Deff, 1.0);
@@ -1754,6 +1754,15 @@
                 if (isRegrind) {
                     effectiveVc *= 0.90;
                     physicsInfoHtml += `<div class="text-[11px] text-amber-800 font-semibold">[Nachschliff] vc -10% (Beschichtungsschutz)</div>`;
+                }
+
+                // FEHLER 8 KORREKTUR: ap > D axiale Spanungs-Dämpfung
+                let k_ap = 1.0;
+                if (ap_factor > 1.0 && tool.geo_type === "shaft") {
+                    k_ap = Math.pow(1.0 / ap_factor, 0.25);
+                    effectiveVc *= k_ap;
+                    effectiveFzBase *= k_ap;
+                    physicsInfoHtml += `<div class="text-[11px] text-amber-800 font-semibold">[Axial-Korrektur] ap > 1.0D (${ap_factor.toFixed(1)}x): Leistung & Vorschub gedrosselt (-${((1 - k_ap)*100).toFixed(0)}%)</div>`;
                 }
 
                 let hm_min = D * 0.0005; 
@@ -1774,15 +1783,21 @@
                 if (ae_ratio < 0.5) {
                     rctFactor = effectiveFzBase / hm_exact; 
                     rctFactor = Math.min(rctFactor, 2.5); 
-                    effectiveFzBase = effectiveFzBase * rctFactor;
-                    physicsInfoHtml += `<div class="text-[11px] text-emerald-700 font-semibold">[Geometrie] Exaktes RCT (Winkel): fz +${((rctFactor - 1) * 100).toFixed(0)}%</div>`;
+                    
+                    // FEHLER 7 KORREKTUR: Hartbearbeitungs-Thermik-Falle (Kein Boost bei HRC & Trockenschnitt)
+                    if (matId.includes('gehaertet')) {
+                        rctFactor = 1.0; // Boost blockieren bei harten Stählen wegen Thermoschock
+                        physicsInfoHtml += `<div class="text-[11px] text-amber-700 font-semibold">[Hartbearbeitung] Thermik-Boost gesperrt (Schutz vor Schneidkanten-Ausbruch)</div>`;
+                    } else {
+                        effectiveFzBase = effectiveFzBase * rctFactor;
+                        physicsInfoHtml += `<div class="text-[11px] text-emerald-700 font-semibold">[Geometrie] Exaktes RCT (Winkel): fz +${((rctFactor - 1) * 100).toFixed(0)}%</div>`;
+                    }
                 }
             }
 
             const effectiveFz = effectiveFzBase;
             const mc = mat.mc !== undefined ? mat.mc : 0.25;
             
-            // Kienzle mit PEAK-Zahnlast durch Rundlauf (der ungenau laufende Zahn erzeugt die maximale Kraftspitze)
             let fz_peak = effectiveFz + runout_mm;
             let hm_peak = (fz_peak * 2 * ae) / (Deff * phi_s_rad);
             if (ae_ratio >= 0.5) hm_peak = fz_peak;
@@ -1809,7 +1824,6 @@
                 warnings.push(`<div class="text-xs font-bold text-rose-700 bg-rose-50 p-2.5 rounded-xl border border-rose-200 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⚠️</span> <div><strong>SPINDEL ÜBERLASTET (Abwürgen):</strong> Gefordertes Drehmoment (${torque_nm.toFixed(1)} Nm) überschreitet das Spindel-Limit (${mach_max_nm} Nm). Bitte ap, ae oder fz reduzieren!</div></div>`);
             }
 
-            // Biegespannung basierend auf der echten Peak-Kraft des am weitesten ausgelenkten Zahns
             let z_in_cut = (phi_s_rad / (2 * Math.PI)) * z;
             let z_force_factor = Math.max(1.0, z_in_cut);
 
