@@ -28,7 +28,7 @@
                 </div>
                 <div>
                     <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 leading-none">CNCPilot</h1>
-                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Industrial Engine</span>
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Industrial Engine 2.1</span>
                 </div>
             </div>
             <div>
@@ -164,7 +164,7 @@
                             <label class="block text-slate-600 mb-1 text-xs font-medium">Bezeichnung</label>
                             <input type="text" id="adm-mach-name" placeholder="z.B. DMG DMU 75 Monoblock" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
                         </div>
-                        <div class="grid grid-cols-3 gap-2 text-xs">
+                        <div class="grid grid-cols-2 gap-2 text-xs">
                             <div>
                                 <label class="block text-slate-600 mb-1 font-medium">Max U/min</label>
                                 <input type="number" id="adm-mach-rpm" value="15000" class="w-full bg-white border border-slate-300 rounded-lg p-1.5">
@@ -174,8 +174,12 @@
                                 <input type="number" id="adm-mach-vf" value="30000" class="w-full bg-white border border-slate-300 rounded-lg p-1.5">
                             </div>
                             <div>
-                                <label class="block text-slate-600 mb-1 font-medium">Max kW</label>
+                                <label class="block text-slate-600 mb-1 font-medium">Max Leistung (kW)</label>
                                 <input type="number" step="0.5" id="adm-mach-kw" value="18" class="w-full bg-white border border-slate-300 rounded-lg p-1.5">
+                            </div>
+                            <div>
+                                <label class="block text-slate-600 mb-1 font-medium">Max Drehmoment (Nm)</label>
+                                <input type="number" step="1" id="adm-mach-nm" value="130" class="w-full bg-white border border-slate-300 rounded-lg p-1.5">
                             </div>
                         </div>
                         <button onclick="addNewMachine()" class="w-full bg-slate-800 hover:bg-slate-900 text-white p-2 rounded-lg text-xs font-bold transition">Maschine Speichern</button>
@@ -490,7 +494,7 @@
 
             </div>
 
-            <!-- SPALTE 3: ERGEBNISSE & GRÜNER BESTÄTIGEN-BUTTON -->
+            <!-- SPALTE 3: ERGEBNISSE -->
             <div class="lg:col-span-4 flex flex-col space-y-6">
                 <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                     <div class="border-b border-slate-100 pb-3 flex justify-between items-center">
@@ -524,9 +528,15 @@
                             <span class="text-xs font-semibold text-slate-600">Zeitspanvolumen (Q):</span>
                             <span id="res-q" class="text-base font-bold font-mono text-slate-900">-- cm³/min</span>
                         </div>
+                        
+                        <!-- MASCHINENLEISTUNG & DREHMOMENT -->
                         <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
                             <span class="text-xs font-semibold text-slate-600">Antriebsleistung (Pc):</span>
                             <span id="res-power" class="text-base font-bold font-mono text-slate-800">-- kW</span>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
+                            <span class="text-xs font-semibold text-slate-600">Spindel-Drehmoment (Mc):</span>
+                            <span id="res-torque" class="text-base font-bold font-mono text-slate-800">-- Nm</span>
                         </div>
                         
                         <!-- ECHTE SCHNITTKRAFT UND BIEGESPANNUNG -->
@@ -535,7 +545,7 @@
                             <span id="res-fc" class="text-base font-bold font-mono text-slate-900">-- N</span>
                         </div>
                         <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
-                            <span class="text-xs font-semibold text-slate-600">Biegespannung (<span class="font-serif italic">σ</span><sub>b</sub>):</span>
+                            <span class="text-xs font-semibold text-slate-600">Biegespannung (<span class="font-serif italic">&sigma;</span><sub>b</sub>):</span>
                             <span id="res-stress" class="text-base font-bold font-mono text-slate-800">-- MPa</span>
                         </div>
                     </div>
@@ -582,8 +592,8 @@
 
         const defaultDb = {
             machines: {
-                "dmg_5achs": { "name": "DMG DMU 75 Monoblock", "max_rpm": 15000, "max_vf": 30000, "max_kw": 18 },
-                "dmg_3achs": { "name": "DMG Mori DMC 850V", "max_rpm": 15000, "max_vf": 30000, "max_kw": 15 }
+                "dmg_5achs": { "name": "DMG DMU 75 Monoblock", "max_rpm": 15000, "max_vf": 30000, "max_kw": 18, "max_nm": 130 },
+                "dmg_3achs": { "name": "DMG Mori DMC 850V", "max_rpm": 15000, "max_vf": 30000, "max_kw": 15, "max_nm": 85 }
             },
             materials: {
                 "stahl_c45": { "name": "Stahl < 850 N/mm² (z.B. C45, St52)", "kc11": 1800, "mc": 0.22 },
@@ -620,7 +630,7 @@
         let supabaseClient = null;
         let isCloudActive = false;
         let db = loadDatabase();
-        let currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0, q: 0, power: 0, fz_eff: 0, vc_eff: 0, fc: 0, stress: 0 };
+        let currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0, q: 0, power: 0, torque: 0, fz_eff: 0, vc_eff: 0, fc: 0, stress: 0 };
 
         function switchAdminTab(tabName) {
             const tabs = ['tools', 'machines', 'materials', 'profiles', 'cloud'];
@@ -1060,7 +1070,7 @@
                 div.innerHTML = `
                     <div>
                         <strong class="text-slate-900">${m.name}</strong>
-                        <div class="text-slate-500 text-[10px] font-mono">Max: ${m.max_rpm} U/min | ${m.max_vf} mm/min | ${m.max_kw} kW</div>
+                        <div class="text-slate-500 text-[10px] font-mono">Max: ${m.max_rpm} U/min | ${m.max_vf} mm/min | ${m.max_kw} kW | ${m.max_nm || '--'} Nm</div>
                     </div>
                     <button onclick="deleteMachineAdmin('${id}')" class="bg-rose-50 hover:bg-rose-100 text-rose-700 px-2.5 py-1 rounded border border-rose-200 font-semibold transition">🗑️</button>
                 `;
@@ -1252,33 +1262,42 @@
             calculate();
         }
 
+        // INDUSTRIE-UPDATE: Dynamische Profile in den Slindern
         function resetSliders() {
             const toolId = document.getElementById('tool-select').value;
             const profId = document.getElementById('profile-select').value;
-            const tool = db.tools[toolId];
-            const prof = db.profiles[profId];
-
-            if(tool && prof) {
-                let D = tool.diameter;
-                if(document.getElementById('regrind-toggle').checked) {
+            const t = db.tools[toolId];
+            const p = db.profiles[profId];
+            
+            if (t && p) {
+                let D = t.diameter;
+                if (document.getElementById('regrind-toggle').checked) {
                     D = parseFloat(document.getElementById('input-d-ist').value) || D;
                 }
-                const Lmax = tool.max_overhang || (D * 3);
+                
+                const Lmax = t.max_overhang || (D * 3);
+                const apS = document.getElementById('slider-ap');
+                const aeS = document.getElementById('slider-ae');
+                
+                apS.max = Lmax.toFixed(2);
+                aeS.max = D.toFixed(2);
+                
+                let targetAp = D * p.ap_factor;
+                let targetAe = D * p.ae_factor;
 
-                const apSlider = document.getElementById('slider-ap');
-                const aeSlider = document.getElementById('slider-ae');
-
-                apSlider.max = Lmax.toFixed(2);
-                aeSlider.max = D.toFixed(2);
-
-                const targetAp = (D * prof.ap_factor).toFixed(2);
-                const targetAe = (D * prof.ae_factor).toFixed(2);
-
-                document.getElementById('input-ap-mm').value = targetAp;
-                apSlider.value = targetAp;
-
-                document.getElementById('input-ae-mm').value = targetAe;
-                aeSlider.value = targetAe;
+                // Nichtlineare Skalierung für Schlichten (verhindert massive Schlichtspäne bei großen Fräsern)
+                if (profId === 'schlichten_gehaertet') {
+                    targetAp = Math.min(D * p.ap_factor, 0.15); // Max 0.15mm Restaufmaß
+                    targetAe = Math.min(D * p.ae_factor, 0.05); // Max 0.05mm radial
+                } else if (profId === 'schlichten') {
+                    targetAp = Math.min(D * p.ap_factor, 0.50); // Max 0.50mm Restaufmaß
+                    targetAe = Math.min(D * p.ae_factor, 0.20); // Max 0.20mm radial
+                }
+                
+                document.getElementById('input-ap-mm').value = targetAp.toFixed(2);
+                apS.value = targetAp.toFixed(2);
+                document.getElementById('input-ae-mm').value = targetAe.toFixed(2);
+                aeS.value = targetAe.toFixed(2);
             }
             calculate();
         }
@@ -1394,7 +1413,8 @@
                 name,
                 max_rpm: parseFloat(document.getElementById('adm-mach-rpm').value),
                 max_vf: parseFloat(document.getElementById('adm-mach-vf').value),
-                max_kw: parseFloat(document.getElementById('adm-mach-kw').value)
+                max_kw: parseFloat(document.getElementById('adm-mach-kw').value),
+                max_nm: parseFloat(document.getElementById('adm-mach-nm').value) || 100
             };
             saveDatabase(); populateDropdowns(); renderAdminMachinesList(); alert('Gespeichert!');
         }
@@ -1745,7 +1765,7 @@
             }
         }
 
-        // --- HAUPTBERECHNUNG MIT INDUSTRIE-PHYSIK V2.0 ---
+        // --- HAUPTBERECHNUNG MIT INDUSTRIE-PHYSIK V2.1 (Drehmoment + Dyn. Profile) ---
         function calculate() {
             const machId = document.getElementById('machine-select').value;
             const matId = document.getElementById('material-select').value;
@@ -1768,6 +1788,7 @@
                 document.getElementById('res-apae').innerText = "-- / -- mm";
                 document.getElementById('res-q').innerText = "-- cm³/min";
                 document.getElementById('res-power').innerText = "-- kW";
+                document.getElementById('res-torque').innerText = "-- Nm";
                 document.getElementById('res-fc').innerText = "-- N";
                 document.getElementById('res-stress').innerText = "-- MPa";
                 return;
@@ -1789,11 +1810,8 @@
             const ap = parseFloat(document.getElementById('input-ap-mm').value) || 0.01;
             const ae = parseFloat(document.getElementById('input-ae-mm').value) || 0.01;
 
-            const ap_factor = ap / D;
-            const ae_factor = ae / D;
-
-            document.getElementById('val-ap-factor').innerText = `(${ap_factor.toFixed(2)} × D)`;
-            document.getElementById('val-ae-factor').innerText = `(${ae_factor.toFixed(2)} × D)`;
+            document.getElementById('val-ap-factor').innerText = `(${(ap/D).toFixed(2)} × D)`;
+            document.getElementById('val-ae-factor').innerText = `(${(ae/D).toFixed(2)} × D)`;
 
             const warnings = [];
 
@@ -1806,7 +1824,6 @@
                 warnings.push(`<div class="text-xs font-bold text-rose-700 bg-rose-50 p-2.5 rounded-xl border border-rose-200 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⚠️</span> <div><strong>KOLLISIONSGEFAHR:</strong> ap (${ap.toFixed(2)} mm) ist tiefer als der Fräser max. einspannen kann (${Lmax} mm)!</div></div>`);
             }
 
-            // KORREKTUR: Echtes Deff für Torusfräser
             let Deff = D;
             let geoInfoText = "";
 
@@ -1835,7 +1852,7 @@
 
             let physicsInfoHtml = geoInfoText;
 
-            // KORREKTUR: Exakte Spanmittendünnung über Eingriffswinkel (phi_s)
+            // Exakte Spanmittendünnung über Eingriffswinkel (phi_s)
             let ae_ratio = Math.min(ae / Deff, 1.0);
             let phi_s_rad = Math.acos(1 - 2 * ae_ratio); // Kontaktwinkel im Bogenmaß
 
@@ -1896,13 +1913,18 @@
             const Q = (ap * ae * vf_eff) / 1000; // cm³/min
             const power_kw = (Q * kc_real) / (60 * 1000); 
 
-            // --- INDUSTRIE-PHYSIK: Widerstandsmoment & Biegespannung ---
-            
-            // Wieviel Zähne sind im Eingriff?
+            // KORREKTUR: Echtes Spindel-Drehmoment berechnen
+            const torque_nm = (power_kw * 9549.3) / n_eff;
+
+            const mach_max_nm = mach.max_nm || 100; // Fallback auf 100Nm falls nicht definiert
+            if (torque_nm > mach_max_nm * 0.9) {
+                warnings.push(`<div class="text-xs font-bold text-rose-700 bg-rose-50 p-2.5 rounded-xl border border-rose-200 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⚠️</span> <div><strong>SPINDEL ÜBERLASTET (Abwürgen):</strong> Gefordertes Drehmoment (${torque_nm.toFixed(1)} Nm) überschreitet das Spindel-Limit (${mach_max_nm} Nm). Bitte ap, ae oder fz reduzieren!</div></div>`);
+            }
+
+            // Widerstandsmoment & Biegespannung
             let z_in_cut = (phi_s_rad / (2 * Math.PI)) * z;
             let z_force_factor = Math.max(1.0, z_in_cut);
 
-            // Tangentialkraft max
             const fc_max = kc_real * ap * hm_calc * z_force_factor;
             const f_bend = fc_max * 0.45; // Radialkraft ≈ 45% der Tangentialkraft
 
@@ -1914,18 +1936,11 @@
             else if (z >= 5) coreFactor = 0.70;
             
             const D_core = D * coreFactor;
-            
-            // Widerstandsmoment W_b
             const W_b = (Math.PI * Math.pow(D_core, 3)) / 32;
-            
-            // Hebelarm mittig im Schnitt
             const Leff = Math.max(Lmax - (ap / 2), Lmax * 0.1);
-
-            // Biegespannung σ_b in MPa (N/mm²)
             const M_b = f_bend * Leff; 
             const sigma_b = M_b / W_b; 
 
-            // Warnungen basierend auf Biegespannung (Zugfestigkeit VHM ≈ 3000-4000 MPa)
             if (sigma_b > 2500) {
                 warnings.push(`<div class="text-xs font-bold text-rose-700 bg-rose-50 p-2.5 rounded-xl border border-rose-200 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⚠️</span> <div><strong>WERKZEUGBRUCH-GEFAHR:</strong> Biegespannung (${sigma_b.toFixed(0)} MPa) überschreitet die Bruchgrenze von Hartmetall. SOFORT ap oder fz reduzieren!</div></div>`);
             } else if (sigma_b > 1500) {
@@ -1950,6 +1965,7 @@
                 ae: ae, 
                 q: Q, 
                 power: power_kw, 
+                torque: torque_nm,
                 fz_eff: effectiveFz, 
                 vc_eff: vc_eff_real,
                 fc: fc_max,
@@ -1959,6 +1975,7 @@
             const rpmEl = document.getElementById('res-rpm');
             const vfEl = document.getElementById('res-vf');
             const powerEl = document.getElementById('res-power');
+            const torqueEl = document.getElementById('res-torque');
             const fcEl = document.getElementById('res-fc');
             const stressEl = document.getElementById('res-stress');
 
@@ -1992,15 +2009,26 @@
                 powerEl.className = "text-base font-bold font-mono text-slate-800";
             }
 
+            if(torqueEl) {
+                torqueEl.innerText = torque_nm.toFixed(1) + " Nm";
+                if (torque_nm > mach_max_nm * 0.9) {
+                    torqueEl.className = "text-base font-bold font-mono text-rose-600 animate-pulse";
+                } else {
+                    torqueEl.className = "text-base font-bold font-mono text-slate-800";
+                }
+            }
+
             fcEl.innerText = fc_max.toFixed(0) + " N";
             
-            stressEl.innerHTML = sigma_b.toFixed(0) + " MPa";
-            if (sigma_b > 2500) {
-                stressEl.className = "text-base font-bold font-mono text-rose-600 animate-pulse";
-            } else if (sigma_b > 1500) {
-                stressEl.className = "text-base font-bold font-mono text-amber-600";
-            } else {
-                stressEl.className = "text-base font-bold font-mono text-slate-800";
+            if(stressEl) {
+                stressEl.innerHTML = sigma_b.toFixed(0) + " MPa";
+                if (sigma_b > 2500) {
+                    stressEl.className = "text-base font-bold font-mono text-rose-600 animate-pulse";
+                } else if (sigma_b > 1500) {
+                    stressEl.className = "text-base font-bold font-mono text-amber-600";
+                } else {
+                    stressEl.className = "text-base font-bold font-mono text-slate-800";
+                }
             }
 
             calculateCamFeed();
