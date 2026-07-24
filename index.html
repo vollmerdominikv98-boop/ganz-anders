@@ -459,6 +459,35 @@
                     </div>
                     <div id="physics-info" class="space-y-1.5 font-mono text-xs"></div>
                 </div>
+
+                <!-- NEU: CAM ECKENVORSCHUB-KALKULATOR -->
+                <div class="bg-slate-50 rounded-xl border border-slate-200 shadow-sm overflow-hidden mt-4">
+                    <button onclick="toggleCamCalc()" class="w-full flex justify-between items-center p-3 bg-slate-100 hover:bg-slate-200 transition text-xs font-bold text-slate-700 border-b border-slate-200">
+                        <span class="flex items-center gap-1.5">🔄 CAM-Eckenvorschub (z.B. OneCNC)</span>
+                        <span id="cam-calc-arrow" class="text-slate-400">▲</span>
+                    </button>
+                    <div id="cam-calc-content" class="p-4 space-y-3">
+                        <p class="text-[10px] text-slate-500 leading-tight">Berechnet den gedrosselten Vorschub in Prozent für das Fräsen von Innenecken (abhängig vom Fräser-Radius).</p>
+                        <div class="flex items-center gap-3">
+                            <div class="flex-1">
+                                <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Radius Ecke (R)</label>
+                                <div class="flex items-center gap-1 bg-white border border-slate-300 rounded-lg px-2 py-1 shadow-sm focus-within:ring-2 focus-within:ring-slate-400">
+                                    <input type="number" id="input-cam-r" step="0.1" min="0.1" value="6.0" oninput="calculateCamFeed()" class="w-full text-right font-mono font-bold text-sm text-slate-900 outline-none">
+                                    <span class="text-xs font-bold text-slate-500">mm</span>
+                                </div>
+                            </div>
+                            <div class="text-slate-300 font-bold mt-3">👉</div>
+                            <div class="flex-1">
+                                <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Vorschub auf</label>
+                                <div id="res-cam-percent" class="w-full bg-emerald-50 border border-emerald-200 rounded-lg p-1.5 text-emerald-700 text-sm font-mono font-black text-center shadow-sm transition-colors">
+                                    -- %
+                                </div>
+                            </div>
+                        </div>
+                        <div id="cam-calc-warning" class="hidden text-[10px] font-bold text-rose-600 bg-rose-50 p-2 rounded-lg border border-rose-200 mt-2"></div>
+                    </div>
+                </div>
+
             </div>
 
             <!-- SPALTE 3: ERGEBNISSE & GRÜNER BESTÄTIGEN-BUTTON -->
@@ -662,6 +691,18 @@
             } else {
                 content.classList.add('hidden');
                 btn.innerText = "▼ Einblenden";
+            }
+        }
+
+        function toggleCamCalc() {
+            const content = document.getElementById('cam-calc-content');
+            const arrow = document.getElementById('cam-calc-arrow');
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                arrow.innerText = '▲';
+            } else {
+                content.classList.add('hidden');
+                arrow.innerText = '▼';
             }
         }
 
@@ -1679,6 +1720,49 @@
             renderFavorites();
         }
 
+        // CAM Eckenvorschub berechnen
+        function calculateCamFeed() {
+            const toolId = document.getElementById('tool-select').value;
+            const tool = db.tools[toolId];
+            const isRegrind = document.getElementById('regrind-toggle').checked;
+            const rInput = document.getElementById('input-cam-r');
+            const resPercent = document.getElementById('res-cam-percent');
+            const warning = document.getElementById('cam-calc-warning');
+
+            if (!tool || !rInput) return;
+
+            let D = tool.diameter;
+            if (isRegrind) {
+                const customD = parseFloat(document.getElementById('input-d-ist').value);
+                if (!isNaN(customD) && customD > 0) D = customD;
+            }
+
+            const rTool = D / 2;
+            const rContour = parseFloat(rInput.value);
+
+            if (isNaN(rContour) || rContour <= 0) {
+                resPercent.innerText = "-- %";
+                warning.classList.add('hidden');
+                return;
+            }
+
+            if (rContour <= rTool) {
+                resPercent.innerText = "0 %";
+                warning.innerHTML = `⚠️ Kontur-Radius (${rContour} mm) ist zu klein/exakt gleich für Fräser (R${rTool} mm)!`;
+                warning.classList.remove('hidden');
+                resPercent.classList.replace('bg-emerald-50', 'bg-rose-50');
+                resPercent.classList.replace('text-emerald-700', 'text-rose-700');
+                resPercent.classList.replace('border-emerald-200', 'border-rose-200');
+            } else {
+                const percent = ((rContour - rTool) / rContour) * 100;
+                resPercent.innerText = percent.toFixed(1) + " %";
+                warning.classList.add('hidden');
+                resPercent.classList.replace('bg-rose-50', 'bg-emerald-50');
+                resPercent.classList.replace('text-rose-700', 'text-emerald-700');
+                resPercent.classList.replace('border-rose-200', 'border-emerald-200');
+            }
+        }
+
         // --- HAUPTBERECHNUNG MIT INDUSTRIE-PHYSIK (KIENZLE & ELASTOSTATIK) ---
         function calculate() {
             const machId = document.getElementById('machine-select').value;
@@ -1971,6 +2055,9 @@
             } else {
                 deflEl.className = "text-base font-bold font-mono text-slate-800";
             }
+
+            // Ruf auch die CAM-Berechnung am Ende nochmal auf, damit sich % bei Werkzeugwechsel direkt ändert
+            calculateCamFeed();
         }
 
         initSupabase();
