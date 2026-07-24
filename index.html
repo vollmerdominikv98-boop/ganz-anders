@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CNCPilot - CNC Cut Optimizer</title>
+    <title>CNCPilot - Industrial Cut Optimizer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -28,6 +28,7 @@
                 </div>
                 <div>
                     <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 leading-none">CNCPilot</h1>
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Industrial Engine</span>
                 </div>
             </div>
             <div>
@@ -56,6 +57,7 @@
 
             <!-- TAB 1: WERKZEUGE -->
             <div id="admin-tab-tools" class="space-y-6">
+                <!-- ... (Werkzeug-Formular bleibt identisch) ... -->
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                     <div class="lg:col-span-5 bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
                         <div class="flex justify-between items-center border-b border-slate-200 pb-2">
@@ -187,7 +189,7 @@
                 </div>
             </div>
 
-            <!-- TAB 3: MATERIALIEN -->
+            <!-- TAB 3: MATERIALIEN (ERWEITERT UM mc) -->
             <div id="admin-tab-materials" class="hidden space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                     <div class="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
@@ -200,9 +202,15 @@
                             <label class="block text-slate-600 mb-1 text-xs font-medium">Bezeichnung</label>
                             <input type="text" id="adm-mat-name" placeholder="z.B. Gehärteter Stahl (~60 HRC)" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
                         </div>
-                        <div>
-                            <label class="block text-slate-600 mb-1 text-xs font-medium">Spez. Schnittkraft kc1.1 (N/mm²)</label>
-                            <input type="number" id="adm-mat-kc11" value="3400" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <div>
+                                <label class="block text-slate-600 mb-1 font-medium">kc1.1 (N/mm²)</label>
+                                <input type="number" id="adm-mat-kc11" value="3400" class="w-full bg-white border border-slate-300 rounded-lg p-1.5">
+                            </div>
+                            <div>
+                                <label class="block text-slate-600 mb-1 font-medium">Kienzle-Faktor (mc)</label>
+                                <input type="number" step="0.01" id="adm-mat-mc" value="0.25" class="w-full bg-white border border-slate-300 rounded-lg p-1.5">
+                            </div>
                         </div>
                         <button onclick="addNewMaterial()" class="w-full bg-slate-800 hover:bg-slate-900 text-white p-2 rounded-lg text-xs font-bold transition">Material Hinzufügen</button>
                     </div>
@@ -492,6 +500,16 @@
                             <span class="text-xs font-semibold text-slate-600">Antriebsleistung (Pc):</span>
                             <span id="res-power" class="text-base font-bold font-mono text-slate-800">-- kW</span>
                         </div>
+                        
+                        <!-- NEU: ECHTE SCHNITTKRAFT UND ABDRÄNGUNG -->
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
+                            <span class="text-xs font-semibold text-slate-600">Schnittkraft (Fc max):</span>
+                            <span id="res-fc" class="text-base font-bold font-mono text-slate-900">-- N</span>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
+                            <span class="text-xs font-semibold text-slate-600">Werkzeug-Abdrängung (y):</span>
+                            <span id="res-deflection" class="text-base font-bold font-mono text-slate-800">-- mm</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -546,13 +564,13 @@
                 "dmg_3achs": { "name": "DMG Mori DMC 850V", "max_rpm": 15000, "max_vf": 30000, "max_kw": 15 }
             },
             materials: {
-                "stahl_c45": { "name": "Stahl < 850 N/mm² (z.B. C45, St52)", "kc11": 1800 },
-                "stahl_1200": { "name": "Werkzeugstahl ungehärtet < 1200 N/mm²", "kc11": 2200 },
-                "gehaertet_55hrc": { "name": "Gehärteter Stahl (~55 HRC)", "kc11": 3000 },
-                "gehaertet_60hrc": { "name": "Gehärteter Stahl (~60 HRC)", "kc11": 3400 },
-                "gehaertet_65hrc": { "name": "Gehärteter Stahl (~65 HRC)", "kc11": 3800 },
-                "rostfrei": { "name": "Rostfreier Stahl (Inox < 750 N/mm²)", "kc11": 2400 },
-                "alu_wrought": { "name": "Aluminium (knetlegiert)", "kc11": 700 }
+                "stahl_c45": { "name": "Stahl < 850 N/mm² (z.B. C45, St52)", "kc11": 1800, "mc": 0.25 },
+                "stahl_1200": { "name": "Werkzeugstahl ungehärtet < 1200 N/mm²", "kc11": 2200, "mc": 0.25 },
+                "gehaertet_55hrc": { "name": "Gehärteter Stahl (~55 HRC)", "kc11": 3000, "mc": 0.22 },
+                "gehaertet_60hrc": { "name": "Gehärteter Stahl (~60 HRC)", "kc11": 3400, "mc": 0.22 },
+                "gehaertet_65hrc": { "name": "Gehärteter Stahl (~65 HRC)", "kc11": 3800, "mc": 0.22 },
+                "rostfrei": { "name": "Rostfreier Stahl (Inox < 750 N/mm²)", "kc11": 2400, "mc": 0.26 },
+                "alu_wrought": { "name": "Aluminium (knetlegiert)", "kc11": 700, "mc": 0.20 }
             },
             rigidity: {
                 "hoch": { "name": "Hoch (VHM / Kurze Auskragung)", "factor": 1.15 },
@@ -590,7 +608,7 @@
         let supabaseClient = null;
         let isCloudActive = false;
         let db = loadDatabase();
-        let currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0, q: 0, power: 0, fz_eff: 0, vc_eff: 0 };
+        let currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0, q: 0, power: 0, fz_eff: 0, vc_eff: 0, fc: 0, deflection: 0 };
 
         function switchAdminTab(tabName) {
             const tabs = ['tools', 'machines', 'materials', 'profiles', 'cloud'];
@@ -1044,7 +1062,7 @@
                 div.innerHTML = `
                     <div>
                         <strong class="text-slate-900">${m.name}</strong>
-                        <div class="text-slate-500 text-[10px] font-mono">kc1.1: ${m.kc11} N/mm²</div>
+                        <div class="text-slate-500 text-[10px] font-mono">kc1.1: ${m.kc11} N/mm² | mc: ${m.mc || 0.25}</div>
                     </div>
                     <button onclick="deleteMaterialAdmin('${id}')" class="bg-rose-50 hover:bg-rose-100 text-rose-700 px-2.5 py-1 rounded border border-rose-200 font-semibold transition">🗑️</button>
                 `;
@@ -1361,7 +1379,11 @@
             const id = document.getElementById('adm-mat-id').value;
             const name = document.getElementById('adm-mat-name').value;
             if(!id || !name) return alert('Bitte ausfüllen');
-            db.materials[id] = { name, kc11: parseFloat(document.getElementById('adm-mat-kc11').value) };
+            db.materials[id] = { 
+                name, 
+                kc11: parseFloat(document.getElementById('adm-mat-kc11').value),
+                mc: parseFloat(document.getElementById('adm-mat-mc').value) || 0.25 
+            };
             saveDatabase(); populateDropdowns(); renderAdminMaterialsList(); alert('Gespeichert!');
         }
 
@@ -1511,6 +1533,8 @@
                 ae: ae.toFixed(2),
                 rpm: currentCalculatedResults.rpm.toFixed(0),
                 vf: currentCalculatedResults.vf.toFixed(0),
+                fc: currentCalculatedResults.fc.toFixed(0),
+                deflection: currentCalculatedResults.deflection.toFixed(3),
                 rating: 5,
                 note: ""
             };
@@ -1656,7 +1680,7 @@
             renderFavorites();
         }
 
-        // --- HAUPTBERECHNUNG MIT KORRIGIERTER TORUS-PHYSIK ---
+        // --- HAUPTBERECHNUNG MIT INDUSTRIE-PHYSIK (KIENZLE & ELASTOSTATIK) ---
         function calculate() {
             const machId = document.getElementById('machine-select').value;
             const matId = document.getElementById('material-select').value;
@@ -1679,6 +1703,8 @@
                 document.getElementById('res-apae').innerText = "-- / -- mm";
                 document.getElementById('res-q').innerText = "-- cm³/min";
                 document.getElementById('res-power').innerText = "-- kW";
+                document.getElementById('res-fc').innerText = "-- N";
+                document.getElementById('res-deflection').innerText = "-- mm";
                 return;
             }
 
@@ -1709,18 +1735,6 @@
 
             if (ap > Lmax) {
                 warnings.push(`<div class="text-xs font-bold text-rose-700 bg-rose-50 p-2.5 rounded-xl border border-rose-200 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⚠️</span> <div><strong>KRITISCHE AUSKRAGUNG:</strong> ap (${ap.toFixed(2)} mm) ist tiefer als der Fräser max. einspannen kann (${Lmax} mm)!</div></div>`);
-            }
-            if (ae_factor < 0.04 && profId !== 'hsc_trochoidal') {
-                warnings.push(`<div class="text-xs font-bold text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-300 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⚠️</span> <div><strong>RATTERGEFAHR (Schab-Effekt):</strong> ae (${ae.toFixed(2)} mm) ist extrem gering (< 4% D). Der Fräser reibt eher als er schneidet. <strong>Empfehlung: ae auf mind. ${(D * 0.05).toFixed(2)} mm erhöhen</strong> für einen stabilen Schnitt!</div></div>`);
-            }
-
-            const warningBox = document.getElementById('calc-warnings');
-            if (warnings.length > 0) {
-                warningBox.innerHTML = warnings.join('');
-                warningBox.classList.remove('hidden');
-            } else {
-                warningBox.innerHTML = '';
-                warningBox.classList.add('hidden');
             }
 
             let Deff = D;
@@ -1782,6 +1796,9 @@
                 if (ae_factor < 0.04) {
                     kv_ae = 0.8; 
                     physicsInfoHtml += `<div class="text-[11px] text-rose-700 font-semibold">[Ratter-Schutz] ae extrem gering (<4%D): Thermik-Boost blockiert & vc gedrosselt!</div>`;
+                    if (profId !== 'hsc_trochoidal') {
+                        warnings.push(`<div class="text-xs font-bold text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-300 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⚠️</span> <div><strong>RATTERGEFAHR (Schab-Effekt):</strong> ae (${ae.toFixed(2)} mm) ist extrem gering (< 4% D). Der Fräser reibt eher als er schneidet. <strong>Empfehlung: ae auf mind. ${(D * 0.05).toFixed(2)} mm erhöhen</strong>!</div></div>`);
+                    }
                 } else if (ae_factor < 0.5) {
                     let effective_ae_for_boost = Math.max(ae_factor, 0.05); 
                     kv_ae = Math.min(Math.pow(0.5 / effective_ae_for_boost, 0.3), 2.0);
@@ -1816,16 +1833,26 @@
                     physicsInfoHtml += `<div class="text-[11px] text-cyan-800 font-semibold">[Feinschlichten] Deff < 15%D: fz geglättet</div>`;
                 }
 
-                let hm = effectiveFzBase * Math.sqrt(Math.min(ae / Deff, 1.0));
-                if (hm < 0.0025 && profId !== 'schlichten_gehaertet') {
+                let hm_min_check = effectiveFzBase * Math.sqrt(Math.min(ae / Deff, 1.0));
+                if (hm_min_check < 0.0025 && profId !== 'schlichten_gehaertet') {
                     effectiveFzBase = 0.0025 / Math.sqrt(Math.min(ae / Deff, 1.0));
                     physicsInfoHtml += `<div class="text-[11px] text-purple-700 font-semibold">[Schab-Schutz] fz angehoben auf hm_min</div>`;
                 }
             }
 
-            document.getElementById('physics-info').innerHTML = physicsInfoHtml;
-
+            // --- 1. INDUSTRIE-PHYSIK: Echte Kienzle-Schnittkraft berechnen ---
             const effectiveFz = effectiveFzBase;
+            const mc = mat.mc !== undefined ? mat.mc : 0.25;
+            
+            // Mittlere Spandicke hm berechnen
+            let hm_calc = effectiveFz * Math.sqrt(Math.min(ae / Deff, 1.0));
+            if (hm_calc < 0.002) hm_calc = 0.002; // Mathematischer Schutz vor Division durch 0
+            
+            // Reale spezifische Schnittkraft (kc) nach Kienzle
+            const kc_real = mat.kc11 / Math.pow(hm_calc, mc);
+            
+            physicsInfoHtml += `<div class="text-[11px] text-slate-500">[Kienzle] Mittlere Spandicke hm: ${hm_calc.toFixed(4)} mm</div>`;
+            physicsInfoHtml += `<div class="text-[11px] text-slate-500">[Kienzle] Reales kc: ${kc_real.toFixed(0)} N/mm²</div>`;
             
             let n_theo = (effectiveVc * 1000) / (Math.PI * Deff);
             let n_eff = Math.min(n_theo, mach.max_rpm);
@@ -1834,14 +1861,68 @@
 
             let vc_eff_real = (Math.PI * Deff * n_eff) / 1000;
 
-            const Q = (ap * ae * vf_eff) / 1000;
-            const power_kw = (Q * mat.kc11) / (60 * 1000);
+            // Leistung Pc aus echter Kraft berechnen
+            const Q = (ap * ae * vf_eff) / 1000; // in cm³/min
+            const power_kw = (Q * kc_real) / (60 * 1000); 
 
-            currentCalculatedResults = { rpm: n_eff, vf: vf_eff, ap: ap, ae: ae, q: Q, power: power_kw, fz_eff: effectiveFz, vc_eff: vc_eff_real };
+            // --- 2. INDUSTRIE-PHYSIK: Elastostatik & Fräserabdrängung ---
+            let ae_ratio_D = Math.min(ae / D, 1.0);
+            let h_max = effectiveFz * 2 * Math.sqrt(ae_ratio_D - Math.pow(ae_ratio_D, 2));
+            if (ae_ratio_D >= 0.5) h_max = effectiveFz;
+            
+            // Wieviel Zähne sind im Eingriff?
+            let phi_s = Math.acos(1 - 2 * ae_ratio_D); // Bogenmaß
+            let z_in_cut = (phi_s / (2 * Math.PI)) * z;
+            let z_force_factor = Math.max(1.0, z_in_cut);
+
+            // Tangentialkraft max
+            const fc_max = kc_real * ap * h_max * z_force_factor;
+            const f_bend = fc_max * 1.2; // Näherung der kombinierten Vektorkraft (Biegung)
+
+            // Trägheitsmoment (Zylinder, Kerndurchmesser ca. 0.8 * D)
+            const D_core = D * 0.8;
+            const I_val = (Math.PI * Math.pow(D_core, 4)) / 64;
+            const E_mod = 600000; // VHM E-Modul in N/mm²
+            
+            // Abdrängung y in mm
+            const deflection_mm = (f_bend * Math.pow(Lmax, 3)) / (3 * E_mod * I_val);
+
+            // Abdrängungs-Warnungen
+            if (deflection_mm > 0.15) {
+                warnings.push(`<div class="text-xs font-bold text-rose-700 bg-rose-50 p-2.5 rounded-xl border border-rose-200 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⚠️</span> <div><strong>WERKZEUGBRUCH-GEFAHR:</strong> Die berechnete Abdrängung beträgt extrem hohe ${deflection_mm.toFixed(2)} mm! Bitte ap oder ae massiv reduzieren.</div></div>`);
+            } else if (deflection_mm > 0.05) {
+                warnings.push(`<div class="text-xs font-bold text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-300 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⚠️</span> <div><strong>TOLERANZ-WARNUNG:</strong> Der Fräser biegt sich unter der Last um ${deflection_mm.toFixed(2)} mm durch. Maßhaltigkeit an Passungen ist gefährdet.</div></div>`);
+            }
+
+            const warningBox = document.getElementById('calc-warnings');
+            if (warnings.length > 0) {
+                warningBox.innerHTML = warnings.join('');
+                warningBox.classList.remove('hidden');
+            } else {
+                warningBox.innerHTML = '';
+                warningBox.classList.add('hidden');
+            }
+
+            document.getElementById('physics-info').innerHTML = physicsInfoHtml;
+
+            currentCalculatedResults = { 
+                rpm: n_eff, 
+                vf: vf_eff, 
+                ap: ap, 
+                ae: ae, 
+                q: Q, 
+                power: power_kw, 
+                fz_eff: effectiveFz, 
+                vc_eff: vc_eff_real,
+                fc: fc_max,
+                deflection: deflection_mm
+            };
 
             const rpmEl = document.getElementById('res-rpm');
             const vfEl = document.getElementById('res-vf');
             const powerEl = document.getElementById('res-power');
+            const fcEl = document.getElementById('res-fc');
+            const deflEl = document.getElementById('res-deflection');
 
             rpmEl.innerText = n_eff.toFixed(0) + " U/min";
             document.getElementById('res-vc-eff').innerText = `vc(eff): ${vc_eff_real.toFixed(0)} m/min`;
@@ -1871,6 +1952,17 @@
                 powerEl.className = "text-base font-bold font-mono text-rose-600 animate-pulse";
             } else {
                 powerEl.className = "text-base font-bold font-mono text-slate-800";
+            }
+
+            fcEl.innerText = fc_max.toFixed(0) + " N";
+            
+            deflEl.innerText = deflection_mm.toFixed(3) + " mm";
+            if (deflection_mm > 0.15) {
+                deflEl.className = "text-base font-bold font-mono text-rose-600 animate-pulse";
+            } else if (deflection_mm > 0.05) {
+                deflEl.className = "text-base font-bold font-mono text-amber-600";
+            } else {
+                deflEl.className = "text-base font-bold font-mono text-slate-800";
             }
         }
 
