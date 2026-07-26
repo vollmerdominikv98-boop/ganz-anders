@@ -28,7 +28,7 @@
                 </div>
                 <div>
                     <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 leading-none">CNCPilot</h1>
-                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Industrial Engine 2.3</span>
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Industrial Engine 2.4 (Repariert)</span>
                 </div>
             </div>
             <div>
@@ -425,11 +425,11 @@
                         
                         <!-- ECHTE SCHNITTKRAFT UND BIEGESPANNUNG -->
                         <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
-                            <span class="text-xs font-semibold text-slate-600">Schnittkraft (Fc max):</span>
+                            <span class="text-xs font-semibold text-slate-600">Schnittkraft (Fc avg):</span>
                             <span id="res-fc" class="text-base font-bold font-mono text-slate-900">-- N</span>
                         </div>
                         <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
-                            <span class="text-xs font-semibold text-slate-600">Biegespannung (<span class="font-serif italic">&sigma;</span><sub>b</sub>):</span>
+                            <span class="text-xs font-semibold text-slate-600">Peak-Biegespannung (<span class="font-serif italic">&sigma;</span><sub>b</sub>):</span>
                             <span id="res-stress" class="text-base font-bold font-mono text-slate-800">-- MPa</span>
                         </div>
                     </div>
@@ -1028,12 +1028,19 @@
             const brandSel = document.getElementById('brand-select');
             brandSel.innerHTML = '';
             
-            const brands = new Set();
+            let brands = new Set();
             for (const t of Object.values(db.tools)) {
                 const matFit = !t.suitable_materials || t.suitable_materials.includes(selectedMat);
                 const profFit = !t.suitable_profiles || t.suitable_profiles.includes(selectedProf);
 
                 if (matFit && profFit) {
+                    if (t.brand && t.brand.trim() !== '') brands.add(t.brand.trim());
+                }
+            }
+
+            // FALLBACK: Wenn der Filter 0 Ergebnisse liefert, zeige trotzdem Marken an
+            if (brands.size === 0) {
+                for (const t of Object.values(db.tools)) {
                     if (t.brand && t.brand.trim() !== '') brands.add(t.brand.trim());
                 }
             }
@@ -1051,16 +1058,21 @@
             const lineSel = document.getElementById('line-select');
             lineSel.innerHTML = '';
 
-            const lines = new Set();
-            for (const t of Object.values(db.tools)) {
-                const matFit = !t.suitable_materials || t.suitable_materials.includes(selectedMat);
-                const profFit = !t.suitable_profiles || t.suitable_profiles.includes(selectedProf);
-                const brandMatch = (selectedBrand === 'ALL' || t.brand === selectedBrand);
+            let lines = new Set();
+            const populateLines = (fallback) => {
+                for (const t of Object.values(db.tools)) {
+                    const matFit = fallback || !t.suitable_materials || t.suitable_materials.includes(selectedMat);
+                    const profFit = fallback || !t.suitable_profiles || t.suitable_profiles.includes(selectedProf);
+                    const brandMatch = (selectedBrand === 'ALL' || t.brand === selectedBrand);
 
-                if (matFit && profFit && brandMatch) {
-                    if (t.line && t.line.trim() !== '') lines.add(t.line.trim());
+                    if (matFit && profFit && brandMatch) {
+                        if (t.line && t.line.trim() !== '') lines.add(t.line.trim());
+                    }
                 }
-            }
+            };
+
+            populateLines(false);
+            if (lines.size === 0) populateLines(true); // Fallback
 
             lineSel.add(new Option('-- Alle --', 'ALL'));
             lines.forEach(l => lineSel.add(new Option(l, l)));
@@ -1079,23 +1091,29 @@
             toolSel.innerHTML = '';
 
             let toolCount = 0;
-            for (const [id, t] of Object.entries(db.tools)) {
-                const matFit = !t.suitable_materials || t.suitable_materials.includes(selectedMat);
-                const profFit = !t.suitable_profiles || t.suitable_profiles.includes(selectedProf);
-                const brandMatch = (selectedBrand === 'ALL' || t.brand === selectedBrand);
-                const lineMatch = (selectedLine === 'ALL' || t.line === selectedLine);
+            const populateTools = (fallback) => {
+                for (const [id, t] of Object.entries(db.tools)) {
+                    const matFit = fallback || !t.suitable_materials || t.suitable_materials.includes(selectedMat);
+                    const profFit = fallback || !t.suitable_profiles || t.suitable_profiles.includes(selectedProf);
+                    const brandMatch = (selectedBrand === 'ALL' || t.brand === selectedBrand);
+                    const lineMatch = (selectedLine === 'ALL' || t.line === selectedLine);
 
-                if (matFit && profFit && brandMatch && lineMatch) {
-                    const label = `${t.line ? '[' + t.line + '] ' : ''}${t.name}`;
-                    toolSel.add(new Option(label, id));
-                    toolCount++;
+                    if (matFit && profFit && brandMatch && lineMatch) {
+                        const label = `${t.line ? '[' + t.line + '] ' : ''}${t.name}` + (fallback ? " (Bedingt geeignet)" : "");
+                        toolSel.add(new Option(label, id));
+                        toolCount++;
+                    }
                 }
-            }
+            };
+
+            populateTools(false);
+            if (toolCount === 0) populateTools(true); // Fallback, damit Dropdown nicht stirbt
 
             if (toolCount === 0) {
                 toolSel.add(new Option('-- Keine passenden Werkzeuge --', ''));
-            } else if (db.tools[previousToolId]) {
-                toolSel.value = previousToolId;
+            } else {
+                let options = Array.from(toolSel.options).map(opt => opt.value);
+                if (options.includes(previousToolId)) toolSel.value = previousToolId;
             }
 
             resetSliders();
@@ -1645,7 +1663,7 @@
             }
         }
 
-        // --- HAUPTBERECHNUNG MIT INDUSTRIE-PHYSIK V2.3 (Inkl. Thermik-Falle & ap>D Korrektur) ---
+        // --- HAUPTBERECHNUNG MIT ENTKOPPELTEN WERTEN ---
         function calculate() {
             const machId = document.getElementById('machine-select').value;
             const matId = document.getElementById('material-select').value;
@@ -1750,33 +1768,43 @@
             let hm_exact = (effectiveFzBase * 2 * ae) / (Deff * phi_s_rad);
             if (ae_ratio >= 0.5) hm_exact = effectiveFzBase; 
 
+            // CAPPINGS FÜR DÄMPFUNGEN (Verhindert Teufelsspirale)
+            let globalDampVc = 1.0;
+            let globalDampFz = 1.0;
+
             if (physicsActive) {
                 if (isRegrind) {
-                    effectiveVc *= 0.90;
+                    globalDampVc *= 0.90;
                     physicsInfoHtml += `<div class="text-[11px] text-amber-800 font-semibold">[Nachschliff] vc -10% (Beschichtungsschutz)</div>`;
                 }
 
-                // FEHLER 8 KORREKTUR: ap > D axiale Spanungs-Dämpfung
-                let k_ap = 1.0;
                 if (ap_factor > 1.0 && tool.geo_type === "shaft") {
-                    k_ap = Math.pow(1.0 / ap_factor, 0.25);
-                    effectiveVc *= k_ap;
-                    effectiveFzBase *= k_ap;
-                    physicsInfoHtml += `<div class="text-[11px] text-amber-800 font-semibold">[Axial-Korrektur] ap > 1.0D (${ap_factor.toFixed(1)}x): Leistung & Vorschub gedrosselt (-${((1 - k_ap)*100).toFixed(0)}%)</div>`;
+                    let k_ap = Math.pow(1.0 / ap_factor, 0.25);
+                    globalDampVc *= k_ap;
+                    globalDampFz *= k_ap;
+                    physicsInfoHtml += `<div class="text-[11px] text-amber-800 font-semibold">[Axial-Korrektur] ap > 1.0D (${ap_factor.toFixed(1)}x): Dynamik -${((1 - k_ap)*100).toFixed(0)}%</div>`;
                 }
 
+                if (ld_ratio > 3.0) {
+                    const dampFactor = Math.sqrt(3.0 / ld_ratio);
+                    globalDampVc *= dampFactor;
+                    globalDampFz *= dampFactor;
+                    physicsInfoHtml += `<div class="text-[11px] text-indigo-700 font-semibold">[Biegeschutz] L/D Ratio (${ld_ratio.toFixed(1)}): Dynamik -${((1 - dampFactor) * 100).toFixed(0)}%</div>`;
+                }
+
+                // Dämpfungs-Deckel: Reduzierung auf maximal 50% begrenzen!
+                if (globalDampVc < 0.5) globalDampVc = 0.5;
+                if (globalDampFz < 0.5) globalDampFz = 0.5;
+
+                effectiveVc *= globalDampVc;
+                effectiveFzBase *= globalDampFz;
+
+                // Schabschutz wird NACH der Dämpfung berechnet
                 let hm_min = D * 0.0005; 
                 if (profId !== 'schlichten_gehaertet' && hm_exact < hm_min) {
                     effectiveFzBase = hm_min * ((Deff * phi_s_rad) / (2 * ae));
                     hm_exact = hm_min;
                     physicsInfoHtml += `<div class="text-[11px] text-purple-700 font-semibold">[Schab-Schutz] fz angehoben auf hm_min (${hm_min.toFixed(4)} mm)</div>`;
-                }
-
-                if (ld_ratio > 3.0) {
-                    const dampFactor = Math.sqrt(3.0 / ld_ratio);
-                    effectiveVc *= dampFactor;
-                    effectiveFzBase *= dampFactor;
-                    physicsInfoHtml += `<div class="text-[11px] text-indigo-700 font-semibold">[Biegeschutz] L/D Ratio (${ld_ratio.toFixed(1)}): Dynamik -${((1 - dampFactor) * 100).toFixed(0)}%</div>`;
                 }
                 
                 let rctFactor = 1.0;
@@ -1784,9 +1812,8 @@
                     rctFactor = effectiveFzBase / hm_exact; 
                     rctFactor = Math.min(rctFactor, 2.5); 
                     
-                    // FEHLER 7 KORREKTUR: Hartbearbeitungs-Thermik-Falle (Kein Boost bei HRC & Trockenschnitt)
                     if (matId.includes('gehaertet')) {
-                        rctFactor = 1.0; // Boost blockieren bei harten Stählen wegen Thermoschock
+                        rctFactor = 1.0; 
                         physicsInfoHtml += `<div class="text-[11px] text-amber-700 font-semibold">[Hartbearbeitung] Thermik-Boost gesperrt (Schutz vor Schneidkanten-Ausbruch)</div>`;
                     } else {
                         effectiveFzBase = effectiveFzBase * rctFactor;
@@ -1798,15 +1825,12 @@
             const effectiveFz = effectiveFzBase;
             const mc = mat.mc !== undefined ? mat.mc : 0.25;
             
-            let fz_peak = effectiveFz + runout_mm;
-            let hm_peak = (fz_peak * 2 * ae) / (Deff * phi_s_rad);
-            if (ae_ratio >= 0.5) hm_peak = fz_peak;
-            let hm_calc = Math.max(hm_peak, 0.001); 
-
+            // NOMINALE KRAFT FÜR LEISTUNG & DREHMOMENT (ENTKOPPELT VON RUNDLAUF)
+            let hm_calc = Math.max(hm_exact, 0.001); 
             const kc_real = mat.kc11 / Math.pow(hm_calc, mc);
             
-            physicsInfoHtml += `<div class="text-[11px] text-slate-500">[Kienzle] Peak-Spandicke (mit Rundlauf): ${hm_calc.toFixed(4)} mm</div>`;
-            physicsInfoHtml += `<div class="text-[11px] text-slate-500">[Kienzle] Reales kc: ${kc_real.toFixed(0)} N/mm²</div>`;
+            physicsInfoHtml += `<div class="text-[11px] text-slate-500">[Kienzle] Nominale Spandicke hm: ${hm_calc.toFixed(4)} mm</div>`;
+            physicsInfoHtml += `<div class="text-[11px] text-slate-500">[Kienzle] Nominales kc: ${kc_real.toFixed(0)} N/mm²</div>`;
             
             let n_theo = (effectiveVc * 1000) / (Math.PI * Deff);
             let n_eff = Math.min(n_theo, mach.max_rpm);
@@ -1826,9 +1850,17 @@
 
             let z_in_cut = (phi_s_rad / (2 * Math.PI)) * z;
             let z_force_factor = Math.max(1.0, z_in_cut);
+            const fc_avg = kc_real * ap * hm_calc * z_force_factor; // Nominale Schnittkraft für UI
 
-            const fc_max = kc_real * ap * hm_calc * z_force_factor;
-            const f_bend = fc_max * 0.45; 
+            // PEAK KRAFT FÜR BIEGESPANNUNG (NUR FÜR WERKZEUGBRUCH-WARNUNG)
+            let fz_peak = effectiveFz + runout_mm;
+            let hm_peak = (fz_peak * 2 * ae) / (Deff * phi_s_rad);
+            if (ae_ratio >= 0.5) hm_peak = fz_peak;
+            let hm_peak_calc = Math.max(hm_peak, 0.001); 
+            const kc_peak = mat.kc11 / Math.pow(hm_peak_calc, mc);
+            
+            const fc_peak = kc_peak * ap * hm_peak_calc; // Kraft auf EINEN max-belasteten Zahn
+            const f_bend = fc_peak * 0.45; // Radialkomponente für Durchbiegung
 
             let coreFactor = 0.6; 
             if (z <= 2) coreFactor = 0.50;
@@ -1843,9 +1875,9 @@
             const sigma_b = M_b / W_b; 
 
             if (sigma_b > 2500) {
-                warnings.push(`<div class="text-xs font-bold text-rose-700 bg-rose-50 p-2.5 rounded-xl border border-rose-200 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⚠️</span> <div><strong>WERKZEUGBRUCH-GEFAHR:</strong> Biegespannung (${sigma_b.toFixed(0)} MPa) überschreitet die Bruchgrenze von Hartmetall. SOFORT ap oder fz reduzieren!</div></div>`);
+                warnings.push(`<div class="text-xs font-bold text-rose-700 bg-rose-50 p-2.5 rounded-xl border border-rose-200 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⚠️</span> <div><strong>WERKZEUGBRUCH-GEFAHR:</strong> Biegespannung des schwerstbelasteten Zahns (${sigma_b.toFixed(0)} MPa) überschreitet die Bruchgrenze. SOFORT ap oder fz reduzieren!</div></div>`);
             } else if (sigma_b > 1500) {
-                warnings.push(`<div class="text-xs font-bold text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-300 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⚠️</span> <div><strong>TOLERANZ-WARNUNG:</strong> Hohe Biegespannung (${sigma_b.toFixed(0)} MPa). Der Fräser weicht stark aus, Maßhaltigkeit gefährdet.</div></div>`);
+                warnings.push(`<div class="text-xs font-bold text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-300 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⚠️</span> <div><strong>TOLERANZ-WARNUNG:</strong> Hohe Biegespannung am Einzelzahn (${sigma_b.toFixed(0)} MPa). Der Fräser weicht periodisch stark aus, Maßhaltigkeit gefährdet.</div></div>`);
             }
 
             const warningBox = document.getElementById('calc-warnings');
@@ -1860,7 +1892,7 @@
             document.getElementById('physics-info').innerHTML = physicsInfoHtml;
 
             currentCalculatedResults = { 
-                rpm: n_eff, vf: vf_eff, ap: ap, ae: ae, q: Q, power: power_kw, torque: torque_nm, fz_eff: effectiveFz, vc_eff: vc_eff_real, fc: fc_max, stress: sigma_b
+                rpm: n_eff, vf: vf_eff, ap: ap, ae: ae, q: Q, power: power_kw, torque: torque_nm, fz_eff: effectiveFz, vc_eff: vc_eff_real, fc: fc_avg, stress: sigma_b
             };
 
             const rpmEl = document.getElementById('res-rpm');
@@ -1889,7 +1921,7 @@
                 torqueEl.className = torque_nm > mach_max_nm * 0.9 ? "text-base font-bold font-mono text-rose-600 animate-pulse" : "text-base font-bold font-mono text-slate-800";
             }
 
-            fcEl.innerText = fc_max.toFixed(0) + " N";
+            fcEl.innerText = fc_avg.toFixed(0) + " N";
             
             if(stressEl) {
                 stressEl.innerHTML = sigma_b.toFixed(0) + " MPa";
