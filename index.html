@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CNCPilot - Decision Engine 3.1</title>
+    <title>CNCPilot - Decision Engine 3.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -28,7 +28,7 @@
                 </div>
                 <div>
                     <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 leading-none">CNCPilot</h1>
-                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Decision Engine 3.1 (Stable Math Fix)</span>
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Decision Engine 3.2 (Intent-Routing & RCT Control)</span>
                 </div>
             </div>
             <div>
@@ -155,10 +155,17 @@
                         <h3 class="font-bold text-slate-800 text-xs uppercase tracking-wider border-b border-slate-200 pb-1">Neues Profil</h3>
                         <div><label class="block text-slate-600 mb-1 text-xs font-medium">Profil-ID</label><input type="text" id="adm-prof-id" placeholder="z.B. trochoidal" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs"></div>
                         <div><label class="block text-slate-600 mb-1 text-xs font-medium">Profil-Name</label><input type="text" id="adm-prof-name" placeholder="z.B. Trochoidal (HPC)" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs"></div>
-                        <div class="grid grid-cols-3 gap-2 text-xs">
+                        <div class="grid grid-cols-4 gap-2 text-xs">
                             <div><label class="block text-slate-600 mb-1 font-medium">ap (× D)</label><input type="number" step="0.05" id="adm-prof-ap" value="0.5" class="w-full bg-white border border-slate-300 rounded-lg p-1.5"></div>
                             <div><label class="block text-slate-600 mb-1 font-medium">ae (× D)</label><input type="number" step="0.05" id="adm-prof-ae" value="0.2" class="w-full bg-white border border-slate-300 rounded-lg p-1.5"></div>
-                            <div><label class="block text-slate-600 mb-1 font-medium">Ziel hm (Ratio)</label><input type="number" step="0.05" id="adm-prof-hm" value="1.0" class="w-full bg-white border border-slate-300 rounded-lg p-1.5"></div>
+                            <div><label class="block text-slate-600 mb-1 font-medium">fz-Ratio</label><input type="number" step="0.05" id="adm-prof-fzratio" value="1.0" class="w-full bg-white border border-slate-300 rounded-lg p-1.5"></div>
+                            <div>
+                                <label class="block text-slate-600 mb-1 font-medium">RCT</label>
+                                <select id="adm-prof-rct" class="w-full bg-white border border-slate-300 rounded-lg p-1.5">
+                                    <option value="true">Aktiv</option>
+                                    <option value="false">Inaktiv</option>
+                                </select>
+                            </div>
                         </div>
                         <div><label class="block text-slate-600 mb-1 font-medium">Beschreibung</label><input type="text" id="adm-prof-desc" placeholder="Kurzbeschreibung" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs"></div>
                         <button onclick="addNewProfile()" class="w-full bg-slate-800 hover:bg-slate-900 text-white p-2 rounded-lg text-xs font-bold transition">Profil Hinzufügen</button>
@@ -473,6 +480,9 @@
         const DEFAULT_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVtcXdpZ3RxaXFsbnZhc3V6cmlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5Mjg5MTgsImV4cCI6MjA4NzUwNDkxOH0.1_HqL3uYf_Z1sB3M6nE0Q0v2s3R1_4v5X6Z7s8Q9a0";
         const ADMIN_PASSWORD = "cnc2026";
 
+        // =========================================================================
+        // DATENBANK: PROFILE MIT "rct_active" (INTENT-ROUTING)
+        // =========================================================================
         const defaultDb = {
             machines: {
                 "dmg_5achs": { "name": "DMG DMU 75 Monoblock", "max_rpm": 15000, "max_vf": 30000, "max_kw": 18, "max_nm": 130 },
@@ -493,11 +503,11 @@
                 "gering": { "name": "Gering (Leichte C-Frame / Lange Auskragung)", "factor": 0.85 }
             },
             profiles: {
-                "schruppen": { "name": "Schruppen (Roughing)", "ap_factor": 1.0, "ae_factor": 0.7, "target_hm_ratio": 1.0, "description": "Maximale Zerspanungsleistung (Q Focus)" },
-                "schlichten": { "name": "Schlichten Standard (Weiche Werkstoffe)", "ap_factor": 0.1, "ae_factor": 0.1, "target_hm_ratio": 0.8, "description": "Gute Oberflächengüte bei ungehärteten Stählen / Alu" },
-                "schlichten_gehaertet": { "name": "Feinschlichten Gehärtet (50-65 HRC)", "ap_factor": 0.03, "ae_factor": 0.02, "target_hm_ratio": 0.5, "description": "Feinstschlichten gehärteter Werkstoffe, Schnittdruckkontrolle" },
-                "hsc_trochoidal": { "name": "HSC / Trochoidal (HPC)", "ap_factor": 1.5, "ae_factor": 0.08, "target_hm_ratio": 1.0, "description": "Maximale Tiefe ap, sehr geringer Radialeingriff ae" },
-                "planfraesen": { "name": "Planfräsen (Face Milling)", "ap_factor": 0.5, "ae_factor": 0.8, "target_hm_ratio": 1.0, "description": "Standard-Flächenbearbeitung mit hoher Überdeckung" }
+                "schruppen": { "name": "Schruppen (Roughing)", "ap_factor": 1.0, "ae_factor": 0.7, "fz_ratio": 1.0, "rct_active": true, "description": "Maximale Zerspanungsleistung, RCT an" },
+                "schlichten": { "name": "Schlichten Standard (Weiche Werkstoffe)", "ap_factor": 0.1, "ae_factor": 0.1, "fz_ratio": 0.6, "rct_active": false, "description": "Gute Oberflächengüte, kleines fz, RCT aus" },
+                "schlichten_gehaertet": { "name": "Feinschlichten Gehärtet (50-65 HRC)", "ap_factor": 0.03, "ae_factor": 0.02, "fz_ratio": 0.35, "rct_active": false, "description": "Feinstschlichten, Schnittdruckkontrolle, RCT aus" },
+                "hsc_trochoidal": { "name": "HSC / Trochoidal (HPC)", "ap_factor": 1.5, "ae_factor": 0.08, "fz_ratio": 1.0, "rct_active": true, "description": "Max ap, kleines ae, RCT aktiv" },
+                "planfraesen": { "name": "Planfräsen (Face Milling)", "ap_factor": 0.5, "ae_factor": 0.8, "fz_ratio": 1.0, "rct_active": false, "description": "Konstanter Eingriff" }
             },
             tools: {
                 "yg1_x5070_d1_r01": { "name": "Torusfräser D1 R0.1 Z2", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.1, "material_schneidstoff": "VHM", "diameter": 1, "z": 2, "max_overhang": 3, "fz_nom": 0.005, "vc_per_material": { "stahl_c45": 140, "stahl_1200": 110, "gehaertet_55hrc": 90, "gehaertet_60hrc": 70, "gehaertet_65hrc": 50 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schlichten", "schlichten_gehaertet", "hsc_trochoidal"] },
@@ -505,7 +515,7 @@
                 "yg1_x5070_d3_r02": { "name": "Torusfräser D3 R0.2 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.2, "material_schneidstoff": "VHM", "diameter": 3, "z": 4, "max_overhang": 8, "fz_nom": 0.018, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "schlichten_gehaertet", "hsc_trochoidal"] },
                 "yg1_x5070_d8_r05": { "name": "Torusfräser D8 R0.5 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.5, "material_schneidstoff": "VHM", "diameter": 8, "z": 4, "max_overhang": 24, "fz_nom": 0.055, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "schlichten_gehaertet", "hsc_trochoidal"] },
                 "yg1_x5070_d10_r10": { "name": "Torusfräser D10 R1.0 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 1, "material_schneidstoff": "VHM", "diameter": 10, "z": 4, "max_overhang": 30, "fz_nom": 0.065, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "schlichten_gehaertet", "hsc_trochoidal"] },
-                "premus_gp_d8": { "name": "Universal D8 Z4", "brand": "PRECITOOL", "line": "PREMUS GP", "type": "Schaftfräser", "geo_type": "shaft", "radius": 0, "material_schneidstoff": "VHM", "diameter": 8, "z": 4, "max_overhang": 25, "fz_nom": 0.050, "vc_per_material": { "stahl_c45": 180, "stahl_1200": 110, "rostfrei": 90, "alu_wrought": 400 }, "suitable_materials": ["stahl_c45", "stahl_1200", "rostfrei", "alu_wrought"], "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal", "planfraesen"] }
+                "premus_gp_d12": { "name": "PREMUS GP Universal D12 Z4", "brand": "PRECITOOL", "line": "PREMUS GP", "type": "Schaftfräser", "geo_type": "shaft", "radius": 0, "material_schneidstoff": "VHM", "diameter": 12, "z": 4, "max_overhang": 36, "fz_nom": 0.084, "vc_per_material": { "stahl_c45": 180, "stahl_1200": 110, "rostfrei": 90, "alu_wrought": 400 }, "suitable_materials": ["stahl_c45", "stahl_1200", "rostfrei", "alu_wrought"], "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal", "planfraesen"] }
             },
             favorites: [],
             history: []
@@ -1017,10 +1027,15 @@
             for (const [id, p] of Object.entries(db.profiles)) {
                 const div = document.createElement('div');
                 div.className = "bg-slate-50 p-3 rounded-lg border border-slate-200 flex justify-between items-center text-xs";
+                
+                // Fallback for older DB versions missing these fields
+                const fzRatio = p.fz_ratio !== undefined ? p.fz_ratio : 1.0;
+                const rctText = p.rct_active ? "Aktiv (HSC)" : "Inaktiv (Schlichten)";
+
                 div.innerHTML = `
                     <div>
                         <strong class="text-slate-900">${p.name}</strong>
-                        <div class="text-slate-500 text-[10px]">ap: ${p.ap_factor}D | ae: ${p.ae_factor}D | Ziel-hm Ratio: ${p.target_hm_ratio || 1.0}</div>
+                        <div class="text-slate-500 text-[10px]">ap: ${p.ap_factor}D | ae: ${p.ae_factor}D | fz-Ratio: ${fzRatio} | RCT: ${rctText}</div>
                     </div>
                     <button onclick="deleteProfileAdmin('${id}')" class="bg-rose-50 hover:bg-rose-100 text-rose-700 px-2.5 py-1 rounded border border-rose-200 font-semibold transition">🗑️</button>
                 `;
@@ -1351,7 +1366,8 @@
                 name,
                 ap_factor: parseFloat(document.getElementById('adm-prof-ap').value),
                 ae_factor: parseFloat(document.getElementById('adm-prof-ae').value),
-                target_hm_ratio: parseFloat(document.getElementById('adm-prof-hm').value) || 1.0,
+                fz_ratio: parseFloat(document.getElementById('adm-prof-fzratio').value) || 1.0,
+                rct_active: document.getElementById('adm-prof-rct').value === 'true',
                 description: document.getElementById('adm-prof-desc').value
             };
 
@@ -1676,7 +1692,7 @@
         }
 
         // =========================================================================
-        // HAUPTBERECHNUNG 3.1: ENTSCHEIDUNGSMASCHINE (STABLE MATH)
+        // HAUPTBERECHNUNG 3.2: ENTSCHEIDUNGSMASCHINE MIT INTENT-ROUTING (RCT CONTROL)
         // =========================================================================
         function calculate() {
             const machId = document.getElementById('machine-select').value;
@@ -1716,10 +1732,7 @@
                 if (!isNaN(customR) && customR >= 0) R = customR;
             }
 
-            // SICHERHEIT: Falls der Radius bei einem Kugelfräser in der DB fehlt (0 ist), erzwinge D/2.
-            if (tool.geo_type === "ball") {
-                R = D / 2;
-            }
+            if (tool.geo_type === "ball") R = D / 2;
 
             const z = tool.z;
             const Lmax = tool.max_overhang || (D * 3);
@@ -1740,7 +1753,7 @@
             // STUFE 1: KATALOG-GRUNDWERTE
             // -----------------------------------------------------------------
             const baseVc = tool.vc_per_material ? (tool.vc_per_material[matId] || 150) : 150;
-            const fz_nom = tool.fz_nom || (D * 0.007); // Nominaler fz bei 50% ae
+            const fz_nom = tool.fz_nom || (D * 0.007); 
             
             physicsInfoHtml += `<div class="text-[11px] text-slate-500">[Katalog] Base vc: ${baseVc} m/min | Nominal fz(50%D): ${fz_nom.toFixed(3)} mm</div>`;
 
@@ -1764,29 +1777,23 @@
                 physicsInfoHtml += `<div class="text-[11px] text-cyan-800 font-semibold">[Geometrie] Torusfräser Deff: ${Deff.toFixed(2)} mm</div>`;
             }
 
-            // Target hm basierend auf Profil-Intent (z.B. Feinschlichten = 50% von nominal hm)
-            const target_hm_ratio = profile.target_hm_ratio || 1.0;
-            const hm_target = fz_nom * target_hm_ratio;
+            // Basis-Zahnvorschub anhand des Profil-Faktors (z.B. 0.6 für Schlichten)
+            const fz_ratio = profile.fz_ratio !== undefined ? profile.fz_ratio : 1.0;
+            let base_fz = fz_nom * fz_ratio;
 
-            physicsInfoHtml += `<div class="text-[11px] text-indigo-700 font-semibold">[Profil-Intent] Ziel-Spandicke hm_target: ${hm_target.toFixed(4)} mm</div>`;
+            physicsInfoHtml += `<div class="text-[11px] text-indigo-700 font-semibold">[Profil-Intent] Basis fz (Ratio ${fz_ratio.toFixed(2)}): ${base_fz.toFixed(4)} mm</div>`;
 
             // -----------------------------------------------------------------
-            // STUFE 3: 3D CHIP-THINNING ENGINE (RADIAL + AXIAL DYNAMISCH)
+            // STUFE 3: 3D CHIP-THINNING (INTENT ROUTING: EIN ODER AUS?)
             // -----------------------------------------------------------------
             let ae_ratio = Math.min(ae / Deff, 1.0);
-            
-            // Schutz vor Division durch 0, wenn ae fast 0 ist
             let phi_s_rad = Math.acos(Math.max(-1, 1 - 2 * ae_ratio)); 
 
-            // 1) Radial Thinning Ratio (hex / fz_radial)
-            // Hier nutzen wir Math.sin() für die MAXIMALE Spandicke. Das erzeugt 
-            // einen stufenlosen, physikalisch korrekten Übergang bis exakt 50% ae.
             let rct_ratio = 1.0;
             if (ae_ratio < 0.5 && phi_s_rad > 0) {
                 rct_ratio = Math.sin(phi_s_rad); 
             }
 
-            // 2) Axial Thinning Ratio (Torus / Kugel bei ap < R)
             let act_ratio = 1.0;
             if ((tool.geo_type === "torus" || tool.geo_type === "ball") && R > 0) {
                 let ap_effective = Math.min(ap, R);
@@ -1794,21 +1801,25 @@
                 act_ratio = Math.max(sin_kappa, 0.10);
             }
 
-            // Gesamter Thinning-Faktor (hm = fz * rct_ratio * act_ratio)
             let combined_thinning = rct_ratio * act_ratio;
-            combined_thinning = Math.max(combined_thinning, 0.20); // Max. 5x Thinning Boost aus Sicherheitsgründen
+            combined_thinning = Math.max(combined_thinning, 0.20); 
 
-            // Geometrisch notwendiges fz, um hm_target exakt zu erreichen:
-            let fz_geo = hm_target / combined_thinning;
+            let fz_geo = base_fz;
 
-            // Praxis-Deckel: fz nicht unendlich aufpumpen (max 3.5-faches von fz_nom)
-            if (fz_geo > fz_nom * 3.5) {
-                fz_geo = fz_nom * 3.5;
-            }
+            // IST RCT FÜR DIESES PROFIL AKTIV? (Schruppen/HSC = Ja, Schlichten = Nein)
+            const isRctActive = profile.rct_active !== undefined ? profile.rct_active : (!profId.includes('schlichten'));
 
-            let boostPercent = ((fz_geo / fz_nom - 1) * 100).toFixed(0);
-            if (boostPercent > 0) {
-                physicsInfoHtml += `<div class="text-[11px] text-emerald-700 font-semibold">[3D-Chip Thinning] RCT & ACT aktiv: fz angeboben um +${boostPercent}% (${fz_geo.toFixed(4)} mm)</div>`;
+            if (physicsActive && isRctActive) {
+                fz_geo = base_fz / combined_thinning;
+                
+                if (fz_geo > fz_nom * 3.5) fz_geo = fz_nom * 3.5;
+                
+                let boostPercent = ((fz_geo / base_fz - 1) * 100).toFixed(0);
+                if (boostPercent > 0) {
+                    physicsInfoHtml += `<div class="text-[11px] text-emerald-700 font-semibold">[3D-Chip Thinning] RCT & ACT aktiv: fz angehoben um +${boostPercent}% (${fz_geo.toFixed(4)} mm)</div>`;
+                }
+            } else if (physicsActive && !isRctActive) {
+                physicsInfoHtml += `<div class="text-[11px] text-amber-700 font-semibold">[Intent Routing] RCT deaktiviert (Fokus auf Oberflächengüte / kleines fz)</div>`;
             }
 
             // -----------------------------------------------------------------
@@ -1828,22 +1839,18 @@
                 k_vc_overhang = 0.95; k_fz_overhang = 0.95;
             }
 
-            // Werkzeugaufnahme Modifikatoren
             let k_vc_holder = 1.0;
             if (holderType === 'schrumpf') k_vc_holder = 1.08;
             else if (holderType === 'hydro') k_vc_holder = 1.05;
             else if (holderType === 'weldon') k_vc_holder = 0.90;
 
-            // Steifigkeit Modifikatoren
             let k_fz_rigidity = rigidity.factor || 1.0;
 
-            // Nachschliff
             let k_vc_regrind = isRegrind ? 0.90 : 1.0;
             if (isRegrind) {
                 physicsInfoHtml += `<div class="text-[11px] text-amber-800 font-semibold">[Nachschliff] vc -10% (Beschichtungsschutz)</div>`;
             }
 
-            // Endgültige Soll-Werte berechnen
             let effectiveVc = baseVc * k_vc_overhang * k_vc_holder * k_vc_regrind;
             let effectiveFz = fz_geo * k_fz_overhang * k_fz_rigidity;
 
@@ -1851,7 +1858,7 @@
             if (holderType === 'spannzange') runout_mm = 0.012;
             else if (holderType === 'weldon') runout_mm = 0.020;
 
-            physicsInfoHtml += `<div class="text-[11px] text-slate-600">[Setup-Check] L/D=${ld_ratio.toFixed(1)} | Halter=${holderType} | vc(korrigiert): ${effectiveVc.toFixed(0)} m/min</div>`;
+            physicsInfoHtml += `<div class="text-[11px] text-slate-600">[Setup-Check] L/D=${ld_ratio.toFixed(1)} | Halter=${holderType} | vc(korr): ${effectiveVc.toFixed(0)} m/min</div>`;
 
             // -----------------------------------------------------------------
             // STUFE 5: DYNAMIK & KINEMATIK DER MASCHINE
@@ -1866,9 +1873,6 @@
             // -----------------------------------------------------------------
             // STUFE 6: PHYSIKALISCHE PRÜFUNG (KIENZLE, Fc, POWER, STRESS)
             // -----------------------------------------------------------------
-            
-            // REALE DURCHSCHNITTLICHE SPANDICKE HM (FÜR KIENZLE-KRAFT)
-            // Die Kienzle-Kraft wird über den gesamten Eingriffsbogen gemittelt.
             let hm_real = 0.0005;
             if (phi_s_rad > 0) {
                 hm_real = (effectiveFz * act_ratio * 2 * ae) / (Deff * phi_s_rad);
@@ -1877,7 +1881,7 @@
 
             const mc = mat.mc !== undefined ? mat.mc : 0.25;
             let kc_raw = mat.kc11 / Math.pow(hm_real, mc);
-            const kc_real = Math.min(kc_raw, 8000); // Kienzle Physical Cap
+            const kc_real = Math.min(kc_raw, 8000); 
             
             physicsInfoHtml += `<div class="text-[11px] text-slate-500">[Kienzle Engine] Reale ø-Spandicke hm: ${hm_real.toFixed(4)} mm | kc: ${kc_real.toFixed(0)} N/mm²</div>`;
 
@@ -1895,7 +1899,6 @@
             let z_force_factor = Math.max(1.0, z_in_cut);
             const fc_avg = kc_real * ap * hm_real * z_force_factor;
 
-            // PEAK-LAST AUF EINZELNEN ZAHN FÜR DURCHBIEGUNG (MAXIMALE SPANDICKE INKL. RUNDLAUF)
             let fz_peak = effectiveFz + runout_mm;
             let hm_peak = fz_peak * combined_thinning;
             hm_peak = Math.max(hm_peak, 0.0005); 
@@ -1952,7 +1955,6 @@
 
             document.getElementById('res-apae').innerText = ap.toFixed(2) + " / " + ae.toFixed(2) + " mm";
             
-            // DYNAMISCHE EINHEITEN FORMATIERUNG
             if (Q_cm3 < 0.01) {
                 document.getElementById('res-q').innerText = Q_mm3.toFixed(1) + " mm³/min";
             } else {
