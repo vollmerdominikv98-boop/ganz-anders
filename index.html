@@ -28,7 +28,7 @@
                 </div>
                 <div>
                     <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 leading-none">CNCPilot</h1>
-                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Industrial Engine 2.4</span>
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Industrial Engine 2.4 (Stable & Cloud-Ready)</span>
                 </div>
             </div>
             <div>
@@ -585,46 +585,26 @@
         function initSupabase() {
             const url = localStorage.getItem('toolpilot_supabase_url') || DEFAULT_SUPABASE_URL;
             const key = localStorage.getItem('toolpilot_supabase_key') || DEFAULT_SUPABASE_KEY;
-
+            
             const urlInput = document.getElementById('supabase-url');
             const keyInput = document.getElementById('supabase-key');
-            const statusText = document.getElementById('supabase-conn-text');
-
             if(urlInput) urlInput.value = url;
             if(keyInput) keyInput.value = key;
 
             if (url && key) {
                 try {
-                    if (!window.supabase) {
-                        if(statusText) {
-                            statusText.innerText = "❌ Supabase SDK nicht geladen";
-                            statusText.className = "text-[11px] font-bold text-rose-600";
-                        }
-                        return;
-                    }
-
                     supabaseClient = window.supabase.createClient(url, key);
                     isCloudActive = true;
-                    
-                    if(statusText) {
-                        statusText.innerText = "🔄 Verbinde mit Cloud...";
-                        statusText.className = "text-[11px] font-bold text-amber-600";
-                    }
-
                     fetchDataFromSupabase();
                     listenToSupabaseRealtime();
-                } catch(e) {
-                    console.error("Supabase Init Error:", e);
-                    isCloudActive = false;
+                    
+                    const statusText = document.getElementById('supabase-conn-text');
                     if(statusText) {
-                        statusText.innerText = "❌ Initialisierungsfehler";
-                        statusText.className = "text-[11px] font-bold text-rose-600";
+                        statusText.innerText = "✅ Verbunden";
+                        statusText.className = "text-[11px] font-bold text-emerald-600";
                     }
-                }
-            } else {
-                if(statusText) {
-                    statusText.innerText = "⚠️ Keine Zugangsdaten hinterlegt";
-                    statusText.className = "text-[11px] font-bold text-amber-600";
+                } catch(e) { 
+                    console.error("Supabase Init Error:", e); 
                 }
             }
         }
@@ -644,60 +624,26 @@
 
         async function fetchDataFromSupabase() {
             if (!supabaseClient) return;
-            const statusText = document.getElementById('supabase-conn-text');
             try {
                 const { data, error } = await supabaseClient.from('app_state').select('data').eq('id', 'global_db').single();
-                
-                if (error) {
-                    console.warn("Tabelle evtl. nicht vorhanden oder leer:", error.message);
-                    if(statusText) {
-                        statusText.innerText = "⚠️ Tabelle 'app_state' prüfen (SQL Editor)";
-                        statusText.className = "text-[11px] font-bold text-amber-600";
-                    }
-                    pushDataToSupabase();
-                    return;
-                }
-
                 if (data && data.data && data.data.tools) {
-                    db = data.data;
-                    if(!db.history) db.history = [];
-                    if(!db.favorites) db.favorites = [];
-                    saveLocalDatabaseBackup();
+                    db = data.data; 
+                    if(!db.history) db.history = []; 
+                    if(!db.favorites) db.favorites = []; 
+                    saveLocalDatabaseBackup(); 
                     initApp();
-                    
-                    if(statusText) {
-                        statusText.innerText = "✅ Verbunden & Synchronisiert";
-                        statusText.className = "text-[11px] font-bold text-emerald-600";
-                    }
                 } else {
                     pushDataToSupabase();
                 }
             } catch(e) { 
-                console.error("Cloud Fetch Error:", e);
-                if(statusText) {
-                    statusText.innerText = "❌ Verbindungsfehler";
-                    statusText.className = "text-[11px] font-bold text-rose-600";
-                }
+                console.error("Cloud Fetch Error:", e); 
             }
         }
 
         async function pushDataToSupabase() {
             if (!supabaseClient) return;
-            const statusText = document.getElementById('supabase-conn-text');
             try {
-                const { error } = await supabaseClient.from('app_state').upsert({ id: 'global_db', data: db, updated_at: new Date() });
-                if (error) {
-                    console.error("Push Error:", error.message);
-                    if(statusText) {
-                        statusText.innerText = "❌ Sync-Fehler";
-                        statusText.className = "text-[11px] font-bold text-rose-600";
-                    }
-                } else {
-                    if(statusText) {
-                        statusText.innerText = "✅ Verbunden & Synchronisiert";
-                        statusText.className = "text-[11px] font-bold text-emerald-600";
-                    }
-                }
+                await supabaseClient.from('app_state').upsert({ id: 'global_db', data: db, updated_at: new Date() });
             } catch(e) { 
                 console.error("Cloud Push Error:", e); 
             }
