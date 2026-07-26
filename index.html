@@ -28,7 +28,7 @@
                 </div>
                 <div>
                     <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 leading-none">CNCPilot</h1>
-                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Industrial Engine 2.4 (Repariert)</span>
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Industrial Engine 2.4</span>
                 </div>
             </div>
             <div>
@@ -408,27 +408,27 @@
                             <span class="text-xs font-semibold text-slate-600">Zustellung (ap / ae):</span>
                             <span id="res-apae" class="text-sm font-bold font-mono text-slate-900">-- / -- mm</span>
                         </div>
-                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
+                        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex justify-between items-center">
                             <span class="text-xs font-semibold text-slate-600">Zeitspanvolumen (Q):</span>
                             <span id="res-q" class="text-base font-bold font-mono text-slate-900">-- cm³/min</span>
                         </div>
                         
                         <!-- MASCHINENLEISTUNG & DREHMOMENT -->
-                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
+                        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex justify-between items-center">
                             <span class="text-xs font-semibold text-slate-600">Antriebsleistung (Pc):</span>
                             <span id="res-power" class="text-base font-bold font-mono text-slate-800">-- kW</span>
                         </div>
-                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
+                        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex justify-between items-center">
                             <span class="text-xs font-semibold text-slate-600">Spindel-Drehmoment (Mc):</span>
                             <span id="res-torque" class="text-base font-bold font-mono text-slate-800">-- Nm</span>
                         </div>
                         
                         <!-- ECHTE SCHNITTKRAFT UND BIEGESPANNUNG -->
-                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
+                        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex justify-between items-center">
                             <span class="text-xs font-semibold text-slate-600">Schnittkraft (Fc avg):</span>
                             <span id="res-fc" class="text-base font-bold font-mono text-slate-900">-- N</span>
                         </div>
-                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
+                        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex justify-between items-center">
                             <span class="text-xs font-semibold text-slate-600">Peak-Biegespannung (<span class="font-serif italic">&sigma;</span><sub>b</sub>):</span>
                             <span id="res-stress" class="text-base font-bold font-mono text-slate-800">-- MPa</span>
                         </div>
@@ -586,18 +586,45 @@
             const url = localStorage.getItem('toolpilot_supabase_url') || DEFAULT_SUPABASE_URL;
             const key = localStorage.getItem('toolpilot_supabase_key') || DEFAULT_SUPABASE_KEY;
 
+            const urlInput = document.getElementById('supabase-url');
+            const keyInput = document.getElementById('supabase-key');
+            const statusText = document.getElementById('supabase-conn-text');
+
+            if(urlInput) urlInput.value = url;
+            if(keyInput) keyInput.value = key;
+
             if (url && key) {
-                const urlInput = document.getElementById('supabase-url');
-                const keyInput = document.getElementById('supabase-key');
-                if(urlInput) urlInput.value = url;
-                if(keyInput) keyInput.value = key;
                 try {
+                    if (!window.supabase) {
+                        if(statusText) {
+                            statusText.innerText = "❌ Supabase SDK nicht geladen";
+                            statusText.className = "text-[11px] font-bold text-rose-600";
+                        }
+                        return;
+                    }
+
                     supabaseClient = window.supabase.createClient(url, key);
                     isCloudActive = true;
+                    
+                    if(statusText) {
+                        statusText.innerText = "🔄 Verbinde mit Cloud...";
+                        statusText.className = "text-[11px] font-bold text-amber-600";
+                    }
+
                     fetchDataFromSupabase();
                     listenToSupabaseRealtime();
                 } catch(e) {
-                    console.error(e);
+                    console.error("Supabase Init Error:", e);
+                    isCloudActive = false;
+                    if(statusText) {
+                        statusText.innerText = "❌ Initialisierungsfehler";
+                        statusText.className = "text-[11px] font-bold text-rose-600";
+                    }
+                }
+            } else {
+                if(statusText) {
+                    statusText.innerText = "⚠️ Keine Zugangsdaten hinterlegt";
+                    statusText.className = "text-[11px] font-bold text-amber-600";
                 }
             }
         }
@@ -617,25 +644,63 @@
 
         async function fetchDataFromSupabase() {
             if (!supabaseClient) return;
+            const statusText = document.getElementById('supabase-conn-text');
             try {
                 const { data, error } = await supabaseClient.from('app_state').select('data').eq('id', 'global_db').single();
-                if (data && data.data && data.data.tools && Object.keys(data.data.tools).length >= Object.keys(db.tools || {}).length) {
+                
+                if (error) {
+                    console.warn("Tabelle evtl. nicht vorhanden oder leer:", error.message);
+                    if(statusText) {
+                        statusText.innerText = "⚠️ Tabelle 'app_state' prüfen (SQL Editor)";
+                        statusText.className = "text-[11px] font-bold text-amber-600";
+                    }
+                    pushDataToSupabase();
+                    return;
+                }
+
+                if (data && data.data && data.data.tools) {
                     db = data.data;
                     if(!db.history) db.history = [];
                     if(!db.favorites) db.favorites = [];
                     saveLocalDatabaseBackup();
                     initApp();
+                    
+                    if(statusText) {
+                        statusText.innerText = "✅ Verbunden & Synchronisiert";
+                        statusText.className = "text-[11px] font-bold text-emerald-600";
+                    }
                 } else {
                     pushDataToSupabase();
                 }
-            } catch(e) { console.error("Cloud Fetch Error:", e); }
+            } catch(e) { 
+                console.error("Cloud Fetch Error:", e);
+                if(statusText) {
+                    statusText.innerText = "❌ Verbindungsfehler";
+                    statusText.className = "text-[11px] font-bold text-rose-600";
+                }
+            }
         }
 
         async function pushDataToSupabase() {
             if (!supabaseClient) return;
+            const statusText = document.getElementById('supabase-conn-text');
             try {
-                await supabaseClient.from('app_state').upsert({ id: 'global_db', data: db, updated_at: new Date() });
-            } catch(e) { console.error("Cloud Push Error:", e); }
+                const { error } = await supabaseClient.from('app_state').upsert({ id: 'global_db', data: db, updated_at: new Date() });
+                if (error) {
+                    console.error("Push Error:", error.message);
+                    if(statusText) {
+                        statusText.innerText = "❌ Sync-Fehler";
+                        statusText.className = "text-[11px] font-bold text-rose-600";
+                    }
+                } else {
+                    if(statusText) {
+                        statusText.innerText = "✅ Verbunden & Synchronisiert";
+                        statusText.className = "text-[11px] font-bold text-emerald-600";
+                    }
+                }
+            } catch(e) { 
+                console.error("Cloud Push Error:", e); 
+            }
         }
 
         function listenToSupabaseRealtime() {
@@ -1038,7 +1103,6 @@
                 }
             }
 
-            // FALLBACK: Wenn der Filter 0 Ergebnisse liefert, zeige trotzdem Marken an
             if (brands.size === 0) {
                 for (const t of Object.values(db.tools)) {
                     if (t.brand && t.brand.trim() !== '') brands.add(t.brand.trim());
@@ -1072,7 +1136,7 @@
             };
 
             populateLines(false);
-            if (lines.size === 0) populateLines(true); // Fallback
+            if (lines.size === 0) populateLines(true);
 
             lineSel.add(new Option('-- Alle --', 'ALL'));
             lines.forEach(l => lineSel.add(new Option(l, l)));
@@ -1107,7 +1171,7 @@
             };
 
             populateTools(false);
-            if (toolCount === 0) populateTools(true); // Fallback, damit Dropdown nicht stirbt
+            if (toolCount === 0) populateTools(true);
 
             if (toolCount === 0) {
                 toolSel.add(new Option('-- Keine passenden Werkzeuge --', ''));
@@ -1768,7 +1832,6 @@
             let hm_exact = (effectiveFzBase * 2 * ae) / (Deff * phi_s_rad);
             if (ae_ratio >= 0.5) hm_exact = effectiveFzBase; 
 
-            // CAPPINGS FÜR DÄMPFUNGEN (Verhindert Teufelsspirale)
             let globalDampVc = 1.0;
             let globalDampFz = 1.0;
 
@@ -1792,14 +1855,12 @@
                     physicsInfoHtml += `<div class="text-[11px] text-indigo-700 font-semibold">[Biegeschutz] L/D Ratio (${ld_ratio.toFixed(1)}): Dynamik -${((1 - dampFactor) * 100).toFixed(0)}%</div>`;
                 }
 
-                // Dämpfungs-Deckel: Reduzierung auf maximal 50% begrenzen!
                 if (globalDampVc < 0.5) globalDampVc = 0.5;
                 if (globalDampFz < 0.5) globalDampFz = 0.5;
 
                 effectiveVc *= globalDampVc;
                 effectiveFzBase *= globalDampFz;
 
-                // Schabschutz wird NACH der Dämpfung berechnet
                 let hm_min = D * 0.0005; 
                 if (profId !== 'schlichten_gehaertet' && hm_exact < hm_min) {
                     effectiveFzBase = hm_min * ((Deff * phi_s_rad) / (2 * ae));
@@ -1825,7 +1886,6 @@
             const effectiveFz = effectiveFzBase;
             const mc = mat.mc !== undefined ? mat.mc : 0.25;
             
-            // NOMINALE KRAFT FÜR LEISTUNG & DREHMOMENT (ENTKOPPELT VON RUNDLAUF)
             let hm_calc = Math.max(hm_exact, 0.001); 
             const kc_real = mat.kc11 / Math.pow(hm_calc, mc);
             
@@ -1850,17 +1910,16 @@
 
             let z_in_cut = (phi_s_rad / (2 * Math.PI)) * z;
             let z_force_factor = Math.max(1.0, z_in_cut);
-            const fc_avg = kc_real * ap * hm_calc * z_force_factor; // Nominale Schnittkraft für UI
+            const fc_avg = kc_real * ap * hm_calc * z_force_factor;
 
-            // PEAK KRAFT FÜR BIEGESPANNUNG (NUR FÜR WERKZEUGBRUCH-WARNUNG)
             let fz_peak = effectiveFz + runout_mm;
             let hm_peak = (fz_peak * 2 * ae) / (Deff * phi_s_rad);
             if (ae_ratio >= 0.5) hm_peak = fz_peak;
             let hm_peak_calc = Math.max(hm_peak, 0.001); 
             const kc_peak = mat.kc11 / Math.pow(hm_peak_calc, mc);
             
-            const fc_peak = kc_peak * ap * hm_peak_calc; // Kraft auf EINEN max-belasteten Zahn
-            const f_bend = fc_peak * 0.45; // Radialkomponente für Durchbiegung
+            const fc_peak = kc_peak * ap * hm_peak_calc; 
+            const f_bend = fc_peak * 0.45; 
 
             let coreFactor = 0.6; 
             if (z <= 2) coreFactor = 0.50;
