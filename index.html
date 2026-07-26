@@ -28,7 +28,7 @@
                 </div>
                 <div>
                     <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 leading-none">CNCPilot</h1>
-                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Industrial Engine 2.4 (Stable & Cloud-Ready)</span>
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Industrial Engine 2.5 (RCT & Micro-Display Fixed)</span>
                 </div>
             </div>
             <div>
@@ -1673,7 +1673,7 @@
             }
         }
 
-        // --- HAUPTBERECHNUNG MIT ENTKOPPELTEN WERTEN ---
+        // --- HAUPTBERECHNUNG MIT ENTKOPPELTEN WERTEN & KORRIGIERTEM RCT ---
         function calculate() {
             const machId = document.getElementById('machine-select').value;
             const matId = document.getElementById('material-select').value;
@@ -1775,9 +1775,6 @@
             let ae_ratio = Math.min(ae / Deff, 1.0);
             let phi_s_rad = Math.acos(1 - 2 * ae_ratio); 
 
-            let hm_exact = (effectiveFzBase * 2 * ae) / (Deff * phi_s_rad);
-            if (ae_ratio >= 0.5) hm_exact = effectiveFzBase; 
-
             let globalDampVc = 1.0;
             let globalDampFz = 1.0;
 
@@ -1807,24 +1804,16 @@
                 effectiveVc *= globalDampVc;
                 effectiveFzBase *= globalDampFz;
 
-                let hm_min = D * 0.0005; 
-                if (profId !== 'schlichten_gehaertet' && hm_exact < hm_min) {
-                    effectiveFzBase = hm_min * ((Deff * phi_s_rad) / (2 * ae));
-                    hm_exact = hm_min;
-                    physicsInfoHtml += `<div class="text-[11px] text-purple-700 font-semibold">[Schab-Schutz] fz angehoben auf hm_min (${hm_min.toFixed(4)} mm)</div>`;
-                }
-                
-                let rctFactor = 1.0;
+                // CHIP-THINNING (RCT) KORREKTUR FÜR VORSCHUB FZ
                 if (ae_ratio < 0.5) {
-                    rctFactor = effectiveFzBase / hm_exact; 
-                    rctFactor = Math.min(rctFactor, 2.5); 
+                    let rctFactor = (Deff * phi_s_rad) / (2 * ae);
+                    if (rctFactor > 2.5) rctFactor = 2.5; 
+                    
+                    effectiveFzBase *= rctFactor;
+                    physicsInfoHtml += `<div class="text-[11px] text-emerald-700 font-semibold">[Geometrie] Chip-Thinning Korrektur (RCT): fz +${((rctFactor - 1) * 100).toFixed(0)}%</div>`;
                     
                     if (matId.includes('gehaertet')) {
-                        rctFactor = 1.0; 
-                        physicsInfoHtml += `<div class="text-[11px] text-amber-700 font-semibold">[Hartbearbeitung] Thermik-Boost gesperrt (Schutz vor Schneidkanten-Ausbruch)</div>`;
-                    } else {
-                        effectiveFzBase = effectiveFzBase * rctFactor;
-                        physicsInfoHtml += `<div class="text-[11px] text-emerald-700 font-semibold">[Geometrie] Exaktes RCT (Winkel): fz +${((rctFactor - 1) * 100).toFixed(0)}%</div>`;
+                        physicsInfoHtml += `<div class="text-[11px] text-amber-700 font-semibold">[Hartbearbeitung] Thermik-Boost für vc gesperrt (Sicherheit)</div>`;
                     }
                 }
             }
@@ -1832,11 +1821,17 @@
             const effectiveFz = effectiveFzBase;
             const mc = mat.mc !== undefined ? mat.mc : 0.25;
             
-            let hm_calc = Math.max(hm_exact, 0.001); 
-            const kc_real = mat.kc11 / Math.pow(hm_calc, mc);
+            // REALE SPANDICKE HM
+            let hm_calc = (effectiveFz * 2 * ae) / (Deff * phi_s_rad);
+            if (ae_ratio >= 0.5) hm_calc = effectiveFz;
+            hm_calc = Math.max(hm_calc, 0.0005); 
+
+            // KIENZLE KC MIT PHYSIKALISCHEM DECKEL (max 8000 N/mm²)
+            let kc_raw = mat.kc11 / Math.pow(hm_calc, mc);
+            const kc_real = Math.min(kc_raw, 8000);
             
             physicsInfoHtml += `<div class="text-[11px] text-slate-500">[Kienzle] Nominale Spandicke hm: ${hm_calc.toFixed(4)} mm</div>`;
-            physicsInfoHtml += `<div class="text-[11px] text-slate-500">[Kienzle] Nominales kc: ${kc_real.toFixed(0)} N/mm²</div>`;
+            physicsInfoHtml += `<div class="text-[11px] text-slate-500">[Kienzle] Reales kc: ${kc_real.toFixed(0)} N/mm²</div>`;
             
             let n_theo = (effectiveVc * 1000) / (Math.PI * Deff);
             let n_eff = Math.min(n_theo, mach.max_rpm);
@@ -1845,8 +1840,9 @@
 
             let vc_eff_real = (Math.PI * Deff * n_eff) / 1000;
 
-            const Q = (ap * ae * vf_eff) / 1000; 
-            const power_kw = (Q * kc_real) / (60 * 1000); 
+            const Q_cm3 = (ap * ae * vf_eff) / 1000; 
+            const Q_mm3 = ap * ae * vf_eff;
+            const power_kw = (Q_cm3 * kc_real) / (60 * 1000); 
             const torque_nm = (power_kw * 9549.3) / n_eff;
 
             const mach_max_nm = mach.max_nm || 100; 
@@ -1861,8 +1857,8 @@
             let fz_peak = effectiveFz + runout_mm;
             let hm_peak = (fz_peak * 2 * ae) / (Deff * phi_s_rad);
             if (ae_ratio >= 0.5) hm_peak = fz_peak;
-            let hm_peak_calc = Math.max(hm_peak, 0.001); 
-            const kc_peak = mat.kc11 / Math.pow(hm_peak_calc, mc);
+            let hm_peak_calc = Math.max(hm_peak, 0.0005); 
+            const kc_peak = Math.min(mat.kc11 / Math.pow(hm_peak_calc, mc), 8000);
             
             const fc_peak = kc_peak * ap * hm_peak_calc; 
             const f_bend = fc_peak * 0.45; 
@@ -1897,7 +1893,7 @@
             document.getElementById('physics-info').innerHTML = physicsInfoHtml;
 
             currentCalculatedResults = { 
-                rpm: n_eff, vf: vf_eff, ap: ap, ae: ae, q: Q, power: power_kw, torque: torque_nm, fz_eff: effectiveFz, vc_eff: vc_eff_real, fc: fc_avg, stress: sigma_b
+                rpm: n_eff, vf: vf_eff, ap: ap, ae: ae, q: Q_cm3, power: power_kw, torque: torque_nm, fz_eff: effectiveFz, vc_eff: vc_eff_real, fc: fc_avg, stress: sigma_b
             };
 
             const rpmEl = document.getElementById('res-rpm');
@@ -1916,20 +1912,36 @@
             document.getElementById('res-fz-eff').innerText = `fz(eff): ${effectiveFz.toFixed(4)} mm`;
 
             document.getElementById('res-apae').innerText = ap.toFixed(2) + " / " + ae.toFixed(2) + " mm";
-            document.getElementById('res-q').innerText = Q.toFixed(2) + " cm³/min";
+            
+            // DYNAMISCHE EINHEITEN-FORMATIERUNG
+            if (Q_cm3 < 0.01) {
+                document.getElementById('res-q').innerText = Q_mm3.toFixed(1) + " mm³/min";
+            } else {
+                document.getElementById('res-q').innerText = Q_cm3.toFixed(2) + " cm³/min";
+            }
 
-            powerEl.innerText = power_kw.toFixed(2) + " kW";
-            powerEl.className = power_kw > (mach.max_kw * 0.85) ? "text-base font-bold font-mono text-rose-600 animate-pulse" : "text-base font-bold font-mono text-slate-800";
+            if (power_kw < 0.01) {
+                const power_w = power_kw * 1000;
+                powerEl.innerText = power_w.toFixed(1) + " W";
+                powerEl.className = "text-base font-bold font-mono text-slate-800";
+            } else {
+                powerEl.innerText = power_kw.toFixed(2) + " kW";
+                powerEl.className = power_kw > (mach.max_kw * 0.85) ? "text-base font-bold font-mono text-rose-600 animate-pulse" : "text-base font-bold font-mono text-slate-800";
+            }
 
             if(torqueEl) {
-                torqueEl.innerText = torque_nm.toFixed(1) + " Nm";
+                if (torque_nm < 0.1) {
+                    torqueEl.innerText = torque_nm.toFixed(2) + " Nm";
+                } else {
+                    torqueEl.innerText = torque_nm.toFixed(1) + " Nm";
+                }
                 torqueEl.className = torque_nm > mach_max_nm * 0.9 ? "text-base font-bold font-mono text-rose-600 animate-pulse" : "text-base font-bold font-mono text-slate-800";
             }
 
-            fcEl.innerText = fc_avg.toFixed(0) + " N";
+            fcEl.innerText = Math.max(fc_avg, 1).toFixed(0) + " N";
             
             if(stressEl) {
-                stressEl.innerHTML = sigma_b.toFixed(0) + " MPa";
+                stressEl.innerHTML = Math.max(sigma_b, 1).toFixed(0) + " MPa";
                 if (sigma_b > 2500) stressEl.className = "text-base font-bold font-mono text-rose-600 animate-pulse";
                 else if (sigma_b > 1500) stressEl.className = "text-base font-bold font-mono text-amber-600";
                 else stressEl.className = "text-base font-bold font-mono text-slate-800";
