@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CNCPilot - Decision Engine 3.2</title>
+    <title>CNCPilot 4.0 - Dual-Mode Assistant</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -20,25 +20,36 @@
 <body class="bg-slate-100 text-slate-800 p-4 lg:p-6 min-h-screen">
     <div class="max-w-[1500px] mx-auto space-y-6">
         
-        <!-- HEADER -->
-        <header class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-md">
+        <!-- HEADER & MODE TOGGLE -->
+        <header class="bg-white border border-slate-200 p-4 sm:p-5 rounded-2xl shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3 w-full md:w-auto">
+                <div class="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-md shrink-0">
                     CP
                 </div>
                 <div>
-                    <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 leading-none">CNCPilot</h1>
-                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Decision Engine 3.2 (Intent-Routing & RCT Control)</span>
+                    <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 leading-none">CNCPilot 4.0</h1>
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Dual-Mode Assistant & Rule Engine</span>
                 </div>
             </div>
-            <div>
-                <button onclick="toggleAdmin()" class="bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2 shadow-sm">
+            
+            <!-- MODE SWITCHER -->
+            <div class="bg-slate-100 border border-slate-200 p-1 rounded-xl flex w-full md:w-auto relative shadow-inner">
+                <button onclick="setMode('standard')" id="btn-mode-standard" class="flex-1 md:flex-none md:w-48 py-2 text-xs font-bold rounded-lg transition-all z-10 text-emerald-800 bg-white shadow-sm ring-1 ring-slate-200">
+                    🟢 Standard (Werker)
+                </button>
+                <button onclick="setMode('expert')" id="btn-mode-expert" class="flex-1 md:flex-none md:w-48 py-2 text-xs font-bold rounded-lg transition-all z-10 text-slate-500 hover:text-slate-700">
+                    ⚙️ Experte (Setup)
+                </button>
+            </div>
+
+            <div class="w-full md:w-auto flex justify-end">
+                <button onclick="toggleAdmin()" class="bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2 shadow-sm w-full md:w-auto">
                     ⚙️ Admin-Konsole
                 </button>
             </div>
         </header>
 
-        <!-- ADMIN BEREICH -->
+        <!-- ADMIN BEREICH (KOMPLETT AUS V3.2) -->
         <div id="admin-panel" class="hidden bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 pb-4">
                 <div>
@@ -211,241 +222,289 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             
             <!-- SPALTE 1: SETUP & SELEKTION -->
-            <div class="lg:col-span-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
+            <div class="lg:col-span-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5 flex flex-col">
                 <div class="flex items-center gap-2 border-b border-slate-100 pb-3">
                     <span class="text-base font-bold text-slate-900">1. Konfiguration</span>
                 </div>
                 
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Maschine</label>
-                    <select id="machine-select" class="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-slate-400 transition" onchange="calculate()"></select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Werkstoff</label>
-                    <select id="material-select" class="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-slate-400 transition" onchange="onMaterialOrProfileChange()"></select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Bearbeitungsprofil (Intent)</label>
-                    <select id="profile-select" class="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-slate-400 transition" onchange="onMaterialOrProfileChange()"></select>
-                </div>
-
-                <div class="space-y-3 bg-slate-50/80 p-4 rounded-xl border border-slate-200">
-                    <div class="flex items-center justify-between">
-                        <label class="block text-xs font-bold text-slate-900 uppercase tracking-wider">Werkzeugauswahl</label>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2.5">
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Hersteller</label>
-                            <select id="brand-select" class="w-full h-9 bg-white border border-slate-200 rounded-lg px-2.5 text-slate-800 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-slate-400" onchange="onBrandChange()"></select>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Produktlinie</label>
-                            <select id="line-select" class="w-full h-9 bg-white border border-slate-200 rounded-lg px-2.5 text-slate-800 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-slate-400" onchange="onLineChange()"></select>
-                        </div>
+                <div class="space-y-4 flex-1">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Maschine</label>
+                        <select id="machine-select" class="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-slate-400 transition" onchange="calculate()"></select>
                     </div>
 
                     <div>
-                        <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Modell</label>
-                        <select id="tool-select" class="w-full h-10 bg-white border border-slate-300 rounded-xl px-3 text-slate-900 text-xs font-bold shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-400" onchange="onToolChange()"></select>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Werkstoff</label>
+                        <select id="material-select" class="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-slate-400 transition" onchange="onMaterialOrProfileChange()"></select>
                     </div>
 
-                    <!-- NACHSCHLIFF / IST-MASS INTEGRATION -->
-                    <div class="pt-2 border-t border-slate-200 space-y-2">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" id="regrind-toggle" onchange="toggleRegrindFields()" class="rounded border-slate-300 text-slate-800 focus:ring-0">
-                            <span class="text-xs font-semibold text-slate-800">Nachgeschliffenes Werkzeug (Ist-Maß)</span>
-                        </label>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Bearbeitungs-Strategie</label>
+                        <select id="profile-select" class="w-full h-10 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl px-3 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-emerald-400 transition" onchange="onMaterialOrProfileChange()"></select>
+                    </div>
 
-                        <div id="regrind-container" class="hidden grid grid-cols-2 gap-2 pt-1">
+                    <div class="space-y-3 bg-slate-50/80 p-4 rounded-xl border border-slate-200">
+                        <label class="block text-xs font-bold text-slate-900 uppercase tracking-wider">Werkzeug</label>
+                        
+                        <div class="grid grid-cols-2 gap-2.5 expert-only">
                             <div>
-                                <label class="block text-[10px] font-bold text-slate-500 mb-0.5 uppercase tracking-wider">Ist-Ø D (mm)</label>
-                                <input type="number" id="input-d-ist" step="0.01" min="0.1" value="7.85" oninput="calculate()" class="w-full bg-slate-100 border border-slate-300 rounded-lg p-1.5 text-slate-900 text-xs font-mono font-bold focus:ring-1 focus:ring-slate-500 outline-none">
+                                <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Hersteller</label>
+                                <select id="brand-select" class="w-full h-9 bg-white border border-slate-200 rounded-lg px-2.5 text-slate-800 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-slate-400" onchange="onBrandChange()"></select>
                             </div>
-                            <div id="regrind-r-box">
-                                <label class="block text-[10px] font-bold text-slate-500 mb-0.5 uppercase tracking-wider">Ist-Radius R (mm)</label>
-                                <input type="number" id="input-r-ist" step="0.01" min="0.0" value="0.50" oninput="calculate()" class="w-full bg-slate-100 border border-slate-300 rounded-lg p-1.5 text-slate-900 text-xs font-mono font-bold focus:ring-1 focus:ring-slate-500 outline-none">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Linie</label>
+                                <select id="line-select" class="w-full h-9 bg-white border border-slate-200 rounded-lg px-2.5 text-slate-800 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-slate-400" onchange="onLineChange()"></select>
+                            </div>
+                        </div>
+
+                        <select id="tool-select" class="w-full h-10 bg-white border border-slate-300 rounded-xl px-3 text-slate-900 text-xs font-bold shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-400" onchange="onToolChange()"></select>
+
+                        <!-- IST-AUFSPANNUNG / EINZELTEILFERTIGUNG -->
+                        <div class="pt-2 border-t border-slate-200 space-y-2 mt-2">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" id="setup-toggle" onchange="toggleSetupFields()" class="rounded border-slate-300 text-slate-800 focus:ring-0">
+                                <span class="text-xs font-bold text-amber-700">🛠️ Abweichendes Ist-Maß / Eigene Aufspannung</span>
+                            </label>
+
+                            <div id="setup-container" class="hidden grid grid-cols-2 gap-2 pt-2">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 mb-0.5 tracking-wider">Ist-Ø D (mm)</label>
+                                    <input type="number" id="input-d-ist" step="0.01" min="0.1" class="w-full bg-amber-50 border border-amber-200 rounded-lg p-1.5 text-amber-900 text-xs font-mono font-bold focus:ring-1 outline-none" oninput="calculate(); calculateCamFeed();">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 mb-0.5 tracking-wider">Ist-Radius R (mm)</label>
+                                    <input type="number" id="input-r-ist" step="0.01" min="0.0" class="w-full bg-amber-50 border border-amber-200 rounded-lg p-1.5 text-amber-900 text-xs font-mono font-bold focus:ring-1 outline-none" oninput="calculate()">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 mb-0.5 tracking-wider" title="Freie Auskraglänge aus dem Futter">Auskrag. L_max (mm)</label>
+                                    <input type="number" id="input-lmax-ist" step="1" min="1" placeholder="Auto" class="w-full bg-amber-50 border border-amber-200 rounded-lg p-1.5 text-amber-900 text-xs font-mono font-bold focus:ring-1 outline-none" oninput="calculate()">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 mb-0.5 tracking-wider" title="Nutzbare Schneidenlänge">Schneide L_c (mm)</label>
+                                    <input type="number" id="input-lc-ist" step="1" min="1" placeholder="Auto" class="w-full bg-amber-50 border border-amber-200 rounded-lg p-1.5 text-amber-900 text-xs font-mono font-bold focus:ring-1 outline-none" oninput="calculate()">
+                                </div>
+                                <p class="col-span-2 text-[9px] text-amber-600 leading-tight">Leere Felder nutzen den Katalogwert. Die Engine schützt die eingegebene Schneidenlänge und berechnet die Hebelkraft neu.</p>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Werkzeugaufnahme</label>
-                    <select id="holder-select" class="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-slate-400 transition" onchange="calculate()">
-                        <option value="schrumpf">Schrumpffutter (vc +8%, Rundlauf 3&mu;m)</option>
-                        <option value="hydro">Hydrodehn-Spannfutter (vc +5%, Rundlauf 3&mu;m)</option>
-                        <option value="spannzange">Spannzange ER (Standard, Rundlauf 12&mu;m)</option>
-                        <option value="weldon">Weldon Spannfutter (vc -10%, Rundlauf 20&mu;m)</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Steifigkeit / Stabilität</label>
-                    <select id="rigidity-select" class="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-slate-400 transition" onchange="calculate()"></select>
+                    <div class="expert-only space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Werkzeugaufnahme</label>
+                            <select id="holder-select" class="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-slate-400 transition" onchange="calculate()">
+                                <option value="schrumpf">Schrumpffutter (vc +8%, Rundlauf 3&mu;m)</option>
+                                <option value="hydro">Hydrodehn-Spannfutter (vc +5%, Rundlauf 3&mu;m)</option>
+                                <option value="spannzange">Spannzange ER (Standard, Rundlauf 12&mu;m)</option>
+                                <option value="weldon">Weldon Spannfutter (vc -10%, Rundlauf 20&mu;m)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Steifigkeit / Stabilität</label>
+                            <select id="rigidity-select" class="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-slate-400 transition" onchange="calculate()"></select>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- SPALTE 2: DYNAMIK & PHYSIK -->
+            <!-- SPALTE 2: ZUSTELLUNG & PARAMETER (DYNAMIC UI) -->
             <div class="lg:col-span-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                    <span class="text-base font-bold text-slate-900">2. Zustellung & Parameter</span>
+                    <span class="text-base font-bold text-slate-900">2. Parameter <span id="param-mode-title" class="text-slate-400 font-normal text-sm"></span></span>
                 </div>
 
-                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-5">
-                    
-                    <!-- ap BLOCK -->
-                    <div class="space-y-2">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <label class="font-bold text-xs text-slate-800 block">Schnitttiefe (ap)</label>
-                                <span id="val-ap-factor" class="text-slate-400 text-[10px] font-mono">(0.00 × D)</span>
-                            </div>
-                            <div class="flex items-center gap-1 bg-white border border-slate-300 rounded-lg px-2 py-1 shadow-sm focus-within:ring-2 focus-within:ring-slate-400">
-                                <input type="number" id="input-ap-mm" step="0.01" min="0.01" value="0.03" oninput="syncApFromInput()" class="w-16 text-right font-mono font-bold text-sm text-slate-900 outline-none">
-                                <span class="text-xs font-bold text-slate-500">mm</span>
-                            </div>
-                        </div>
-                        <input type="range" id="slider-ap" min="0.01" max="30.0" step="0.01" value="0.03" oninput="syncApFromSlider()" class="w-full accent-slate-800 bg-slate-200 rounded-lg appearance-none h-2 cursor-pointer">
-                        <div class="flex gap-1.5 pt-0.5">
-                            <button onclick="setApShortcut(0.01)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">0.01mm</button>
-                            <button onclick="setApShortcut(0.03)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">0.03mm</button>
-                            <button onclick="setApShortcut(0.05)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">0.05mm</button>
-                            <button onclick="setApShortcut(0.1)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">0.1mm</button>
-                            <button onclick="setApShortcut(1.0)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">1.0×D</button>
-                        </div>
+                <!-- STANDARD MODUS: Nur Wunschtiefe -->
+                <div class="standard-only bg-emerald-50 p-6 rounded-xl border border-emerald-200 flex flex-col justify-center items-center text-center space-y-4 min-h-[250px]">
+                    <div class="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center text-2xl shadow-inner">🎯</div>
+                    <div>
+                        <h3 class="text-sm font-bold text-emerald-900 mb-1">Was ist dein Z-Maß?</h3>
+                        <p class="text-xs text-emerald-700">Gib die Gesamttiefe ein, die du fräsen willst. Die App berechnet im Hintergrund automatisch die physikalisch sicheren Tiefenschnitte.</p>
                     </div>
-
-                    <div class="border-b border-slate-200"></div>
-
-                    <!-- ae BLOCK -->
-                    <div class="space-y-2">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <label class="font-bold text-xs text-slate-800 block">Schnittbreite (ae)</label>
-                                <span id="val-ae-factor" class="text-slate-400 text-[10px] font-mono">(0.00 × D)</span>
-                            </div>
-                            <div class="flex items-center gap-1 bg-white border border-slate-300 rounded-lg px-2 py-1 shadow-sm focus-within:ring-2 focus-within:ring-slate-400">
-                                <input type="number" id="input-ae-mm" step="0.01" min="0.01" value="0.10" oninput="syncAeFromInput()" class="w-16 text-right font-mono font-bold text-sm text-slate-900 outline-none">
-                                <span class="text-xs font-bold text-slate-500">mm</span>
-                            </div>
-                        </div>
-                        <input type="range" id="slider-ae" min="0.01" max="12.0" step="0.01" value="0.10" oninput="syncAeFromSlider()" class="w-full accent-slate-800 bg-slate-200 rounded-lg appearance-none h-2 cursor-pointer">
-                        <div class="flex gap-1.5 pt-0.5">
-                            <button onclick="setAeShortcut(0.05)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">0.05mm</button>
-                            <button onclick="setAeShortcut(0.1)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">0.10mm</button>
-                            <button onclick="setAeShortcut(0.2)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">0.20mm</button>
-                            <button onclick="setAeShortcut(0.5)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">50% D</button>
-                        </div>
+                    <div class="flex items-center justify-center gap-2 bg-white border-2 border-emerald-300 rounded-xl px-3 py-2 shadow-sm focus-within:ring-4 focus-within:ring-emerald-100 transition-all w-3/4">
+                        <input type="number" id="input-z-total" step="0.5" min="0.1" value="20.0" oninput="calculate()" class="w-full text-center font-mono font-black text-2xl text-emerald-900 outline-none bg-transparent">
+                        <span class="text-sm font-bold text-emerald-600">mm</span>
                     </div>
-
-                    <!-- Container für Warnungen -->
-                    <div id="calc-warnings" class="space-y-2 mt-3 empty:hidden"></div>
                 </div>
 
-                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
-                    <div class="flex items-center justify-between border-b border-slate-200 pb-2">
-                        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Entscheidungs-Herleitung & Physik</h3>
-                        <label class="flex items-center gap-1.5 cursor-pointer">
-                            <input type="checkbox" id="physics-toggle" checked onchange="calculate()" class="rounded border-slate-300 text-slate-800 focus:ring-0">
-                            <span class="text-xs text-slate-600 font-semibold">Aktiv</span>
-                        </label>
-                    </div>
-                    <div id="physics-info" class="space-y-1.5 font-mono text-xs"></div>
-                </div>
-
-                <!-- CAM ECKENVORSCHUB-KALKULATOR -->
-                <div class="bg-slate-50 rounded-xl border border-slate-200 shadow-sm overflow-hidden mt-4">
-                    <button onclick="toggleCamCalc()" class="w-full flex justify-between items-center p-3 bg-slate-100 hover:bg-slate-200 transition text-xs font-bold text-slate-700 border-b border-slate-200">
-                        <span class="flex items-center gap-1.5">🔄 CAM-Eckenvorschub (z.B. OneCNC)</span>
-                        <span id="cam-calc-arrow" class="text-slate-400">▲</span>
-                    </button>
-                    <div id="cam-calc-content" class="p-4 space-y-3">
-                        <p class="text-[10px] text-slate-500 leading-tight">Berechnet den gedrosselten Vorschub in Prozent für das Fräsen von Innenecken (abhängig vom Fräser-Radius).</p>
-                        <div class="flex items-center gap-3">
-                            <div class="flex-1">
-                                <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Radius Ecke (R)</label>
+                <!-- EXPERTEN MODUS: Slider, Physik & CAM-Rechner -->
+                <div class="expert-only hidden space-y-5">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-5">
+                        <!-- ap BLOCK -->
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <label class="font-bold text-xs text-slate-800 block">Schnitttiefe (ap)</label>
+                                    <span id="val-ap-factor" class="text-slate-400 text-[10px] font-mono">(0.00 × D)</span>
+                                </div>
                                 <div class="flex items-center gap-1 bg-white border border-slate-300 rounded-lg px-2 py-1 shadow-sm focus-within:ring-2 focus-within:ring-slate-400">
-                                    <input type="number" id="input-cam-r" step="0.1" min="0.1" value="6.0" oninput="calculateCamFeed()" class="w-full text-right font-mono font-bold text-sm text-slate-900 outline-none">
+                                    <input type="number" id="input-ap-mm" step="0.01" min="0.01" value="0.03" oninput="syncApFromInput()" class="w-16 text-right font-mono font-bold text-sm text-slate-900 outline-none">
                                     <span class="text-xs font-bold text-slate-500">mm</span>
                                 </div>
                             </div>
-                            <div class="text-slate-300 font-bold mt-3">👉</div>
-                            <div class="flex-1">
-                                <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Vorschub auf</label>
-                                <div id="res-cam-percent" class="w-full bg-emerald-50 border border-emerald-200 rounded-lg p-1.5 text-emerald-700 text-sm font-mono font-black text-center shadow-sm transition-colors">
-                                    -- %
-                                </div>
+                            <input type="range" id="slider-ap" min="0.01" max="30.0" step="0.01" value="0.03" oninput="syncApFromSlider()" class="w-full accent-slate-800 bg-slate-200 rounded-lg appearance-none h-2 cursor-pointer">
+                            <div class="flex gap-1.5 pt-0.5">
+                                <button onclick="setApShortcut(0.01)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">0.01mm</button>
+                                <button onclick="setApShortcut(0.03)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">0.03mm</button>
+                                <button onclick="setApShortcut(0.1)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">0.1mm</button>
+                                <button onclick="setApShortcut(1.0)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">1.0×D</button>
                             </div>
                         </div>
-                        <div id="cam-calc-warning" class="hidden text-[10px] font-bold text-rose-600 bg-rose-50 p-2 rounded-lg border border-rose-200 mt-2"></div>
+
+                        <div class="border-b border-slate-200"></div>
+
+                        <!-- ae BLOCK -->
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <label class="font-bold text-xs text-slate-800 block">Schnittbreite (ae)</label>
+                                    <span id="val-ae-factor" class="text-slate-400 text-[10px] font-mono">(0.00 × D)</span>
+                                </div>
+                                <div class="flex items-center gap-1 bg-white border border-slate-300 rounded-lg px-2 py-1 shadow-sm focus-within:ring-2 focus-within:ring-slate-400">
+                                    <input type="number" id="input-ae-mm" step="0.01" min="0.01" value="0.10" oninput="syncAeFromInput()" class="w-16 text-right font-mono font-bold text-sm text-slate-900 outline-none">
+                                    <span class="text-xs font-bold text-slate-500">mm</span>
+                                </div>
+                            </div>
+                            <input type="range" id="slider-ae" min="0.01" max="12.0" step="0.01" value="0.10" oninput="syncAeFromSlider()" class="w-full accent-slate-800 bg-slate-200 rounded-lg appearance-none h-2 cursor-pointer">
+                            <div class="flex gap-1.5 pt-0.5">
+                                <button onclick="setAeShortcut(0.05)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">0.05mm</button>
+                                <button onclick="setAeShortcut(0.1)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">0.10mm</button>
+                                <button onclick="setAeShortcut(0.2)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">0.20mm</button>
+                                <button onclick="setAeShortcut(0.5)" class="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono transition">50% D</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider border-b border-slate-200 pb-2">Entscheidungs-Herleitung</h3>
+                        <div id="physics-info" class="space-y-1.5 font-mono text-xs"></div>
+                    </div>
+
+                    <!-- CAM ECKENVORSCHUB-KALKULATOR -->
+                    <div class="bg-slate-50 rounded-xl border border-slate-200 shadow-sm overflow-hidden mt-4">
+                        <button onclick="toggleCamCalc()" class="w-full flex justify-between items-center p-3 bg-slate-100 hover:bg-slate-200 transition text-xs font-bold text-slate-700 border-b border-slate-200">
+                            <span class="flex items-center gap-1.5">🔄 CAM-Eckenvorschub (z.B. OneCNC)</span>
+                            <span id="cam-calc-arrow" class="text-slate-400">▲</span>
+                        </button>
+                        <div id="cam-calc-content" class="p-4 space-y-3 hidden">
+                            <p class="text-[10px] text-slate-500 leading-tight">Berechnet den gedrosselten Vorschub in Prozent für das Fräsen von Innenecken (abhängig vom Fräser-Radius).</p>
+                            <div class="flex items-center gap-3">
+                                <div class="flex-1">
+                                    <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Radius Ecke (R)</label>
+                                    <div class="flex items-center gap-1 bg-white border border-slate-300 rounded-lg px-2 py-1 shadow-sm focus-within:ring-2 focus-within:ring-slate-400">
+                                        <input type="number" id="input-cam-r" step="0.1" min="0.1" value="6.0" oninput="calculateCamFeed()" class="w-full text-right font-mono font-bold text-sm text-slate-900 outline-none">
+                                        <span class="text-xs font-bold text-slate-500">mm</span>
+                                    </div>
+                                </div>
+                                <div class="text-slate-300 font-bold mt-3">👉</div>
+                                <div class="flex-1">
+                                    <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Vorschub auf</label>
+                                    <div id="res-cam-percent" class="w-full bg-emerald-50 border border-emerald-200 rounded-lg p-1.5 text-emerald-700 text-sm font-mono font-black text-center shadow-sm transition-colors">
+                                        -- %
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="cam-calc-warning" class="hidden text-[10px] font-bold text-rose-600 bg-rose-50 p-2 rounded-lg border border-rose-200 mt-2"></div>
+                        </div>
                     </div>
                 </div>
+
+                <!-- WARNUNGEN FÜR BEIDE MODI -->
+                <div id="calc-warnings" class="space-y-2 empty:hidden mt-3"></div>
 
             </div>
 
             <!-- SPALTE 3: ERGEBNISSE -->
             <div class="lg:col-span-4 flex flex-col space-y-6">
-                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4 h-full flex flex-col">
                     <div class="border-b border-slate-100 pb-3 flex justify-between items-center">
-                        <span class="text-base font-bold text-slate-900">3. Berechnete Schnittdaten</span>
-                        <!-- GRÜNER BESTÄTIGEN BUTTON -->
+                        <span class="text-base font-bold text-slate-900">3. Laufzettel</span>
                         <button onclick="confirmAndPushToHistory()" class="bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-600 text-xs px-3.5 py-1.5 rounded-xl font-bold transition flex items-center gap-1 shadow-sm">
                             ✔ Bestätigen
                         </button>
                     </div>
+
+                    <!-- RESULT STANDARD MODE (LAUFZETTEL) -->
+                    <div class="standard-only flex-1 flex flex-col space-y-3">
+                        <div id="std-status-box" class="bg-emerald-100 border border-emerald-300 p-3 rounded-xl flex items-center gap-3">
+                            <span class="text-2xl" id="std-status-icon">✅</span>
+                            <div>
+                                <h4 class="font-bold text-emerald-900 text-sm" id="std-status-title">Prozess sicher</h4>
+                                <p class="text-[10px] text-emerald-700 font-semibold" id="std-status-desc">Automatisch auf Maschinen-Limit optimiert.</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl flex flex-col items-center justify-center space-y-1">
+                            <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Drehzahl (S)</span>
+                            <span id="std-res-rpm" class="text-3xl font-black font-mono text-slate-900">-- U/min</span>
+                        </div>
+
+                        <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl flex flex-col items-center justify-center space-y-1">
+                            <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Vorschub (F)</span>
+                            <span id="std-res-vf" class="text-3xl font-black font-mono text-slate-900">-- mm/min</span>
+                        </div>
+
+                        <div class="bg-slate-800 text-white border border-slate-900 p-4 rounded-xl flex flex-col space-y-2 mt-auto">
+                            <div class="flex justify-between items-center border-b border-slate-600 pb-2">
+                                <span class="text-xs font-semibold text-slate-300">Zustellung Z (ap)</span>
+                                <span id="std-res-ap" class="text-lg font-bold font-mono">-- mm</span>
+                            </div>
+                            <p id="std-res-passes" class="text-xs text-amber-300 font-semibold text-center italic"></p>
+                            
+                            <div class="flex justify-between items-center pt-2">
+                                <span class="text-xs font-semibold text-slate-300">Zustellung XY (ae)</span>
+                                <span id="std-res-ae" class="text-lg font-bold font-mono">-- mm</span>
+                            </div>
+                        </div>
+                    </div>
                     
-                    <div class="grid grid-cols-1 gap-2.5">
+                    <!-- RESULT EXPERT MODE (DETAILS) -->
+                    <div class="expert-only hidden flex-1 flex flex-col space-y-2.5">
                         <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex justify-between items-center">
                             <div>
                                 <span class="text-xs font-semibold text-slate-600 block">Drehzahl (n):</span>
-                                <span id="res-vc-eff" class="text-[10px] text-slate-500 font-mono font-medium">vc(eff): -- m/min</span>
+                                <span id="res-vc-eff" class="text-[10px] text-slate-500 font-mono font-medium">vc: -- m/min</span>
                             </div>
-                            <span id="res-rpm" class="text-xl font-black font-mono text-slate-900">-- U/min</span>
+                            <span id="res-rpm" class="text-xl font-black font-mono text-slate-900">--</span>
                         </div>
                         <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex justify-between items-center">
                             <div>
-                                <span class="text-xs font-semibold text-slate-600 block">Tischvorschub (vf):</span>
-                                <span id="res-fz-eff" class="text-[10px] text-slate-500 font-mono font-medium">fz(eff): -- mm</span>
+                                <span class="text-xs font-semibold text-slate-600 block">Vorschub (vf):</span>
+                                <span id="res-fz-eff" class="text-[10px] text-slate-500 font-mono font-medium">fz: -- mm</span>
                             </div>
-                            <span id="res-vf" class="text-xl font-black font-mono text-slate-900">-- mm/min</span>
+                            <span id="res-vf" class="text-xl font-black font-mono text-slate-900">--</span>
                         </div>
                         <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex justify-between items-center">
-                            <span class="text-xs font-semibold text-slate-600">Zustellung (ap / ae):</span>
-                            <span id="res-apae" class="text-sm font-bold font-mono text-slate-900">-- / -- mm</span>
-                        </div>
-                        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex justify-between items-center">
-                            <span class="text-xs font-semibold text-slate-600">Zeitspanvolumen (Q):</span>
+                            <span class="text-xs font-semibold text-slate-600">Volumen (Q):</span>
                             <span id="res-q" class="text-base font-bold font-mono text-slate-900">-- cm³/min</span>
                         </div>
-                        
-                        <!-- MASCHINENLEISTUNG & DREHMOMENT -->
                         <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex justify-between items-center">
-                            <span class="text-xs font-semibold text-slate-600">Antriebsleistung (Pc):</span>
-                            <span id="res-power" class="text-base font-bold font-mono text-slate-800">-- kW</span>
-                        </div>
-                        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex justify-between items-center">
-                            <span class="text-xs font-semibold text-slate-600">Spindel-Drehmoment (Mc):</span>
-                            <span id="res-torque" class="text-base font-bold font-mono text-slate-800">-- Nm</span>
+                            <span class="text-xs font-semibold text-slate-600">Zustellung (ap/ae):</span>
+                            <span id="res-apae-exp" class="text-sm font-bold font-mono text-slate-900">-- / -- mm</span>
                         </div>
                         
-                        <!-- ECHTE SCHNITTKRAFT UND BIEGESPANNUNG -->
-                        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex justify-between items-center">
-                            <span class="text-xs font-semibold text-slate-600">Schnittkraft (Fc avg):</span>
-                            <span id="res-fc" class="text-base font-bold font-mono text-slate-900">-- N</span>
-                        </div>
-                        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex justify-between items-center">
-                            <span class="text-xs font-semibold text-slate-600">Peak-Biegespannung (<span class="font-serif italic">&sigma;</span><sub>b</sub>):</span>
-                            <span id="res-stress" class="text-base font-bold font-mono text-slate-800">-- MPa</span>
+                        <div class="pt-2 border-t border-slate-100 space-y-2.5">
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
+                                <span class="text-[11px] font-semibold text-slate-600">Leistung (Pc):</span>
+                                <span id="res-power" class="text-sm font-bold font-mono text-slate-800">-- kW</span>
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
+                                <span class="text-[11px] font-semibold text-slate-600">Drehmoment (Mc):</span>
+                                <span id="res-torque" class="text-sm font-bold font-mono text-slate-800">-- Nm</span>
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
+                                <span class="text-[11px] font-semibold text-slate-600">Schnittkraft (Fc):</span>
+                                <span id="res-fc" class="text-sm font-bold font-mono text-slate-800">-- N</span>
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
+                                <span class="text-[11px] font-semibold text-slate-600">Biegespannung (<span class="font-serif italic">&sigma;</span><sub>b</sub>):</span>
+                                <span id="res-stress" class="text-sm font-bold font-mono text-slate-800">-- MPa</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- UNTERER BEREICH: EIN- / AUSBLENDHBAR (FAVORITEN & VERLAUF) -->
+        <!-- UNTERER BEREICH: FAVORITEN & VERLAUF (KOMPLETT AUS V3.2) -->
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-3">
                 <div class="flex gap-2 items-center">
@@ -466,56 +525,47 @@
                 <div id="tab-content-favorites" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
                 <div id="tab-content-history" class="hidden space-y-3">
                     <div class="flex justify-between items-center">
-                        <p class="text-xs text-slate-500">Manuell bestätigter Verlauf (max. 30 Einträge). Hier kannst du direkt Sterne vergeben, Notizen machen oder als Favorit speichern.</p>
+                        <p class="text-xs text-slate-500">Manuell bestätigter Verlauf (max. 30 Einträge).</p>
                         <button onclick="clearHistory()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1 rounded-lg font-semibold transition">Verlauf leeren</button>
                     </div>
                     <div id="history-container" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
                 </div>
             </div>
         </div>
+
     </div>
 
+    <!-- SCRIPT LOGIC (Vollständig verschmolzen: V3.2 Features + V4.0 Engine) -->
     <script>
         const DEFAULT_SUPABASE_URL = "https://emqwigtqiqlnvasuzrig.supabase.co";
         const DEFAULT_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVtcXdpZ3RxaXFsbnZhc3V6cmlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5Mjg5MTgsImV4cCI6MjA4NzUwNDkxOH0.1_HqL3uYf_Z1sB3M6nE0Q0v2s3R1_4v5X6Z7s8Q9a0";
         const ADMIN_PASSWORD = "cnc2026";
 
-        // =========================================================================
-        // DATENBANK: PROFILE MIT "rct_active" (INTENT-ROUTING)
-        // =========================================================================
         const defaultDb = {
             machines: {
                 "dmg_5achs": { "name": "DMG DMU 75 Monoblock", "max_rpm": 15000, "max_vf": 30000, "max_kw": 18, "max_nm": 130 },
                 "dmg_3achs": { "name": "DMG Mori DMC 850V", "max_rpm": 15000, "max_vf": 30000, "max_kw": 15, "max_nm": 85 }
             },
             materials: {
-                "stahl_c45": { "name": "Stahl < 850 N/mm² (z.B. C45, St52)", "kc11": 1800, "mc": 0.22 },
-                "stahl_1200": { "name": "Werkzeugstahl ungehärtet < 1200 N/mm²", "kc11": 2200, "mc": 0.24 },
+                "stahl_c45": { "name": "Stahl < 850 N/mm² (z.B. C45)", "kc11": 1800, "mc": 0.22 },
+                "stahl_1200": { "name": "Werkzeugstahl < 1200 N/mm²", "kc11": 2200, "mc": 0.24 },
                 "gehaertet_55hrc": { "name": "Gehärteter Stahl (~55 HRC)", "kc11": 3000, "mc": 0.15 },
-                "gehaertet_60hrc": { "name": "Gehärteter Stahl (~60 HRC)", "kc11": 3400, "mc": 0.15 },
-                "gehaertet_65hrc": { "name": "Gehärteter Stahl (~65 HRC)", "kc11": 3800, "mc": 0.15 },
-                "rostfrei": { "name": "Rostfreier Stahl (Inox < 750 N/mm²)", "kc11": 2400, "mc": 0.24 },
                 "alu_wrought": { "name": "Aluminium (knetlegiert)", "kc11": 700, "mc": 0.25 }
             },
             rigidity: {
-                "hoch": { "name": "Hoch (Schwere Portalmaschine / VHM Setup)", "factor": 1.10 },
-                "mittel": { "name": "Mittel (Standard BAZ Setup)", "factor": 1.0 },
-                "gering": { "name": "Gering (Leichte C-Frame / Lange Auskragung)", "factor": 0.85 }
+                "hoch": { "name": "Hoch (Schwer / VHM)", "factor": 1.10 },
+                "mittel": { "name": "Mittel (Standard Setup)", "factor": 1.0 },
+                "gering": { "name": "Gering (Leicht / Lang)", "factor": 0.85 }
             },
             profiles: {
-                "schruppen": { "name": "Schruppen (Roughing)", "ap_factor": 1.0, "ae_factor": 0.7, "fz_ratio": 1.0, "rct_active": true, "description": "Maximale Zerspanungsleistung, RCT an" },
-                "schlichten": { "name": "Schlichten Standard (Weiche Werkstoffe)", "ap_factor": 0.1, "ae_factor": 0.1, "fz_ratio": 0.6, "rct_active": false, "description": "Gute Oberflächengüte, kleines fz, RCT aus" },
-                "schlichten_gehaertet": { "name": "Feinschlichten Gehärtet (50-65 HRC)", "ap_factor": 0.03, "ae_factor": 0.02, "fz_ratio": 0.35, "rct_active": false, "description": "Feinstschlichten, Schnittdruckkontrolle, RCT aus" },
-                "hsc_trochoidal": { "name": "HSC / Trochoidal (HPC)", "ap_factor": 1.5, "ae_factor": 0.08, "fz_ratio": 1.0, "rct_active": true, "description": "Max ap, kleines ae, RCT aktiv" },
-                "planfraesen": { "name": "Planfräsen (Face Milling)", "ap_factor": 0.5, "ae_factor": 0.8, "fz_ratio": 1.0, "rct_active": false, "description": "Konstanter Eingriff" }
+                "schruppen": { "name": "Schruppen (Vollschnitt/Tasche)", "ap_factor": 1.0, "ae_factor": 0.7, "fz_ratio": 1.0, "rct_active": true },
+                "schlichten": { "name": "Schlichten Wand (Weich)", "ap_factor": 0.1, "ae_factor": 0.05, "fz_ratio": 0.6, "rct_active": false },
+                "hsc_trochoidal": { "name": "HSC / Trochoidal (HPC)", "ap_factor": 1.5, "ae_factor": 0.08, "fz_ratio": 1.0, "rct_active": true },
+                "planfraesen": { "name": "Planfräsen (Fläche)", "ap_factor": 0.5, "ae_factor": 0.8, "fz_ratio": 1.0, "rct_active": false }
             },
             tools: {
-                "yg1_x5070_d1_r01": { "name": "Torusfräser D1 R0.1 Z2", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.1, "material_schneidstoff": "VHM", "diameter": 1, "z": 2, "max_overhang": 3, "fz_nom": 0.005, "vc_per_material": { "stahl_c45": 140, "stahl_1200": 110, "gehaertet_55hrc": 90, "gehaertet_60hrc": 70, "gehaertet_65hrc": 50 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schlichten", "schlichten_gehaertet", "hsc_trochoidal"] },
-                "yg1_x5070_d2_r02": { "name": "Torusfräser D2 R0.2 Z2", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.2, "material_schneidstoff": "VHM", "diameter": 2, "z": 2, "max_overhang": 5, "fz_nom": 0.010, "vc_per_material": { "stahl_c45": 150, "stahl_1200": 120, "gehaertet_55hrc": 100, "gehaertet_60hrc": 80, "gehaertet_65hrc": 55 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schlichten", "schlichten_gehaertet", "hsc_trochoidal"] },
-                "yg1_x5070_d3_r02": { "name": "Torusfräser D3 R0.2 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.2, "material_schneidstoff": "VHM", "diameter": 3, "z": 4, "max_overhang": 8, "fz_nom": 0.018, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "schlichten_gehaertet", "hsc_trochoidal"] },
-                "yg1_x5070_d8_r05": { "name": "Torusfräser D8 R0.5 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.5, "material_schneidstoff": "VHM", "diameter": 8, "z": 4, "max_overhang": 24, "fz_nom": 0.055, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "schlichten_gehaertet", "hsc_trochoidal"] },
-                "yg1_x5070_d10_r10": { "name": "Torusfräser D10 R1.0 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 1, "material_schneidstoff": "VHM", "diameter": 10, "z": 4, "max_overhang": 30, "fz_nom": 0.065, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "schlichten_gehaertet", "hsc_trochoidal"] },
-                "premus_gp_d12": { "name": "PREMUS GP Universal D12 Z4", "brand": "PRECITOOL", "line": "PREMUS GP", "type": "Schaftfräser", "geo_type": "shaft", "radius": 0, "material_schneidstoff": "VHM", "diameter": 12, "z": 4, "max_overhang": 36, "fz_nom": 0.084, "vc_per_material": { "stahl_c45": 180, "stahl_1200": 110, "rostfrei": 90, "alu_wrought": 400 }, "suitable_materials": ["stahl_c45", "stahl_1200", "rostfrei", "alu_wrought"], "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal", "planfraesen"] }
+                "yg1_d10_r10": { "name": "Torusfräser D10 R1.0 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 1, "diameter": 10, "z": 4, "max_overhang": 30, "fz_nom": 0.065, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "alu_wrought": 300 } },
+                "premus_gp_d12": { "name": "PREMUS GP Schaft D12 Z4", "brand": "PRECITOOL", "line": "PREMUS GP", "type": "Schaftfräser", "geo_type": "shaft", "radius": 0, "diameter": 12, "z": 4, "max_overhang": 36, "fz_nom": 0.084, "vc_per_material": { "stahl_c45": 180, "stahl_1200": 110, "alu_wrought": 400 } }
             },
             favorites: [],
             history: []
@@ -524,74 +574,17 @@
         let supabaseClient = null;
         let isCloudActive = false;
         let db = loadDatabase();
+        let expertMode = false;
+        let lastSafeApCalculated = 0;
         let currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0, q: 0, power: 0, torque: 0, fz_eff: 0, vc_eff: 0, fc: 0, stress: 0 };
 
-        function switchAdminTab(tabName) {
-            const tabs = ['tools', 'machines', 'materials', 'profiles', 'cloud'];
-            tabs.forEach(t => {
-                const tabEl = document.getElementById(`admin-tab-${t}`);
-                const btnEl = document.getElementById(`tab-btn-${t}`);
-                if (tabEl && btnEl) {
-                    if (t === tabName) {
-                        tabEl.classList.remove('hidden');
-                        btnEl.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition bg-white text-slate-900 shadow-sm";
-                    } else {
-                        tabEl.classList.add('hidden');
-                        btnEl.className = "px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition";
-                    }
-                }
-            });
-
-            if (tabName === 'tools') renderAdminToolTable();
-            if (tabName === 'machines') renderAdminMachinesList();
-            if (tabName === 'materials') renderAdminMaterialsList();
-            if (tabName === 'profiles') renderAdminProfilesList();
-        }
-
-        function switchBottomTab(tab) {
-            const btnFav = document.getElementById('bottom-tab-fav');
-            const btnHist = document.getElementById('bottom-tab-hist');
-            const contentFav = document.getElementById('tab-content-favorites');
-            const contentHist = document.getElementById('tab-content-history');
-            const searchWrapper = document.getElementById('favorites-search-wrapper');
-
-            if (tab === 'favorites') {
-                btnFav.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-slate-800 text-white shadow-sm";
-                btnHist.className = "px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-50 border border-slate-200 transition";
-                contentFav.classList.remove('hidden');
-                contentHist.classList.add('hidden');
-                searchWrapper.classList.remove('hidden');
-            } else {
-                btnHist.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-slate-800 text-white shadow-sm";
-                btnFav.className = "px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-50 border border-slate-200 transition";
-                contentHist.classList.remove('hidden');
-                contentFav.classList.add('hidden');
-                searchWrapper.classList.add('hidden');
-            }
-        }
-
-        function toggleBottomSection() {
-            const content = document.getElementById('bottom-section-content');
-            const btn = document.getElementById('toggle-section-btn');
-            if (content.classList.contains('hidden')) {
-                content.classList.remove('hidden');
-                btn.innerText = "▲ Ausblenden";
-            } else {
-                content.classList.add('hidden');
-                btn.innerText = "▼ Einblenden";
-            }
-        }
-
-        function toggleCamCalc() {
-            const content = document.getElementById('cam-calc-content');
-            const arrow = document.getElementById('cam-calc-arrow');
-            if (content.classList.contains('hidden')) {
-                content.classList.remove('hidden');
-                arrow.innerText = '▲';
-            } else {
-                content.classList.add('hidden');
-                arrow.innerText = '▼';
-            }
+        // --- APP & CLOUD INIT ---
+        function initApp() {
+            populateDropdowns();
+            setMode('standard'); 
+            renderFavorites();
+            renderHistory();
+            renderAdminToolTable();
         }
 
         function initSupabase() {
@@ -609,27 +602,21 @@
                     isCloudActive = true;
                     fetchDataFromSupabase();
                     listenToSupabaseRealtime();
-                    
                     const statusText = document.getElementById('supabase-conn-text');
                     if(statusText) {
                         statusText.innerText = "✅ Verbunden";
                         statusText.className = "text-[11px] font-bold text-emerald-600";
                     }
-                } catch(e) { 
-                    console.error("Supabase Init Error:", e); 
-                }
+                } catch(e) { console.error("Supabase Init Error:", e); }
             }
         }
 
         function saveSupabaseConfig() {
             const url = document.getElementById('supabase-url').value.trim();
             const key = document.getElementById('supabase-key').value.trim();
-
             if (!url || !key) return alert("Bitte URL und Key eingeben.");
-
             localStorage.setItem('toolpilot_supabase_url', url);
             localStorage.setItem('toolpilot_supabase_key', key);
-
             initSupabase();
             alert("Supabase Konfiguration gespeichert!");
         }
@@ -647,18 +634,14 @@
                 } else {
                     pushDataToSupabase();
                 }
-            } catch(e) { 
-                console.error("Cloud Fetch Error:", e); 
-            }
+            } catch(e) { console.error("Cloud Fetch Error:", e); }
         }
 
         async function pushDataToSupabase() {
             if (!supabaseClient) return;
             try {
                 await supabaseClient.from('app_state').upsert({ id: 'global_db', data: db, updated_at: new Date() });
-            } catch(e) { 
-                console.error("Cloud Push Error:", e); 
-            }
+            } catch(e) { console.error("Cloud Push Error:", e); }
         }
 
         function listenToSupabaseRealtime() {
@@ -682,7 +665,7 @@
             if (saved) {
                 try { 
                     const parsed = JSON.parse(saved);
-                    if (parsed && parsed.tools && Object.keys(parsed.tools).length > 2) {
+                    if (parsed && parsed.tools && Object.keys(parsed.tools).length > 1) {
                         if(!parsed.history) parsed.history = [];
                         if(!parsed.favorites) parsed.favorites = [];
                         return parsed;
@@ -692,16 +675,8 @@
             return JSON.parse(JSON.stringify(defaultDb));
         }
 
-        function saveLocalDatabaseBackup() {
-            localStorage.setItem('toolpilot_master_db', JSON.stringify(db));
-        }
-
-        function saveDatabase() {
-            saveLocalDatabaseBackup();
-            if (isCloudActive) {
-                pushDataToSupabase();
-            }
-        }
+        function saveLocalDatabaseBackup() { localStorage.setItem('toolpilot_master_db', JSON.stringify(db)); }
+        function saveDatabase() { saveLocalDatabaseBackup(); if (isCloudActive) pushDataToSupabase(); }
 
         function exportDatabaseJSON() {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
@@ -709,14 +684,12 @@
             dlAnchor.setAttribute("href", dataStr);
             dlAnchor.setAttribute("download", `cncpilot_db_export_${Date.now()}.json`);
             document.body.appendChild(dlAnchor);
-            dlAnchor.click();
-            dlAnchor.remove();
+            dlAnchor.click(); dlAnchor.remove();
         }
 
         function importDatabaseJSON(event) {
             const file = event.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
@@ -725,15 +698,10 @@
                         db = importedDb;
                         if(!db.history) db.history = [];
                         if(!db.favorites) db.favorites = [];
-                        saveDatabase();
-                        initApp();
+                        saveDatabase(); initApp();
                         alert("Datenbank erfolgreich importiert & synchronisiert!");
-                    } else {
-                        alert("Ungültiges Dateiformat.");
-                    }
-                } catch (err) {
-                    alert("Fehler beim Lesen der JSON-Datei.");
-                }
+                    } else { alert("Ungültiges Dateiformat."); }
+                } catch (err) { alert("Fehler beim Lesen der JSON-Datei."); }
             };
             reader.readAsText(file);
         }
@@ -741,18 +709,36 @@
         function resetToDefaultData() {
             if(confirm("Datenbank auf Werkseinstellungen zurücksetzen? Dies überschreibt auch die Cloud-Datenbank!")) {
                 db = JSON.parse(JSON.stringify(defaultDb));
-                saveDatabase();
-                initApp();
-                alert("Erfolgreich zurückgesetzt!");
+                saveDatabase(); initApp(); alert("Erfolgreich zurückgesetzt!");
             }
         }
 
-        function initApp() {
-            populateDropdowns();
-            resetSliders(); 
-            renderFavorites();
-            renderHistory();
-            renderAdminToolTable();
+        // --- UI TOGGLES & TABS ---
+        function setMode(mode) {
+            expertMode = (mode === 'expert');
+            const btnStd = document.getElementById('btn-mode-standard');
+            const btnExp = document.getElementById('btn-mode-expert');
+            const expElements = document.querySelectorAll('.expert-only');
+            const stdElements = document.querySelectorAll('.standard-only');
+
+            if (expertMode) {
+                btnExp.className = "flex-1 md:flex-none md:w-48 py-2 text-xs font-bold rounded-lg transition-all z-10 text-emerald-800 bg-white shadow-sm ring-1 ring-slate-200";
+                btnStd.className = "flex-1 md:flex-none md:w-48 py-2 text-xs font-bold rounded-lg transition-all z-10 text-slate-500 hover:text-slate-700";
+                document.getElementById('param-mode-title').innerText = "(Manuell)";
+                expElements.forEach(el => el.classList.remove('hidden'));
+                stdElements.forEach(el => el.classList.add('hidden'));
+                if(lastSafeApCalculated > 0) {
+                    document.getElementById('input-ap-mm').value = lastSafeApCalculated.toFixed(2);
+                    document.getElementById('slider-ap').value = lastSafeApCalculated.toFixed(2);
+                }
+            } else {
+                btnStd.className = "flex-1 md:flex-none md:w-48 py-2 text-xs font-bold rounded-lg transition-all z-10 text-emerald-800 bg-white shadow-sm ring-1 ring-slate-200";
+                btnExp.className = "flex-1 md:flex-none md:w-48 py-2 text-xs font-bold rounded-lg transition-all z-10 text-slate-500 hover:text-slate-700";
+                document.getElementById('param-mode-title').innerText = "(Wunschtiefe)";
+                expElements.forEach(el => el.classList.add('hidden'));
+                stdElements.forEach(el => el.classList.remove('hidden'));
+            }
+            calculate();
         }
 
         function toggleAdmin() {
@@ -762,94 +748,281 @@
                 if (pwd === ADMIN_PASSWORD) {
                     panel.classList.remove('hidden');
                     renderAdminToolTable();
-                } else if (pwd !== null) {
-                    alert("Falsches Passwort!");
+                } else if (pwd !== null) { alert("Falsches Passwort!"); }
+            } else { panel.classList.add('hidden'); }
+        }
+
+        function switchAdminTab(tabName) {
+            const tabs = ['tools', 'machines', 'materials', 'profiles', 'cloud'];
+            tabs.forEach(t => {
+                const tabEl = document.getElementById(`admin-tab-${t}`);
+                const btnEl = document.getElementById(`tab-btn-${t}`);
+                if (tabEl && btnEl) {
+                    if (t === tabName) {
+                        tabEl.classList.remove('hidden');
+                        btnEl.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition bg-white text-slate-900 shadow-sm";
+                    } else {
+                        tabEl.classList.add('hidden');
+                        btnEl.className = "px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition";
+                    }
                 }
+            });
+            if (tabName === 'tools') renderAdminToolTable();
+            if (tabName === 'machines') renderAdminMachinesList();
+            if (tabName === 'materials') renderAdminMaterialsList();
+            if (tabName === 'profiles') renderAdminProfilesList();
+        }
+
+        function switchBottomTab(tab) {
+            const btnFav = document.getElementById('bottom-tab-fav');
+            const btnHist = document.getElementById('bottom-tab-hist');
+            const contentFav = document.getElementById('tab-content-favorites');
+            const contentHist = document.getElementById('tab-content-history');
+            const searchWrapper = document.getElementById('favorites-search-wrapper');
+
+            if (tab === 'favorites') {
+                btnFav.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-slate-800 text-white shadow-sm";
+                btnHist.className = "px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-50 border border-slate-200 transition";
+                contentFav.classList.remove('hidden'); contentHist.classList.add('hidden'); searchWrapper.classList.remove('hidden');
             } else {
-                panel.classList.add('hidden');
+                btnHist.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-slate-800 text-white shadow-sm";
+                btnFav.className = "px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-50 border border-slate-200 transition";
+                contentHist.classList.remove('hidden'); contentFav.classList.add('hidden'); searchWrapper.classList.add('hidden');
             }
         }
 
+        function toggleBottomSection() {
+            const content = document.getElementById('bottom-section-content');
+            const btn = document.getElementById('toggle-section-btn');
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden'); btn.innerText = "▲ Ausblenden";
+            } else {
+                content.classList.add('hidden'); btn.innerText = "▼ Einblenden";
+            }
+        }
+
+        function toggleCamCalc() {
+            const content = document.getElementById('cam-calc-content');
+            const arrow = document.getElementById('cam-calc-arrow');
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden'); arrow.innerText = '▲';
+            } else {
+                content.classList.add('hidden'); arrow.innerText = '▼';
+            }
+        }
+
+        function toggleSetupFields() {
+            const active = document.getElementById('setup-toggle').checked;
+            const container = document.getElementById('setup-container');
+            const toolId = document.getElementById('tool-select').value;
+            const tool = db.tools[toolId];
+
+            if(active) {
+                container.classList.remove('hidden');
+                if(tool) {
+                    document.getElementById('input-d-ist').value = tool.diameter.toFixed(2);
+                    document.getElementById('input-r-ist').value = (tool.radius || 0).toFixed(2);
+                    document.getElementById('input-lmax-ist').value = tool.max_overhang || (tool.diameter * 3);
+                    document.getElementById('input-lc-ist').value = ""; 
+                }
+            } else { container.classList.add('hidden'); }
+            calculate(); calculateCamFeed();
+        }
+
+        // --- DROPDOWNS & SYNC ---
         function populateDropdowns() {
-            const machSel = document.getElementById('machine-select');
-            machSel.innerHTML = '';
-            for (const [id, m] of Object.entries(db.machines)) {
-                machSel.add(new Option(m.name, id));
-            }
+            const machSel = document.getElementById('machine-select'); machSel.innerHTML = '';
+            for (const [id, m] of Object.entries(db.machines)) machSel.add(new Option(m.name, id));
 
-            const matSel = document.getElementById('material-select');
-            matSel.innerHTML = '';
-            for (const [id, m] of Object.entries(db.materials)) {
-                matSel.add(new Option(m.name, id));
-            }
+            const matSel = document.getElementById('material-select'); matSel.innerHTML = '';
+            for (const [id, m] of Object.entries(db.materials)) matSel.add(new Option(m.name, id));
 
-            const profSel = document.getElementById('profile-select');
-            profSel.innerHTML = '';
-            for (const [id, p] of Object.entries(db.profiles)) {
-                profSel.add(new Option(p.name, id));
-            }
+            const profSel = document.getElementById('profile-select'); profSel.innerHTML = '';
+            for (const [id, p] of Object.entries(db.profiles)) profSel.add(new Option(p.name, id));
 
-            const rigSel = document.getElementById('rigidity-select');
-            rigSel.innerHTML = '';
-            for (const [id, r] of Object.entries(db.rigidity)) {
-                rigSel.add(new Option(`${r.name} (Faktor: ${r.factor})`, id));
-            }
+            const rigSel = document.getElementById('rigidity-select'); rigSel.innerHTML = '';
+            for (const [id, r] of Object.entries(db.rigidity)) rigSel.add(new Option(`${r.name} (Faktor: ${r.factor})`, id));
             if(db.rigidity["mittel"]) rigSel.value = "mittel";
 
-            renderToolMatrixInputs();
-            renderProfileCheckboxes();
-            populateBrandDropdown();
+            renderToolMatrixInputs(); renderProfileCheckboxes(); populateBrandDropdown();
         }
 
+        function onMaterialOrProfileChange() { populateBrandDropdown(); }
+
+        function populateBrandDropdown() {
+            const selectedMat = document.getElementById('material-select').value;
+            const selectedProf = document.getElementById('profile-select').value;
+            const brandSel = document.getElementById('brand-select'); brandSel.innerHTML = '';
+            let brands = new Set();
+            for (const t of Object.values(db.tools)) {
+                const matFit = !t.suitable_materials || t.suitable_materials.includes(selectedMat);
+                const profFit = !t.suitable_profiles || t.suitable_profiles.includes(selectedProf);
+                if (matFit && profFit && t.brand && t.brand.trim() !== '') brands.add(t.brand.trim());
+            }
+            if (brands.size === 0) for (const t of Object.values(db.tools)) if (t.brand && t.brand.trim() !== '') brands.add(t.brand.trim());
+            brandSel.add(new Option('-- Alle --', 'ALL'));
+            brands.forEach(b => brandSel.add(new Option(b, b)));
+            onBrandChange();
+        }
+
+        function onBrandChange() {
+            const selectedMat = document.getElementById('material-select').value;
+            const selectedProf = document.getElementById('profile-select').value;
+            const selectedBrand = document.getElementById('brand-select').value;
+            const lineSel = document.getElementById('line-select'); lineSel.innerHTML = '';
+            let lines = new Set();
+            const popLines = (fallback) => {
+                for (const t of Object.values(db.tools)) {
+                    const matFit = fallback || !t.suitable_materials || t.suitable_materials.includes(selectedMat);
+                    const profFit = fallback || !t.suitable_profiles || t.suitable_profiles.includes(selectedProf);
+                    const brandMatch = (selectedBrand === 'ALL' || t.brand === selectedBrand);
+                    if (matFit && profFit && brandMatch && t.line && t.line.trim() !== '') lines.add(t.line.trim());
+                }
+            };
+            popLines(false); if (lines.size === 0) popLines(true);
+            lineSel.add(new Option('-- Alle --', 'ALL'));
+            lines.forEach(l => lineSel.add(new Option(l, l)));
+            onLineChange();
+        }
+
+        function onLineChange() {
+            const selectedMat = document.getElementById('material-select').value;
+            const selectedProf = document.getElementById('profile-select').value;
+            const selectedBrand = document.getElementById('brand-select').value;
+            const selectedLine = document.getElementById('line-select').value;
+            const toolSel = document.getElementById('tool-select');
+            const prevId = toolSel.value; toolSel.innerHTML = '';
+            let count = 0;
+            const popTools = (fallback) => {
+                for (const [id, t] of Object.entries(db.tools)) {
+                    const matFit = fallback || !t.suitable_materials || t.suitable_materials.includes(selectedMat);
+                    const profFit = fallback || !t.suitable_profiles || t.suitable_profiles.includes(selectedProf);
+                    const brandMatch = (selectedBrand === 'ALL' || t.brand === selectedBrand);
+                    const lineMatch = (selectedLine === 'ALL' || t.line === selectedLine);
+                    if (matFit && profFit && brandMatch && lineMatch) {
+                        toolSel.add(new Option(`${t.line ? '[' + t.line + '] ' : ''}${t.name}` + (fallback ? " (Bedingt)" : ""), id));
+                        count++;
+                    }
+                }
+            };
+            popTools(false); if (count === 0) popTools(true);
+            if (count === 0) toolSel.add(new Option('-- Keine Werkzeuge --', ''));
+            else {
+                let options = Array.from(toolSel.options).map(o => o.value);
+                if (options.includes(prevId)) toolSel.value = prevId;
+            }
+            onToolChange();
+        }
+
+        function onToolChange() {
+            const toolId = document.getElementById('tool-select').value;
+            const tool = db.tools[toolId];
+            if(tool) {
+                if(document.getElementById('setup-toggle').checked) {
+                    document.getElementById('input-d-ist').value = tool.diameter.toFixed(2);
+                    document.getElementById('input-r-ist').value = (tool.radius || 0).toFixed(2);
+                    document.getElementById('input-lmax-ist').value = tool.max_overhang || (tool.diameter * 3);
+                }
+                const profId = document.getElementById('profile-select').value;
+                const p = db.profiles[profId];
+                if(p) {
+                    let D = tool.diameter;
+                    if (document.getElementById('setup-toggle').checked) D = parseFloat(document.getElementById('input-d-ist').value) || D;
+                    const Lmax = tool.max_overhang || (D * 3);
+                    document.getElementById('slider-ap').max = Lmax.toFixed(2);
+                    document.getElementById('slider-ae').max = D.toFixed(2);
+                    
+                    let targetAp = Math.min(D * p.ap_factor, Lmax);
+                    let targetAe = Math.min(D * p.ae_factor, D);
+                    if (profId.includes('schlichten_gehaertet')) { targetAp = Math.min(targetAp, 0.25); targetAe = Math.min(targetAe, 0.20); }
+                    
+                    document.getElementById('input-ap-mm').value = targetAp.toFixed(2);
+                    document.getElementById('slider-ap').value = targetAp.toFixed(2);
+                    document.getElementById('input-ae-mm').value = targetAe.toFixed(2);
+                    document.getElementById('slider-ae').value = targetAe.toFixed(2);
+                }
+            }
+            calculate(); calculateCamFeed();
+        }
+
+        function syncApFromSlider() { document.getElementById('input-ap-mm').value = document.getElementById('slider-ap').value; calculate(); }
+        function syncApFromInput() { document.getElementById('slider-ap').value = document.getElementById('input-ap-mm').value; calculate(); }
+        function syncAeFromSlider() { document.getElementById('input-ae-mm').value = document.getElementById('slider-ae').value; calculate(); }
+        function syncAeFromInput() { document.getElementById('slider-ae').value = document.getElementById('input-ae-mm').value; calculate(); }
+
+        function setApShortcut(valRatio) {
+            let D = parseFloat(document.getElementById('input-d-ist').value) || 10;
+            if(!document.getElementById('setup-toggle').checked) {
+                const t = db.tools[document.getElementById('tool-select').value];
+                if(t) D = t.diameter;
+            }
+            let val = valRatio >= 0.5 ? D * valRatio : valRatio;
+            document.getElementById('input-ap-mm').value = val.toFixed(2); document.getElementById('slider-ap').value = val.toFixed(2); calculate();
+        }
+        function setAeShortcut(valRatio) {
+            let D = parseFloat(document.getElementById('input-d-ist').value) || 10;
+            if(!document.getElementById('setup-toggle').checked) {
+                const t = db.tools[document.getElementById('tool-select').value];
+                if(t) D = t.diameter;
+            }
+            let val = valRatio >= 0.5 ? D * valRatio : valRatio;
+            document.getElementById('input-ae-mm').value = val.toFixed(2); document.getElementById('slider-ae').value = val.toFixed(2); calculate();
+        }
+
+        // --- ADMIN FUNCTIONS ---
         function renderAdminToolTable() {
             const tbody = document.getElementById('adm-tool-table-body');
             const searchInput = document.getElementById('adm-tool-search');
             const countEl = document.getElementById('adm-tool-count');
             if(!tbody) return;
-
             const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
             tbody.innerHTML = '';
-
             let toolEntries = Object.entries(db.tools || {});
             if(countEl) countEl.innerText = toolEntries.length;
 
-            toolEntries = toolEntries.filter(([id, t]) => {
-                const fullStr = `${t.brand || ''} ${t.line || ''} ${t.name || ''} Ø${t.diameter}`.toLowerCase();
-                return fullStr.includes(query);
-            });
-
-            if (toolEntries.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-slate-400 italic">Keine Werkzeuge gefunden</td></tr>`;
-                return;
-            }
+            toolEntries = toolEntries.filter(([id, t]) => `${t.brand||''} ${t.line||''} ${t.name||''} Ø${t.diameter}`.toLowerCase().includes(query));
+            if (toolEntries.length === 0) { tbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-slate-400 italic">Keine Werkzeuge gefunden</td></tr>`; return; }
 
             toolEntries.forEach(([id, t]) => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
-                
-                const brandLine = `${t.brand ? '<strong>[' + t.brand + ']</strong> ' : ''}${t.line ? t.line + ' - ' : ''}`;
-                const geoBadge = `<span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-mono font-bold text-[10px]">Ø${t.diameter} Z${t.z} (fz ${t.fz_nom || 0.05}mm)</span>`;
-
+                const tr = document.createElement('tr'); tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
                 tr.innerHTML = `
                     <td class="p-2.5">
-                        <div class="font-medium text-slate-900">${brandLine}${t.name}</div>
+                        <div class="font-medium text-slate-900">${t.brand ? '<strong>['+t.brand+']</strong> ' : ''}${t.line ? t.line+' - ' : ''}${t.name}</div>
                         <div class="text-[10px] text-slate-400 font-mono">${t.type || 'Schaftfräser'}</div>
                     </td>
-                    <td class="p-2.5">${geoBadge}</td>
+                    <td class="p-2.5"><span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-mono font-bold text-[10px]">Ø${t.diameter} Z${t.z}</span></td>
                     <td class="p-2.5 text-right space-x-1">
-                        <button onclick="editToolFromAdmin('${id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] px-2 py-1 rounded font-semibold border border-slate-200 transition">✏️ Bearbeiten</button>
-                        <button onclick="duplicateToolAdmin('${id}')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 text-[11px] px-2 py-1 rounded font-semibold border border-slate-200 transition">📋 Kopieren</button>
-                        <button onclick="deleteToolAdmin('${id}')" class="bg-rose-50 hover:bg-rose-100 text-rose-700 text-[11px] px-2 py-1 rounded border border-rose-200 transition">🗑️</button>
+                        <button onclick="editToolFromAdmin('${id}')" class="bg-slate-100 text-slate-800 text-[11px] px-2 py-1 rounded font-semibold border border-slate-200">✏️</button>
+                        <button onclick="duplicateToolAdmin('${id}')" class="bg-slate-50 text-slate-700 text-[11px] px-2 py-1 rounded font-semibold border border-slate-200">📋</button>
+                        <button onclick="deleteToolAdmin('${id}')" class="bg-rose-50 text-rose-700 text-[11px] px-2 py-1 rounded border border-rose-200">🗑️</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
         }
-
+        function toggleToolGeoFields() {
+            const geoType = document.getElementById('adm-tool-geotype').value;
+            const radiusContainer = document.getElementById('adm-tool-radius-container');
+            if(geoType === 'shaft') radiusContainer.classList.add('hidden'); else radiusContainer.classList.remove('hidden');
+        }
+        function renderProfileCheckboxes() {
+            const container = document.getElementById('adm-tool-profiles-container'); if(!container) return; container.innerHTML = '';
+            for (const [profId, p] of Object.entries(db.profiles)) {
+                const div = document.createElement('div'); div.className = "flex items-center gap-1.5";
+                div.innerHTML = `<input type="checkbox" id="tool-prof-${profId}" checked class="rounded border-slate-300"><label for="tool-prof-${profId}" class="text-slate-700 cursor-pointer text-[11px] font-medium truncate">${p.name}</label>`;
+                container.appendChild(div);
+            }
+        }
+        function renderToolMatrixInputs() {
+            const container = document.getElementById('adm-tool-matrix-container'); if(!container) return; container.innerHTML = '';
+            for (const [matId, mat] of Object.entries(db.materials)) {
+                const div = document.createElement('div'); div.className = "flex items-center justify-between bg-white p-1.5 rounded-lg border border-slate-300";
+                div.innerHTML = `<label class="flex items-center gap-1.5 truncate text-slate-700 cursor-pointer text-[11px]"><input type="checkbox" id="tool-suit-${matId}" checked class="rounded"><span class="truncate">${mat.name}</span></label><input type="number" id="tool-vc-${matId}" value="200" class="w-12 bg-slate-50 border border-slate-300 rounded p-0.5 text-right text-xs font-mono">`;
+                container.appendChild(div);
+            }
+        }
         function editToolFromAdmin(id) {
-            const t = db.tools[id];
-            if(!t) return;
-
+            const t = db.tools[id]; if(!t) return;
             document.getElementById('adm-editing-tool-id').value = id;
             document.getElementById('adm-tool-form-title').innerText = `Werkzeug bearbeiten`;
             document.getElementById('adm-tool-brand').value = t.brand || '';
@@ -861,1138 +1034,450 @@
             document.getElementById('adm-tool-overhang').value = t.max_overhang || 30;
             document.getElementById('adm-tool-radius').value = t.radius || 0;
             document.getElementById('adm-tool-fznom').value = t.fz_nom || (t.diameter * 0.007);
-
             toggleToolGeoFields();
-
-            for (const profId of Object.keys(db.profiles)) {
-                const chk = document.getElementById(`tool-prof-${profId}`);
-                if(chk) chk.checked = t.suitable_profiles ? t.suitable_profiles.includes(profId) : true;
-            }
-
-            for (const matId of Object.keys(db.materials)) {
-                const chk = document.getElementById(`tool-suit-${matId}`);
-                const input = document.getElementById(`tool-vc-${matId}`);
-                if(chk) chk.checked = t.suitable_materials ? t.suitable_materials.includes(matId) : true;
-                if(input) input.value = t.vc_per_material && t.vc_per_material[matId] !== undefined ? t.vc_per_material[matId] : 200;
-            }
+            for (const p of Object.keys(db.profiles)) { const chk = document.getElementById(`tool-prof-${p}`); if(chk) chk.checked = t.suitable_profiles ? t.suitable_profiles.includes(p) : true; }
+            for (const m of Object.keys(db.materials)) { const chk = document.getElementById(`tool-suit-${m}`); const inp = document.getElementById(`tool-vc-${m}`); if(chk) chk.checked = t.suitable_materials ? t.suitable_materials.includes(m) : true; if(inp) inp.value = t.vc_per_material && t.vc_per_material[m] !== undefined ? t.vc_per_material[m] : 200; }
         }
-
         function resetToolForm() {
             document.getElementById('adm-editing-tool-id').value = '';
             document.getElementById('adm-tool-form-title').innerText = `Neues Werkzeug anlegen`;
-            document.getElementById('adm-tool-brand').value = '';
-            document.getElementById('adm-tool-line').value = '';
             document.getElementById('adm-tool-name').value = '';
-            document.getElementById('adm-tool-d').value = 10;
-            document.getElementById('adm-tool-z').value = 4;
-            document.getElementById('adm-tool-overhang').value = 30;
-            document.getElementById('adm-tool-radius').value = 0;
-            document.getElementById('adm-tool-fznom').value = 0.065;
         }
-
         function saveToolFromForm() {
             const editId = document.getElementById('adm-editing-tool-id').value;
             const geoType = document.getElementById('adm-tool-geotype').value;
-            const brand = document.getElementById('adm-tool-brand').value.trim();
-            const line = document.getElementById('adm-tool-line').value.trim();
             const d = parseFloat(document.getElementById('adm-tool-d').value);
             const z = parseInt(document.getElementById('adm-tool-z').value);
-            const radius = parseFloat(document.getElementById('adm-tool-radius').value) || 0;
-            const fz_nom = parseFloat(document.getElementById('adm-tool-fznom').value) || (d * 0.007);
-            
             if(isNaN(d) || isNaN(z)) return alert('Bitte Durchmesser und Zähnezahl prüfen.');
-
-            let baseTitle = document.getElementById('adm-tool-name').value.trim();
-            if(!baseTitle) {
-                if(geoType === 'shaft') baseTitle = `Schaftfräser D${d} Z${z}`;
-                if(geoType === 'ball') baseTitle = `Kugelfräser D${d} Z${z}`;
-                if(geoType === 'torus') baseTitle = `Torusfräser D${d} R${radius} Z${z}`;
-            }
-
-            const fullName = baseTitle;
+            let fullName = document.getElementById('adm-tool-name').value.trim();
+            if(!fullName) fullName = `${geoType === 'ball' ? 'Kugelfräser' : (geoType==='torus'?'Torusfräser':'Schaftfräser')} D${d} Z${z}`;
             const id = editId ? editId : ('tool_' + Date.now());
             
-            let vcMap = {}; 
-            let suitableMaterials = [];
-            for (const matId of Object.keys(db.materials)) {
-                const chk = document.getElementById(`tool-suit-${matId}`);
-                const vcInput = document.getElementById(`tool-vc-${matId}`);
-                if (chk && chk.checked) suitableMaterials.push(matId);
-                vcMap[matId] = vcInput ? parseFloat(vcInput.value) : 200;
-            }
-
-            let suitableProfiles = [];
-            for (const profId of Object.keys(db.profiles)) {
-                const chkProf = document.getElementById(`tool-prof-${profId}`);
-                if (chkProf && chkProf.checked) suitableProfiles.push(profId);
-            }
+            let vcMap = {}, suitMat = [], suitProf = [];
+            for (const m of Object.keys(db.materials)) { if (document.getElementById(`tool-suit-${m}`)?.checked) suitMat.push(m); vcMap[m] = parseFloat(document.getElementById(`tool-vc-${m}`)?.value||200); }
+            for (const p of Object.keys(db.profiles)) { if (document.getElementById(`tool-prof-${p}`)?.checked) suitProf.push(p); }
 
             db.tools[id] = {
-                name: fullName,
-                brand: brand,
-                line: line,
-                type: geoType === 'ball' ? 'Kugelfräser' : (geoType === 'torus' ? 'Torusfräser' : 'Schaftfräser'),
-                geo_type: geoType,
-                radius: radius,
-                material_schneidstoff: "VHM",
-                diameter: d,
-                z: z,
-                fz_nom: fz_nom,
+                name: fullName, brand: document.getElementById('adm-tool-brand').value.trim(), line: document.getElementById('adm-tool-line').value.trim(),
+                type: geoType === 'ball' ? 'Kugelfräser' : (geoType === 'torus' ? 'Torusfräser' : 'Schaftfräser'), geo_type: geoType,
+                radius: parseFloat(document.getElementById('adm-tool-radius').value) || 0, diameter: d, z: z,
+                fz_nom: parseFloat(document.getElementById('adm-tool-fznom').value) || (d * 0.007),
                 max_overhang: parseFloat(document.getElementById('adm-tool-overhang').value) || (d * 3),
-                vc_per_material: vcMap,
-                suitable_materials: suitableMaterials,
-                suitable_profiles: suitableProfiles
+                vc_per_material: vcMap, suitable_materials: suitMat, suitable_profiles: suitProf
             };
-
-            saveDatabase(); 
-            populateDropdowns(); 
-            resetToolForm();
-            alert('Werkzeug erfolgreich gespeichert!');
+            saveDatabase(); populateDropdowns(); resetToolForm(); alert('Gespeichert!');
         }
-
         function duplicateToolAdmin(id) {
-            const source = db.tools[id];
-            if(!source) return;
-            const newId = 'tool_' + Date.now();
-            const copy = JSON.parse(JSON.stringify(source));
-            copy.name = copy.name + " (Kopie)";
-            db.tools[newId] = copy;
-            saveDatabase();
-            populateDropdowns();
+            const src = db.tools[id]; if(!src) return;
+            const cp = JSON.parse(JSON.stringify(src)); cp.name += " (Kopie)";
+            db.tools['tool_'+Date.now()] = cp; saveDatabase(); populateDropdowns();
         }
-
-        function deleteToolAdmin(id) {
-            if(confirm("Werkzeug wirklich löschen?")) {
-                delete db.tools[id];
-                saveDatabase();
-                populateDropdowns();
-            }
-        }
+        function deleteToolAdmin(id) { if(confirm("Löschen?")) { delete db.tools[id]; saveDatabase(); populateDropdowns(); } }
 
         function renderAdminMachinesList() {
-            const container = document.getElementById('adm-machines-list');
-            if(!container) return;
-            container.innerHTML = '';
+            const container = document.getElementById('adm-machines-list'); if(!container) return; container.innerHTML = '';
             for (const [id, m] of Object.entries(db.machines)) {
-                const div = document.createElement('div');
-                div.className = "bg-slate-50 p-3 rounded-lg border border-slate-200 flex justify-between items-center text-xs";
-                div.innerHTML = `
-                    <div>
-                        <strong class="text-slate-900">${m.name}</strong>
-                        <div class="text-slate-500 text-[10px] font-mono">Max: ${m.max_rpm} U/min | ${m.max_vf} mm/min | ${m.max_kw} kW | ${m.max_nm || '--'} Nm</div>
-                    </div>
-                    <button onclick="deleteMachineAdmin('${id}')" class="bg-rose-50 hover:bg-rose-100 text-rose-700 px-2.5 py-1 rounded border border-rose-200 font-semibold transition">🗑️</button>
-                `;
-                container.appendChild(div);
+                container.innerHTML += `<div class="bg-slate-50 p-3 rounded-lg border border-slate-200 flex justify-between items-center text-xs"><div><strong class="text-slate-900">${m.name}</strong><div class="text-slate-500 font-mono">Max: ${m.max_rpm} U/min | ${m.max_kw} kW</div></div><button onclick="deleteMachineAdmin('${id}')" class="text-rose-700 px-2 py-1 rounded border border-rose-200">🗑️</button></div>`;
             }
         }
-
-        function deleteMachineAdmin(id) {
-            if(Object.keys(db.machines).length <= 1) return alert('Mindestens eine Maschine ist nötig.');
-            delete db.machines[id];
-            saveDatabase();
-            populateDropdowns();
-            renderAdminMachinesList();
+        function addNewMachine() {
+            const id = document.getElementById('adm-mach-id').value, name = document.getElementById('adm-mach-name').value;
+            if(!id || !name) return alert('Bitte ausfüllen');
+            db.machines[id] = { name, max_rpm: parseFloat(document.getElementById('adm-mach-rpm').value), max_vf: parseFloat(document.getElementById('adm-mach-vf').value), max_kw: parseFloat(document.getElementById('adm-mach-kw').value), max_nm: parseFloat(document.getElementById('adm-mach-nm').value)||100 };
+            saveDatabase(); populateDropdowns(); renderAdminMachinesList();
         }
+        function deleteMachineAdmin(id) { if(Object.keys(db.machines).length>1) { delete db.machines[id]; saveDatabase(); populateDropdowns(); renderAdminMachinesList(); } }
 
         function renderAdminMaterialsList() {
-            const container = document.getElementById('adm-materials-list');
-            if(!container) return;
-            container.innerHTML = '';
+            const container = document.getElementById('adm-materials-list'); if(!container) return; container.innerHTML = '';
             for (const [id, m] of Object.entries(db.materials)) {
-                const div = document.createElement('div');
-                div.className = "bg-slate-50 p-3 rounded-lg border border-slate-200 flex justify-between items-center text-xs";
-                div.innerHTML = `
-                    <div>
-                        <strong class="text-slate-900">${m.name}</strong>
-                        <div class="text-slate-500 text-[10px] font-mono">kc1.1: ${m.kc11} N/mm² | mc: ${m.mc || 0.25}</div>
-                    </div>
-                    <button onclick="deleteMaterialAdmin('${id}')" class="bg-rose-50 hover:bg-rose-100 text-rose-700 px-2.5 py-1 rounded border border-rose-200 font-semibold transition">🗑️</button>
-                `;
-                container.appendChild(div);
+                container.innerHTML += `<div class="bg-slate-50 p-3 rounded-lg border border-slate-200 flex justify-between items-center text-xs"><div><strong class="text-slate-900">${m.name}</strong><div class="text-slate-500 font-mono">kc1.1: ${m.kc11} | mc: ${m.mc}</div></div><button onclick="deleteMaterialAdmin('${id}')" class="text-rose-700 px-2 py-1 rounded border border-rose-200">🗑️</button></div>`;
             }
         }
-
-        function deleteMaterialAdmin(id) {
-            delete db.materials[id];
-            saveDatabase();
-            populateDropdowns();
-            renderAdminMaterialsList();
+        function addNewMaterial() {
+            const id = document.getElementById('adm-mat-id').value, name = document.getElementById('adm-mat-name').value;
+            if(!id || !name) return;
+            db.materials[id] = { name, kc11: parseFloat(document.getElementById('adm-mat-kc11').value), mc: parseFloat(document.getElementById('adm-mat-mc').value)||0.25 };
+            saveDatabase(); populateDropdowns(); renderAdminMaterialsList();
         }
+        function deleteMaterialAdmin(id) { delete db.materials[id]; saveDatabase(); populateDropdowns(); renderAdminMaterialsList(); }
 
         function renderAdminProfilesList() {
-            const container = document.getElementById('adm-profiles-list');
-            if(!container) return;
-            container.innerHTML = '';
+            const container = document.getElementById('adm-profiles-list'); if(!container) return; container.innerHTML = '';
             for (const [id, p] of Object.entries(db.profiles)) {
-                const div = document.createElement('div');
-                div.className = "bg-slate-50 p-3 rounded-lg border border-slate-200 flex justify-between items-center text-xs";
-                
-                // Fallback for older DB versions missing these fields
-                const fzRatio = p.fz_ratio !== undefined ? p.fz_ratio : 1.0;
-                const rctText = p.rct_active ? "Aktiv (HSC)" : "Inaktiv (Schlichten)";
-
-                div.innerHTML = `
-                    <div>
-                        <strong class="text-slate-900">${p.name}</strong>
-                        <div class="text-slate-500 text-[10px]">ap: ${p.ap_factor}D | ae: ${p.ae_factor}D | fz-Ratio: ${fzRatio} | RCT: ${rctText}</div>
-                    </div>
-                    <button onclick="deleteProfileAdmin('${id}')" class="bg-rose-50 hover:bg-rose-100 text-rose-700 px-2.5 py-1 rounded border border-rose-200 font-semibold transition">🗑️</button>
-                `;
-                container.appendChild(div);
+                container.innerHTML += `<div class="bg-slate-50 p-3 rounded-lg border border-slate-200 flex justify-between items-center text-xs"><div><strong class="text-slate-900">${p.name}</strong><div class="text-slate-500">ap: ${p.ap_factor}D | RCT: ${p.rct_active?'An':'Aus'}</div></div><button onclick="deleteProfileAdmin('${id}')" class="text-rose-700 px-2 py-1 rounded border border-rose-200">🗑️</button></div>`;
             }
         }
-
-        function deleteProfileAdmin(id) {
-            delete db.profiles[id];
-            saveDatabase();
-            populateDropdowns();
-            renderAdminProfilesList();
-        }
-
-        function onMaterialOrProfileChange() {
-            populateBrandDropdown();
-        }
-
-        function populateBrandDropdown() {
-            const selectedMat = document.getElementById('material-select').value;
-            const selectedProf = document.getElementById('profile-select').value;
-            const brandSel = document.getElementById('brand-select');
-            brandSel.innerHTML = '';
-            
-            let brands = new Set();
-            for (const t of Object.values(db.tools)) {
-                const matFit = !t.suitable_materials || t.suitable_materials.includes(selectedMat);
-                const profFit = !t.suitable_profiles || t.suitable_profiles.includes(selectedProf);
-
-                if (matFit && profFit) {
-                    if (t.brand && t.brand.trim() !== '') brands.add(t.brand.trim());
-                }
-            }
-
-            if (brands.size === 0) {
-                for (const t of Object.values(db.tools)) {
-                    if (t.brand && t.brand.trim() !== '') brands.add(t.brand.trim());
-                }
-            }
-
-            brandSel.add(new Option('-- Alle --', 'ALL'));
-            brands.forEach(b => brandSel.add(new Option(b, b)));
-
-            onBrandChange();
-        }
-
-        function onBrandChange() {
-            const selectedMat = document.getElementById('material-select').value;
-            const selectedProf = document.getElementById('profile-select').value;
-            const selectedBrand = document.getElementById('brand-select').value;
-            const lineSel = document.getElementById('line-select');
-            lineSel.innerHTML = '';
-
-            let lines = new Set();
-            const populateLines = (fallback) => {
-                for (const t of Object.values(db.tools)) {
-                    const matFit = fallback || !t.suitable_materials || t.suitable_materials.includes(selectedMat);
-                    const profFit = fallback || !t.suitable_profiles || t.suitable_profiles.includes(selectedProf);
-                    const brandMatch = (selectedBrand === 'ALL' || t.brand === selectedBrand);
-
-                    if (matFit && profFit && brandMatch) {
-                        if (t.line && t.line.trim() !== '') lines.add(t.line.trim());
-                    }
-                }
-            };
-
-            populateLines(false);
-            if (lines.size === 0) populateLines(true);
-
-            lineSel.add(new Option('-- Alle --', 'ALL'));
-            lines.forEach(l => lineSel.add(new Option(l, l)));
-
-            onLineChange();
-        }
-
-        function onLineChange() {
-            const selectedMat = document.getElementById('material-select').value;
-            const selectedProf = document.getElementById('profile-select').value;
-            const selectedBrand = document.getElementById('brand-select').value;
-            const selectedLine = document.getElementById('line-select').value;
-            const toolSel = document.getElementById('tool-select');
-            
-            const previousToolId = toolSel.value;
-            toolSel.innerHTML = '';
-
-            let toolCount = 0;
-            const populateTools = (fallback) => {
-                for (const [id, t] of Object.entries(db.tools)) {
-                    const matFit = fallback || !t.suitable_materials || t.suitable_materials.includes(selectedMat);
-                    const profFit = fallback || !t.suitable_profiles || t.suitable_profiles.includes(selectedProf);
-                    const brandMatch = (selectedBrand === 'ALL' || t.brand === selectedBrand);
-                    const lineMatch = (selectedLine === 'ALL' || t.line === selectedLine);
-
-                    if (matFit && profFit && brandMatch && lineMatch) {
-                        const label = `${t.line ? '[' + t.line + '] ' : ''}${t.name}` + (fallback ? " (Bedingt geeignet)" : "");
-                        toolSel.add(new Option(label, id));
-                        toolCount++;
-                    }
-                }
-            };
-
-            populateTools(false);
-            if (toolCount === 0) populateTools(true);
-
-            if (toolCount === 0) {
-                toolSel.add(new Option('-- Keine passenden Werkzeuge --', ''));
-            } else {
-                let options = Array.from(toolSel.options).map(opt => opt.value);
-                if (options.includes(previousToolId)) toolSel.value = previousToolId;
-            }
-
-            resetSliders();
-        }
-
-        function onToolChange() {
-            const toolId = document.getElementById('tool-select').value;
-            const tool = db.tools[toolId];
-            if(tool) {
-                if(tool.brand) {
-                    document.getElementById('brand-select').value = tool.brand;
-                    onBrandChange();
-                }
-                if(tool.line) {
-                    document.getElementById('line-select').value = tool.line;
-                    onLineChange();
-                    document.getElementById('tool-select').value = toolId;
-                }
-                document.getElementById('input-d-ist').value = tool.diameter.toFixed(2);
-                document.getElementById('input-r-ist').value = (tool.radius || 0).toFixed(2);
-            }
-            resetSliders();
-        }
-
-        function toggleRegrindFields() {
-            const active = document.getElementById('regrind-toggle').checked;
-            const container = document.getElementById('regrind-container');
-            const toolId = document.getElementById('tool-select').value;
-            const tool = db.tools[toolId];
-
-            if(active) {
-                container.classList.remove('hidden');
-                if(tool) {
-                    document.getElementById('input-d-ist').value = tool.diameter.toFixed(2);
-                    document.getElementById('input-r-ist').value = (tool.radius || 0).toFixed(2);
-                }
-                const rBox = document.getElementById('regrind-r-box');
-                if(tool && tool.geo_type === 'shaft') {
-                    rBox.classList.add('hidden');
-                } else {
-                    rBox.classList.remove('hidden');
-                }
-            } else {
-                container.classList.add('hidden');
-            }
-            calculate();
-        }
-
-        function resetSliders() {
-            const toolId = document.getElementById('tool-select').value;
-            const profId = document.getElementById('profile-select').value;
-            const t = db.tools[toolId];
-            const p = db.profiles[profId];
-            
-            if (t && p) {
-                let D = t.diameter;
-                if (document.getElementById('regrind-toggle').checked) {
-                    D = parseFloat(document.getElementById('input-d-ist').value) || D;
-                }
-                
-                const Lmax = t.max_overhang || (D * 3);
-                const apS = document.getElementById('slider-ap');
-                const aeS = document.getElementById('slider-ae');
-                
-                apS.max = Lmax.toFixed(2);
-                aeS.max = D.toFixed(2);
-                
-                let targetAp = D * p.ap_factor;
-                let targetAe = D * p.ae_factor;
-
-                if (profId === 'schlichten_gehaertet') {
-                    targetAp = Math.min(D * p.ap_factor, 0.25); 
-                    targetAe = Math.min(D * p.ae_factor, 0.20); 
-                }
-                
-                document.getElementById('input-ap-mm').value = targetAp.toFixed(2);
-                apS.value = targetAp.toFixed(2);
-                document.getElementById('input-ae-mm').value = targetAe.toFixed(2);
-                aeS.value = targetAe.toFixed(2);
-            }
-            calculate();
-        }
-
-        function syncApFromSlider() {
-            const val = parseFloat(document.getElementById('slider-ap').value) || 0.01;
-            document.getElementById('input-ap-mm').value = val.toFixed(2);
-            calculate();
-        }
-
-        function syncApFromInput() {
-            const val = parseFloat(document.getElementById('input-ap-mm').value) || 0.01;
-            document.getElementById('slider-ap').value = val;
-            calculate();
-        }
-
-        function syncAeFromSlider() {
-            const val = parseFloat(document.getElementById('slider-ae').value) || 0.01;
-            document.getElementById('input-ae-mm').value = val.toFixed(2);
-            calculate();
-        }
-
-        function syncAeFromInput() {
-            const val = parseFloat(document.getElementById('input-ae-mm').value) || 0.01;
-            document.getElementById('slider-ae').value = val;
-            calculate();
-        }
-
-        function setApShortcut(value) {
-            const toolId = document.getElementById('tool-select').value;
-            const tool = db.tools[toolId];
-            if(!tool) return;
-
-            let D = tool.diameter;
-            if(document.getElementById('regrind-toggle').checked) {
-                D = parseFloat(document.getElementById('input-d-ist').value) || D;
-            }
-
-            let val = value;
-            if(value >= 0.5) val = D * value;
-
-            document.getElementById('input-ap-mm').value = val.toFixed(2);
-            document.getElementById('slider-ap').value = val.toFixed(2);
-            calculate();
-        }
-
-        function setAeShortcut(value) {
-            const toolId = document.getElementById('tool-select').value;
-            const tool = db.tools[toolId];
-            if(!tool) return;
-
-            let D = tool.diameter;
-            if(document.getElementById('regrind-toggle').checked) {
-                D = parseFloat(document.getElementById('input-d-ist').value) || D;
-            }
-
-            let val = value;
-            if(value >= 0.5) val = D * value;
-
-            document.getElementById('input-ae-mm').value = val.toFixed(2);
-            document.getElementById('slider-ae').value = val.toFixed(2);
-            calculate();
-        }
-
-        function toggleToolGeoFields() {
-            const geoType = document.getElementById('adm-tool-geotype').value;
-            const radiusContainer = document.getElementById('adm-tool-radius-container');
-            if(geoType === 'shaft') {
-                radiusContainer.classList.add('hidden');
-            } else {
-                radiusContainer.classList.remove('hidden');
-            }
-        }
-
-        function renderProfileCheckboxes() {
-            const container = document.getElementById('adm-tool-profiles-container');
-            if(!container) return;
-            container.innerHTML = '';
-            for (const [profId, p] of Object.entries(db.profiles)) {
-                const div = document.createElement('div');
-                div.className = "flex items-center gap-1.5";
-                div.innerHTML = `
-                    <input type="checkbox" id="tool-prof-${profId}" checked class="rounded border-slate-300 text-slate-800">
-                    <label for="tool-prof-${profId}" class="text-slate-700 cursor-pointer text-[11px] font-medium truncate" title="${p.name}">${p.name}</label>
-                `;
-                container.appendChild(div);
-            }
-        }
-
-        function renderToolMatrixInputs() {
-            const container = document.getElementById('adm-tool-matrix-container');
-            if(!container) return;
-            container.innerHTML = '';
-            for (const [matId, mat] of Object.entries(db.materials)) {
-                const div = document.createElement('div');
-                div.className = "flex items-center justify-between gap-1 bg-white p-1.5 rounded-lg border border-slate-300";
-                div.innerHTML = `
-                    <label class="flex items-center gap-1.5 truncate text-slate-700 cursor-pointer flex-1 text-[11px]">
-                        <input type="checkbox" id="tool-suit-${matId}" checked class="rounded border-slate-300 text-slate-800">
-                        <span class="truncate font-medium">${mat.name}</span>
-                    </label>
-                    <input type="number" id="tool-vc-${matId}" value="200" class="w-12 bg-slate-50 border border-slate-300 rounded p-0.5 text-slate-900 text-right text-xs font-mono">
-                `;
-                container.appendChild(div);
-            }
-        }
-
-        function addNewMachine() {
-            const id = document.getElementById('adm-mach-id').value;
-            const name = document.getElementById('adm-mach-name').value;
-            if(!id || !name) return alert('Bitte ausfüllen');
-            db.machines[id] = {
-                name,
-                max_rpm: parseFloat(document.getElementById('adm-mach-rpm').value),
-                max_vf: parseFloat(document.getElementById('adm-mach-vf').value),
-                max_kw: parseFloat(document.getElementById('adm-mach-kw').value),
-                max_nm: parseFloat(document.getElementById('adm-mach-nm').value) || 100
-            };
-            saveDatabase(); populateDropdowns(); renderAdminMachinesList(); alert('Gespeichert!');
-        }
-
-        function addNewMaterial() {
-            const id = document.getElementById('adm-mat-id').value;
-            const name = document.getElementById('adm-mat-name').value;
-            if(!id || !name) return alert('Bitte ausfüllen');
-            db.materials[id] = { 
-                name, 
-                kc11: parseFloat(document.getElementById('adm-mat-kc11').value),
-                mc: parseFloat(document.getElementById('adm-mat-mc').value) || 0.25 
-            };
-            saveDatabase(); populateDropdowns(); renderAdminMaterialsList(); alert('Gespeichert!');
-        }
-
         function addNewProfile() {
-            const id = document.getElementById('adm-prof-id').value;
-            const name = document.getElementById('adm-prof-name').value;
-            if(!id || !name) return alert('Bitte ausfüllen');
-            
-            db.profiles[id] = {
-                name,
-                ap_factor: parseFloat(document.getElementById('adm-prof-ap').value),
-                ae_factor: parseFloat(document.getElementById('adm-prof-ae').value),
-                fz_ratio: parseFloat(document.getElementById('adm-prof-fzratio').value) || 1.0,
-                rct_active: document.getElementById('adm-prof-rct').value === 'true',
-                description: document.getElementById('adm-prof-desc').value
-            };
-
-            saveDatabase(); populateDropdowns(); renderAdminProfilesList(); alert('Gespeichert!');
+            const id = document.getElementById('adm-prof-id').value, name = document.getElementById('adm-prof-name').value;
+            if(!id || !name) return;
+            db.profiles[id] = { name, ap_factor: parseFloat(document.getElementById('adm-prof-ap').value), ae_factor: parseFloat(document.getElementById('adm-prof-ae').value), fz_ratio: parseFloat(document.getElementById('adm-prof-fzratio').value)||1.0, rct_active: document.getElementById('adm-prof-rct').value==='true' };
+            saveDatabase(); populateDropdowns(); renderAdminProfilesList();
         }
+        function deleteProfileAdmin(id) { delete db.profiles[id]; saveDatabase(); populateDropdowns(); renderAdminProfilesList(); }
 
+        // --- HISTORY & FAVORITEN ---
         function renderFavorites() {
-            const container = document.getElementById('tab-content-favorites');
-            const searchInput = document.getElementById('fav-search-input');
-            const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
-            
+            const container = document.getElementById('tab-content-favorites'); const query = document.getElementById('fav-search-input')?.value.toLowerCase().trim() || '';
             container.innerHTML = '';
-            
-            let filteredFavs = db.favorites || [];
-            if (query !== '') {
-                filteredFavs = filteredFavs.filter(f => 
-                    f.title.toLowerCase().includes(query) || 
-                    (f.feedback && f.feedback.toLowerCase().includes(query))
-                );
-            }
-
-            if (filteredFavs.length === 0) {
-                container.innerHTML = `<div class="text-xs text-slate-400 italic col-span-4">Keine passenden Favoriten gefunden.</div>`;
-                return;
-            }
-
-            filteredFavs.forEach(fav => {
-                const card = document.createElement('div');
-                card.className = "bg-slate-50 p-3.5 rounded-xl border border-slate-200 hover:border-slate-400 transition flex flex-col justify-between space-y-2 shadow-sm";
-                card.innerHTML = `
-                    <div>
-                        <div class="flex justify-between items-start">
-                            <span class="font-bold text-slate-900 text-xs truncate">${fav.title}</span>
-                            <span class="text-amber-500 text-[10px] flex-shrink-0">${'⭐'.repeat(fav.rating)}</span>
-                        </div>
+            let favs = db.favorites || [];
+            if(query !== '') favs = favs.filter(f => f.title.toLowerCase().includes(query) || (f.feedback && f.feedback.toLowerCase().includes(query)));
+            if(favs.length === 0) { container.innerHTML = `<div class="text-xs text-slate-400 italic col-span-4">Keine Favoriten.</div>`; return; }
+            favs.forEach(fav => {
+                container.innerHTML += `
+                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="flex justify-between items-start"><span class="font-bold text-xs truncate">${fav.title}</span><span class="text-[10px]">${'⭐'.repeat(fav.rating)}</span></div>
                         <p class="text-[11px] text-slate-500 mt-1 italic truncate">"${fav.feedback || 'Keine Notiz'}"</p>
-                        <div class="text-[10px] text-slate-600 mt-2 space-y-0.5 font-mono">
-                            <div>n: <strong class="text-slate-900">${fav.rpm} U/min</strong> | vf: <strong class="text-slate-900">${fav.feed_rate_vf} mm/min</strong></div>
+                        <div class="text-[10px] text-slate-600 mt-2 font-mono">n: <strong class="text-slate-900">${fav.rpm}</strong> | vf: <strong class="text-slate-900">${fav.feed_rate_vf}</strong></div>
+                        <div class="flex gap-2 pt-2 mt-2 border-t border-slate-200">
+                            <button onclick="loadFavorite('${fav.id}')" class="flex-1 bg-white hover:bg-slate-100 text-xs py-1 rounded border border-slate-200 font-semibold">Laden</button>
+                            <button onclick="deleteFavorite('${fav.id}')" class="bg-rose-50 text-rose-700 text-xs px-2 rounded border border-rose-200">🗑️</button>
                         </div>
-                    </div>
-                    <div class="flex gap-2 pt-1">
-                        <button onclick="loadFavorite('${fav.id}')" class="flex-1 bg-white hover:bg-slate-100 text-slate-800 text-xs py-1 rounded-lg border border-slate-200 font-semibold transition">Laden</button>
-                        <button onclick="deleteFavorite('${fav.id}')" class="bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs px-2.5 rounded-lg border border-rose-200 transition">🗑️</button>
-                    </div>
-                `;
-                container.appendChild(card);
+                    </div>`;
             });
         }
 
         function renderHistory() {
-            const container = document.getElementById('history-container');
-            const countEl = document.getElementById('history-count');
-            if(!container) return;
-
-            if(!db.history) db.history = [];
-            countEl.innerText = db.history.length;
+            const container = document.getElementById('history-container'); if(!container) return;
+            document.getElementById('history-count').innerText = (db.history||[]).length;
             container.innerHTML = '';
-
-            if (db.history.length === 0) {
-                container.innerHTML = `<div class="text-xs text-slate-400 italic col-span-4">Noch kein Verlauf aufgezeichnet. Klicke oben auf "✔ Bestätigen", um Setups hier zu sichern!</div>`;
-                return;
-            }
-
+            if ((db.history||[]).length === 0) { container.innerHTML = `<div class="text-xs text-slate-400 italic col-span-4">Noch kein Verlauf.</div>`; return; }
             db.history.slice(-30).reverse().forEach(item => {
-                const card = document.createElement('div');
-                card.className = "bg-slate-50 p-3.5 rounded-xl border border-slate-200 hover:border-slate-400 transition flex flex-col justify-between space-y-3 shadow-sm";
-                card.innerHTML = `
-                    <div>
-                        <div class="flex justify-between items-start">
-                            <span class="font-bold text-slate-900 text-xs truncate">${item.tool_name || 'Berechnung'}</span>
-                            <span class="text-[9px] text-slate-400 font-mono">${item.time}</span>
+                container.innerHTML += `
+                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                        <div class="flex justify-between items-start"><span class="font-bold text-xs truncate">${item.tool_name}</span><span class="text-[9px] text-slate-400 font-mono">${item.time}</span></div>
+                        <div class="text-[10px] text-slate-500 truncate">${item.mat_name} | ${item.prof_name}</div>
+                        <div class="text-[10px] font-mono">n: <strong>${item.rpm}</strong> | vf: <strong>${item.vf}</strong></div>
+                        <div class="space-y-2 pt-2 border-t border-slate-200">
+                            <div class="flex gap-1"><select id="hist-rating-${item.id}" class="border rounded px-1 py-1 text-[10px]"><option value="5">⭐⭐⭐⭐⭐</option><option value="4">⭐⭐⭐⭐</option><option value="3">⭐⭐⭐</option></select><input type="text" id="hist-note-${item.id}" placeholder="Notiz..." class="flex-1 border rounded px-1 text-[10px]"></div>
+                            <div class="flex gap-2"><button onclick="loadHistoryItem('${item.id}')" class="flex-1 bg-white text-xs py-1 rounded border font-semibold">Laden</button><button onclick="saveHistoryAsFavorite('${item.id}')" class="bg-slate-800 text-white text-xs px-2 py-1 rounded font-semibold">⭐</button></div>
                         </div>
-                        <div class="text-[10px] text-slate-500 mt-1 truncate">${item.mat_name} | ${item.prof_name}</div>
-                        <div class="text-[10px] text-slate-700 mt-2 space-y-0.5 font-mono">
-                            <div>n: <strong class="text-slate-900">${item.rpm} U/min</strong> | vf: <strong class="text-slate-900">${item.vf} mm/min</strong></div>
-                        </div>
-                    </div>
-                    <div class="space-y-2 pt-2 border-t border-slate-200">
-                        <div class="flex justify-between items-center gap-2">
-                            <select id="hist-rating-${item.id}" class="bg-white border border-slate-200 rounded px-1.5 py-1 text-[11px] text-slate-800 font-medium">
-                                <option value="5" ${item.rating == 5 ? 'selected' : ''}>⭐⭐⭐⭐⭐</option>
-                                <option value="4" ${item.rating == 4 ? 'selected' : ''}>⭐⭐⭐⭐</option>
-                                <option value="3" ${item.rating == 3 ? 'selected' : ''}>⭐⭐⭐</option>
-                                <option value="2" ${item.rating == 2 ? 'selected' : ''}>⭐⭐</option>
-                                <option value="1" ${item.rating == 1 ? 'selected' : ''}>⭐</option>
-                            </select>
-                            <input type="text" id="hist-note-${item.id}" value="${item.note || ''}" placeholder="Notiz..." class="flex-1 bg-white border border-slate-200 rounded px-2 py-1 text-[11px] text-slate-800 outline-none">
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="loadHistoryItem('${item.id}')" class="flex-1 bg-white hover:bg-slate-100 text-slate-800 text-xs py-1 rounded-lg border border-slate-200 font-semibold transition">Laden</button>
-                            <button onclick="saveHistoryAsFavorite('${item.id}')" class="bg-slate-800 hover:bg-slate-900 text-white text-xs px-3 py-1 rounded-lg font-semibold transition">⭐ Speichern</button>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(card);
+                    </div>`;
             });
         }
 
         function confirmAndPushToHistory() {
-            const machId = document.getElementById('machine-select').value;
-            const matId = document.getElementById('material-select').value;
-            const profId = document.getElementById('profile-select').value;
-            const toolId = document.getElementById('tool-select').value;
-            const rigId = document.getElementById('rigidity-select').value;
-            
-            const mach = db.machines[machId];
-            const mat = db.materials[matId];
-            const profile = db.profiles[profId];
-            const tool = db.tools[toolId];
-
-            if(!mach || !tool || !mat || !profile) return alert("Bitte wähle alle Konfigurationsparameter aus.");
-
-            const ap = parseFloat(document.getElementById('input-ap-mm').value) || 0.01;
-            const ae = parseFloat(document.getElementById('input-ae-mm').value) || 0.01;
-
+            if(!currentCalculatedResults || currentCalculatedResults.rpm === 0) return alert("Bitte wähle alle Parameter aus.");
+            const setup = getSetupObj();
             if(!db.history) db.history = [];
-            const now = new Date();
-            const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
-            const historyItem = {
-                id: 'hist_' + Date.now(),
-                time: timeStr,
-                tool_id: toolId,
-                tool_name: tool.name,
-                mat_id: matId,
-                mat_name: mat.name,
-                prof_id: profId,
-                prof_name: profile.name,
-                mach_id: machId,
-                rigidity_id: rigId,
-                ap: ap.toFixed(2),
-                ae: ae.toFixed(2),
-                rpm: currentCalculatedResults.rpm.toFixed(0),
-                vf: currentCalculatedResults.vf.toFixed(0),
-                fc: currentCalculatedResults.fc.toFixed(0),
-                stress: currentCalculatedResults.stress.toFixed(0),
-                rating: 5,
-                note: ""
+            const item = {
+                id: 'hist_' + Date.now(), time: new Date().toLocaleTimeString(),
+                tool_id: setup.toolId, tool_name: setup.tool.name, mat_id: setup.matId, mat_name: setup.mat.name,
+                prof_id: setup.profId, prof_name: setup.profile.name, mach_id: setup.machId, rigidity_id: setup.rigId,
+                ap: currentCalculatedResults.ap.toFixed(2), ae: currentCalculatedResults.ae.toFixed(2),
+                rpm: currentCalculatedResults.rpm.toFixed(0), vf: currentCalculatedResults.vf.toFixed(0),
+                fc: currentCalculatedResults.fc.toFixed(0), stress: currentCalculatedResults.stress.toFixed(0),
+                rating: 5, note: ""
             };
-
-            db.history.push(historyItem);
-            
-            if(db.history.length > 30) {
-                db.history.shift();
-            }
-
-            saveDatabase();
-            renderHistory();
-            switchBottomTab('history');
+            db.history.push(item); if(db.history.length > 30) db.history.shift();
+            saveDatabase(); renderHistory(); switchBottomTab('history');
         }
 
         function loadHistoryItem(id) {
-            const item = db.history.find(h => h.id === id);
-            if(!item) return;
-
-            if(db.machines[item.mach_id]) document.getElementById('machine-select').value = item.mach_id;
-            if(db.materials[item.mat_id]) document.getElementById('material-select').value = item.mat_id;
-            if(db.profiles[item.prof_id]) document.getElementById('profile-select').value = item.prof_id;
-            
+            const h = db.history.find(x => x.id === id); if(!h) return;
+            if(db.machines[h.mach_id]) document.getElementById('machine-select').value = h.mach_id;
+            if(db.materials[h.mat_id]) document.getElementById('material-select').value = h.mat_id;
+            if(db.profiles[h.prof_id]) document.getElementById('profile-select').value = h.prof_id;
             onMaterialOrProfileChange();
-
-            if(db.tools[item.tool_id]) {
-                const t = db.tools[item.tool_id];
-                if(t.brand) {
-                    document.getElementById('brand-select').value = t.brand;
-                    onBrandChange();
-                }
-                if(t.line) {
-                    document.getElementById('line-select').value = t.line;
-                    onLineChange();
-                }
-                document.getElementById('tool-select').value = item.tool_id;
-            }
-
-            if(item.rigidity_id && db.rigidity[item.rigidity_id]) document.getElementById('rigidity-select').value = item.rigidity_id;
-
-            document.getElementById('input-ap-mm').value = item.ap;
-            document.getElementById('slider-ap').value = item.ap;
-            document.getElementById('input-ae-mm').value = item.ae;
-            document.getElementById('slider-ae').value = item.ae;
-
+            if(db.tools[h.tool_id]) { document.getElementById('tool-select').value = h.tool_id; onToolChange(); }
+            if(h.rigidity_id) document.getElementById('rigidity-select').value = h.rigidity_id;
+            
+            // Set Experte Mode directly so slider vals are applied
+            setMode('expert');
+            document.getElementById('input-ap-mm').value = h.ap; document.getElementById('slider-ap').value = h.ap;
+            document.getElementById('input-ae-mm').value = h.ae; document.getElementById('slider-ae').value = h.ae;
             calculate();
         }
 
         function saveHistoryAsFavorite(id) {
-            const item = db.history.find(h => h.id === id);
-            if(!item) return;
-
-            const ratingSelect = document.getElementById(`hist-rating-${id}`);
-            const noteInput = document.getElementById(`hist-note-${id}`);
-
-            const rating = ratingSelect ? parseInt(ratingSelect.value) : 5;
-            const note = noteInput ? noteInput.value.trim() : "";
-
-            item.rating = rating;
-            item.note = note;
-
+            const h = db.history.find(x => x.id === id); if(!h) return;
+            const rating = parseInt(document.getElementById(`hist-rating-${id}`)?.value || 5);
+            const note = document.getElementById(`hist-note-${id}`)?.value.trim() || "";
             if(!db.favorites) db.favorites = [];
-
-            const newFav = {
-                id: 'fav_' + Date.now(),
-                title: `${item.tool_name} (${item.prof_name})`,
-                tool_id: item.tool_id,
-                material_id: item.mat_id,
-                profile_id: item.prof_id,
-                rigidity_id: item.rigidity_id,
-                machine_id: item.mach_id,
-                ap_mm: parseFloat(item.ap),
-                ae_mm: parseFloat(item.ae),
-                rating: rating,
-                feedback: note || "Aus Verlauf übernommen",
-                rpm: parseFloat(item.rpm),
-                feed_rate_vf: parseFloat(item.vf)
-            };
-
-            db.favorites.push(newFav);
-            saveDatabase();
-            renderFavorites();
-            switchBottomTab('favorites');
-            alert('Erfolgreich als Favorit gespeichert!');
+            db.favorites.push({
+                id: 'fav_' + Date.now(), title: `${h.tool_name} (${h.prof_name})`, tool_id: h.tool_id, material_id: h.mat_id,
+                profile_id: h.prof_id, rigidity_id: h.rigidity_id, machine_id: h.mach_id,
+                ap_mm: parseFloat(h.ap), ae_mm: parseFloat(h.ae), rating: rating, feedback: note || "Aus Verlauf",
+                rpm: parseFloat(h.rpm), feed_rate_vf: parseFloat(h.vf)
+            });
+            saveDatabase(); renderFavorites(); switchBottomTab('favorites'); alert('Als Favorit gespeichert!');
         }
-
-        function clearHistory() {
-            if(confirm("Verlauf wirklich leeren?")) {
-                db.history = [];
-                saveDatabase();
-                renderHistory();
-            }
-        }
-
-        function loadFavorite(favId) {
-            const fav = db.favorites.find(f => f.id === favId);
-            if(!fav) return;
-
-            if(fav.machine_id && db.machines[fav.machine_id]) {
-                document.getElementById('machine-select').value = fav.machine_id;
-            }
-            if(fav.rigidity_id && db.rigidity[fav.rigidity_id]) {
-                document.getElementById('rigidity-select').value = fav.rigidity_id;
-            }
-
-            if(db.materials[fav.material_id]) document.getElementById('material-select').value = fav.material_id;
-            if(db.profiles[fav.profile_id]) document.getElementById('profile-select').value = fav.profile_id;
-            
+        function clearHistory() { if(confirm("Verlauf leeren?")) { db.history = []; saveDatabase(); renderHistory(); } }
+        function loadFavorite(id) {
+            const f = db.favorites.find(x => x.id === id); if(!f) return;
+            if(f.machine_id) document.getElementById('machine-select').value = f.machine_id;
+            if(f.material_id) document.getElementById('material-select').value = f.material_id;
+            if(f.profile_id) document.getElementById('profile-select').value = f.profile_id;
             onMaterialOrProfileChange();
-
-            if(db.tools[fav.tool_id]) {
-                const t = db.tools[fav.tool_id];
-                if(t.brand) {
-                    document.getElementById('brand-select').value = t.brand;
-                    onBrandChange();
-                }
-                if(t.line) {
-                    document.getElementById('line-select').value = t.line;
-                    onLineChange();
-                }
-                document.getElementById('tool-select').value = fav.tool_id;
-            }
+            if(db.tools[f.tool_id]) { document.getElementById('tool-select').value = f.tool_id; onToolChange(); }
+            if(f.rigidity_id) document.getElementById('rigidity-select').value = f.rigidity_id;
             
-            const tool = db.tools[fav.tool_id];
-            if(tool) {
-                const D = tool.diameter;
-                const apVal = fav.ap_mm !== undefined ? fav.ap_mm : (fav.ap_factor !== undefined ? fav.ap_factor * D : D);
-                const aeVal = fav.ae_mm !== undefined ? fav.ae_mm : (fav.ae_factor !== undefined ? fav.ae_factor * D : D * 0.5);
-
-                document.getElementById('input-ap-mm').value = apVal.toFixed(2);
-                document.getElementById('slider-ap').value = apVal.toFixed(2);
-
-                document.getElementById('input-ae-mm').value = aeVal.toFixed(2);
-                document.getElementById('slider-ae').value = aeVal.toFixed(2);
-            }
-
+            setMode('expert');
+            document.getElementById('input-ap-mm').value = f.ap_mm.toFixed(2); document.getElementById('slider-ap').value = f.ap_mm.toFixed(2);
+            document.getElementById('input-ae-mm').value = f.ae_mm.toFixed(2); document.getElementById('slider-ae').value = f.ae_mm.toFixed(2);
             calculate();
         }
+        function deleteFavorite(id) { db.favorites = db.favorites.filter(x => x.id !== id); saveDatabase(); renderFavorites(); }
 
-        function deleteFavorite(favId) {
-            db.favorites = db.favorites.filter(f => f.id !== favId);
-            saveDatabase();
-            renderFavorites();
-        }
-
+        // --- CAM CALCULATOR ---
         function calculateCamFeed() {
-            const toolId = document.getElementById('tool-select').value;
-            const tool = db.tools[toolId];
-            const isRegrind = document.getElementById('regrind-toggle').checked;
+            const setup = getSetupObj();
             const rInput = document.getElementById('input-cam-r');
             const resPercent = document.getElementById('res-cam-percent');
             const warning = document.getElementById('cam-calc-warning');
-
-            if (!tool || !rInput) return;
-
-            let D = tool.diameter;
-            if (isRegrind) {
-                const customD = parseFloat(document.getElementById('input-d-ist').value);
-                if (!isNaN(customD) && customD > 0) D = customD;
-            }
-
-            const rTool = D / 2;
-            const rContour = parseFloat(rInput.value);
-
-            if (isNaN(rContour) || rContour <= 0) {
-                resPercent.innerText = "-- %";
-                warning.classList.add('hidden');
-                return;
-            }
-
+            if (!setup.tool || !rInput) return;
+            let D = setup.customD > 0 ? setup.customD : setup.tool.diameter;
+            const rTool = D / 2, rContour = parseFloat(rInput.value);
+            if (isNaN(rContour) || rContour <= 0) { resPercent.innerText = "-- %"; warning.classList.add('hidden'); return; }
             if (rContour <= rTool) {
                 resPercent.innerText = "0 %";
-                warning.innerHTML = `⚠️ Kontur-Radius (${rContour} mm) ist zu klein/exakt gleich für Fräser (R${rTool} mm)!`;
-                warning.classList.remove('hidden');
-                resPercent.classList.replace('bg-emerald-50', 'bg-rose-50');
-                resPercent.classList.replace('text-emerald-700', 'text-rose-700');
-                resPercent.classList.replace('border-emerald-200', 'border-rose-200');
+                warning.innerHTML = `⚠️ Kontur-Radius (${rContour} mm) ist zu klein/gleich für Fräser (R${rTool} mm)!`;
+                warning.classList.remove('hidden'); resPercent.className = "w-full bg-rose-50 border border-rose-200 rounded-lg p-1.5 text-rose-700 text-sm font-mono font-black text-center shadow-sm";
             } else {
                 const percent = ((rContour - rTool) / rContour) * 100;
-                resPercent.innerText = percent.toFixed(1) + " %";
-                warning.classList.add('hidden');
-                resPercent.classList.replace('bg-rose-50', 'bg-emerald-50');
-                resPercent.classList.replace('text-rose-700', 'text-emerald-700');
-                resPercent.classList.replace('border-rose-200', 'border-emerald-200');
+                resPercent.innerText = percent.toFixed(1) + " %"; warning.classList.add('hidden');
+                resPercent.className = "w-full bg-emerald-50 border border-emerald-200 rounded-lg p-1.5 text-emerald-700 text-sm font-mono font-black text-center shadow-sm";
             }
         }
 
-        // =========================================================================
-        // HAUPTBERECHNUNG 3.2: ENTSCHEIDUNGSMASCHINE MIT INTENT-ROUTING (RCT CONTROL)
-        // =========================================================================
-        function calculate() {
-            const machId = document.getElementById('machine-select').value;
-            const matId = document.getElementById('material-select').value;
-            const profId = document.getElementById('profile-select').value;
-            const toolId = document.getElementById('tool-select').value;
-            const rigId = document.getElementById('rigidity-select').value;
-            const holderType = document.getElementById('holder-select').value; 
-            const physicsActive = document.getElementById('physics-toggle').checked;
-            const isRegrind = document.getElementById('regrind-toggle').checked;
+        // --- CORE PHYSICS ENGINE ---
+        function getSetupObj() {
+            const setup = {
+                machId: document.getElementById('machine-select').value,
+                matId: document.getElementById('material-select').value,
+                profId: document.getElementById('profile-select').value,
+                toolId: document.getElementById('tool-select').value,
+                rigId: expertMode ? document.getElementById('rigidity-select').value : 'mittel',
+                holderType: expertMode ? document.getElementById('holder-select').value : 'hydro',
+                isCustomSetup: document.getElementById('setup-toggle').checked,
+                customD: parseFloat(document.getElementById('input-d-ist').value) || 0,
+                customR: parseFloat(document.getElementById('input-r-ist').value) || 0,
+                customLmax: parseFloat(document.getElementById('input-lmax-ist').value) || 0,
+                customLc: parseFloat(document.getElementById('input-lc-ist').value) || 0
+            };
+            setup.mach = db.machines[setup.machId]; setup.mat = db.materials[setup.matId];
+            setup.profile = db.profiles[setup.profId]; setup.tool = db.tools[setup.toolId];
+            setup.rigidity = db.rigidity[setup.rigId] || {factor: 1.0};
+            return setup;
+        }
+
+        function runPhysicsEngine(ap, ae, setup) {
+            const { mach, mat, profile, tool, rigidity, holderType, isCustomSetup, customD, customR, customLmax } = setup;
             
-            const mach = db.machines[machId];
-            const mat = db.materials[matId];
-            const profile = db.profiles[profId];
-            const tool = db.tools[toolId];
-            const rigidity = db.rigidity[rigId];
-            
-            if(!mach || !tool || !mat || !profile || !rigidity) {
-                document.getElementById('res-rpm').innerText = "-- U/min";
-                document.getElementById('res-vf').innerText = "-- mm/min";
-                document.getElementById('res-apae').innerText = "-- / -- mm";
-                document.getElementById('res-q').innerText = "-- cm³/min";
-                document.getElementById('res-power').innerText = "-- kW";
-                document.getElementById('res-torque').innerText = "-- Nm";
-                document.getElementById('res-fc').innerText = "-- N";
-                document.getElementById('res-stress').innerText = "-- MPa";
-                return;
-            }
-
-            let D = tool.diameter;
-            let R = tool.radius || 0;
-
-            if (isRegrind) {
-                const customD = parseFloat(document.getElementById('input-d-ist').value);
-                const customR = parseFloat(document.getElementById('input-r-ist').value);
-                if (!isNaN(customD) && customD > 0) D = customD;
-                if (!isNaN(customR) && customR >= 0) R = customR;
-            }
-
+            let D = customD > 0 ? customD : tool.diameter;
+            let R = customR >= 0 ? customR : (tool.radius || 0);
             if (tool.geo_type === "ball") R = D / 2;
-
             const z = tool.z;
-            const Lmax = tool.max_overhang || (D * 3);
+            const Lmax = customLmax > 0 ? customLmax : (tool.max_overhang || (D * 3));
 
-            const ap = parseFloat(document.getElementById('input-ap-mm').value) || 0.01;
-            const ae = parseFloat(document.getElementById('input-ae-mm').value) || 0.01;
-
-            const ap_factor = ap / D;
-            const ae_factor = ae / D;
-
-            document.getElementById('val-ap-factor').innerText = `(${ap_factor.toFixed(2)} × D)`;
-            document.getElementById('val-ae-factor').innerText = `(${ae_factor.toFixed(2)} × D)`;
-
-            const warnings = [];
-            let physicsInfoHtml = "";
-
-            // -----------------------------------------------------------------
-            // STUFE 1: KATALOG-GRUNDWERTE
-            // -----------------------------------------------------------------
-            const baseVc = tool.vc_per_material ? (tool.vc_per_material[matId] || 150) : 150;
+            const baseVc = tool.vc_per_material ? (tool.vc_per_material[setup.matId] || 150) : 150;
             const fz_nom = tool.fz_nom || (D * 0.007); 
             
-            physicsInfoHtml += `<div class="text-[11px] text-slate-500">[Katalog] Base vc: ${baseVc} m/min | Nominal fz(50%D): ${fz_nom.toFixed(3)} mm</div>`;
-
-            // -----------------------------------------------------------------
-            // STUFE 2: EFFEKTIVER DURCHMESSER (Deff)
-            // -----------------------------------------------------------------
             let Deff = D;
             if (tool.geo_type === "ball") {
                 let effectiveAp = Math.min(ap, D / 2);
                 Deff = 2 * Math.sqrt(effectiveAp * (D - effectiveAp));
-                if (Deff < 0.1) Deff = 0.1;
-                physicsInfoHtml += `<div class="text-[11px] text-cyan-800 font-semibold">[Geometrie] Kugelfräser Deff: ${Deff.toFixed(2)} mm</div>`;
             } else if (tool.geo_type === "torus") {
-                if (ap <= R) {
-                    Deff = D - 2*R + 2 * Math.sqrt(Math.pow(R, 2) - Math.pow(R - ap, 2));
-                } else {
-                    Deff = D;
-                }
-                if (Deff > D) Deff = D;
-                if (Deff < 0.1) Deff = 0.1;
-                physicsInfoHtml += `<div class="text-[11px] text-cyan-800 font-semibold">[Geometrie] Torusfräser Deff: ${Deff.toFixed(2)} mm</div>`;
+                if (ap <= R) Deff = D - 2*R + 2 * Math.sqrt(Math.pow(R, 2) - Math.pow(R - ap, 2));
             }
+            if (Deff > D) Deff = D;
+            if (Deff < 0.1) Deff = 0.1;
 
-            // Basis-Zahnvorschub anhand des Profil-Faktors (z.B. 0.6 für Schlichten)
             const fz_ratio = profile.fz_ratio !== undefined ? profile.fz_ratio : 1.0;
             let base_fz = fz_nom * fz_ratio;
 
-            physicsInfoHtml += `<div class="text-[11px] text-indigo-700 font-semibold">[Profil-Intent] Basis fz (Ratio ${fz_ratio.toFixed(2)}): ${base_fz.toFixed(4)} mm</div>`;
-
-            // -----------------------------------------------------------------
-            // STUFE 3: 3D CHIP-THINNING (INTENT ROUTING: EIN ODER AUS?)
-            // -----------------------------------------------------------------
             let ae_ratio = Math.min(ae / Deff, 1.0);
             let phi_s_rad = Math.acos(Math.max(-1, 1 - 2 * ae_ratio)); 
 
             let rct_ratio = 1.0;
-            if (ae_ratio < 0.5 && phi_s_rad > 0) {
-                rct_ratio = Math.sin(phi_s_rad); 
-            }
+            if (ae_ratio < 0.5 && phi_s_rad > 0) rct_ratio = Math.sin(phi_s_rad); 
 
             let act_ratio = 1.0;
             if ((tool.geo_type === "torus" || tool.geo_type === "ball") && R > 0) {
-                let ap_effective = Math.min(ap, R);
-                let sin_kappa = Math.sqrt(1 - Math.pow(1 - (ap_effective / R), 2));
-                act_ratio = Math.max(sin_kappa, 0.10);
+                let ap_eff = Math.min(ap, R);
+                act_ratio = Math.max(Math.sqrt(1 - Math.pow(1 - (ap_eff / R), 2)), 0.10);
             }
 
-            let combined_thinning = rct_ratio * act_ratio;
-            combined_thinning = Math.max(combined_thinning, 0.20); 
-
+            let combined_thinning = Math.max(rct_ratio * act_ratio, 0.20); 
             let fz_geo = base_fz;
+            const isRctActive = profile.rct_active !== undefined ? profile.rct_active : true;
 
-            // IST RCT FÜR DIESES PROFIL AKTIV? (Schruppen/HSC = Ja, Schlichten = Nein)
-            const isRctActive = profile.rct_active !== undefined ? profile.rct_active : (!profId.includes('schlichten'));
-
-            if (physicsActive && isRctActive) {
+            let logHtml = `<div class="text-[11px] text-slate-500">Deff: ${Deff.toFixed(2)} mm | Base fz: ${base_fz.toFixed(4)} mm</div>`;
+            if (isRctActive) {
                 fz_geo = base_fz / combined_thinning;
-                
                 if (fz_geo > fz_nom * 3.5) fz_geo = fz_nom * 3.5;
-                
-                let boostPercent = ((fz_geo / base_fz - 1) * 100).toFixed(0);
-                if (boostPercent > 0) {
-                    physicsInfoHtml += `<div class="text-[11px] text-emerald-700 font-semibold">[3D-Chip Thinning] RCT & ACT aktiv: fz angehoben um +${boostPercent}% (${fz_geo.toFixed(4)} mm)</div>`;
-                }
-            } else if (physicsActive && !isRctActive) {
-                physicsInfoHtml += `<div class="text-[11px] text-amber-700 font-semibold">[Intent Routing] RCT deaktiviert (Fokus auf Oberflächengüte / kleines fz)</div>`;
+                let b = ((fz_geo / base_fz - 1) * 100).toFixed(0);
+                if (b > 0) logHtml += `<div class="text-[11px] text-emerald-700">[Thinning] fz +${b}% -> ${fz_geo.toFixed(3)} mm</div>`;
+            } else {
+                logHtml += `<div class="text-[11px] text-amber-700">[Intent] RCT deaktiviert für Schlicht-Qualität.</div>`;
             }
 
-            // -----------------------------------------------------------------
-            // STUFE 4: SETUP-KORREKTUREN (AUSKRAGUNG, HALTER, STEIFIGKEIT)
-            // -----------------------------------------------------------------
-            let k_vc_overhang = 1.0;
-            let k_fz_overhang = 1.0;
             const ld_ratio = Lmax / D;
-
-            if (ld_ratio > 8.0) {
-                k_vc_overhang = 0.60; k_fz_overhang = 0.70;
-                warnings.push(`<div class="text-xs font-bold text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-300 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⚠️</span> <div><strong>EXTREME AUSKRAGUNG (L/D > 8):</strong> Dynamik stark gedrosselt (-40% vc, -30% fz)!</div></div>`);
-            } else if (ld_ratio > 6.0) {
-                k_vc_overhang = 0.85; k_fz_overhang = 0.90;
-                warnings.push(`<div class="text-xs font-bold text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-300 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⚠️</span> <div><strong>HOHE AUSKRAGUNG (L/D > 6):</strong> Leicht gedrosselt (-15% vc, -10% fz)!</div></div>`);
-            } else if (ld_ratio > 4.0) {
-                k_vc_overhang = 0.95; k_fz_overhang = 0.95;
-            }
+            let k_vc_overhang = 1.0, k_fz_overhang = 1.0;
+            if (ld_ratio > 8.0) { k_vc_overhang = 0.60; k_fz_overhang = 0.70; } 
+            else if (ld_ratio > 6.0) { k_vc_overhang = 0.85; k_fz_overhang = 0.90; } 
+            else if (ld_ratio > 4.0) { k_vc_overhang = 0.95; k_fz_overhang = 0.95; }
 
             let k_vc_holder = 1.0;
             if (holderType === 'schrumpf') k_vc_holder = 1.08;
             else if (holderType === 'hydro') k_vc_holder = 1.05;
             else if (holderType === 'weldon') k_vc_holder = 0.90;
 
-            let k_fz_rigidity = rigidity.factor || 1.0;
-
-            let k_vc_regrind = isRegrind ? 0.90 : 1.0;
-            if (isRegrind) {
-                physicsInfoHtml += `<div class="text-[11px] text-amber-800 font-semibold">[Nachschliff] vc -10% (Beschichtungsschutz)</div>`;
-            }
-
+            let k_vc_regrind = isCustomSetup ? 0.90 : 1.0; 
             let effectiveVc = baseVc * k_vc_overhang * k_vc_holder * k_vc_regrind;
-            let effectiveFz = fz_geo * k_fz_overhang * k_fz_rigidity;
+            let effectiveFz = fz_geo * k_fz_overhang * rigidity.factor;
 
-            let runout_mm = 0.003; 
-            if (holderType === 'spannzange') runout_mm = 0.012;
-            else if (holderType === 'weldon') runout_mm = 0.020;
+            let runout_mm = (holderType === 'spannzange') ? 0.012 : (holderType === 'weldon' ? 0.020 : 0.003);
 
-            physicsInfoHtml += `<div class="text-[11px] text-slate-600">[Setup-Check] L/D=${ld_ratio.toFixed(1)} | Halter=${holderType} | vc(korr): ${effectiveVc.toFixed(0)} m/min</div>`;
-
-            // -----------------------------------------------------------------
-            // STUFE 5: DYNAMIK & KINEMATIK DER MASCHINE
-            // -----------------------------------------------------------------
             let n_theo = (effectiveVc * 1000) / (Math.PI * Deff);
             let n_eff = Math.min(n_theo, mach.max_rpm);
-            let vf_eff = effectiveFz * z * n_eff;
-            vf_eff = Math.min(vf_eff, mach.max_vf);
-
+            let vf_eff = Math.min(effectiveFz * z * n_eff, mach.max_vf);
             let vc_eff_real = (Math.PI * Deff * n_eff) / 1000;
 
-            // -----------------------------------------------------------------
-            // STUFE 6: PHYSIKALISCHE PRÜFUNG (KIENZLE, Fc, POWER, STRESS)
-            // -----------------------------------------------------------------
-            let hm_real = 0.0005;
-            if (phi_s_rad > 0) {
-                hm_real = (effectiveFz * act_ratio * 2 * ae) / (Deff * phi_s_rad);
-            }
-            hm_real = Math.max(hm_real, 0.0005); 
-
-            const mc = mat.mc !== undefined ? mat.mc : 0.25;
-            let kc_raw = mat.kc11 / Math.pow(hm_real, mc);
-            const kc_real = Math.min(kc_raw, 8000); 
-            
-            physicsInfoHtml += `<div class="text-[11px] text-slate-500">[Kienzle Engine] Reale ø-Spandicke hm: ${hm_real.toFixed(4)} mm | kc: ${kc_real.toFixed(0)} N/mm²</div>`;
+            let hm_real = Math.max((phi_s_rad > 0) ? (effectiveFz * act_ratio * 2 * ae) / (Deff * phi_s_rad) : 0.0005, 0.0005); 
+            const mc = mat.mc || 0.25;
+            const kc_real = Math.min(mat.kc11 / Math.pow(hm_real, mc), 8000); 
 
             const Q_cm3 = (ap * ae * vf_eff) / 1000; 
-            const Q_mm3 = ap * ae * vf_eff;
             const power_kw = (Q_cm3 * kc_real) / (60 * 1000); 
             const torque_nm = (power_kw * 9549.3) / n_eff;
 
-            const mach_max_nm = mach.max_nm || 100; 
-            if (torque_nm > mach_max_nm * 0.9) {
-                warnings.push(`<div class="text-xs font-bold text-rose-700 bg-rose-50 p-2.5 rounded-xl border border-rose-200 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⚠️</span> <div><strong>SPINDEL ÜBERLASTET:</strong> Drehmoment (${torque_nm.toFixed(1)} Nm) überschreitet Limit (${mach_max_nm} Nm)!</div></div>`);
-            }
-
             let z_in_cut = (phi_s_rad / (2 * Math.PI)) * z;
-            let z_force_factor = Math.max(1.0, z_in_cut);
-            const fc_avg = kc_real * ap * hm_real * z_force_factor;
+            const fc_avg = kc_real * ap * hm_real * Math.max(1.0, z_in_cut);
 
-            let fz_peak = effectiveFz + runout_mm;
-            let hm_peak = fz_peak * combined_thinning;
-            hm_peak = Math.max(hm_peak, 0.0005); 
+            let hm_peak = Math.max((effectiveFz + runout_mm) * combined_thinning, 0.0005); 
             const kc_peak = Math.min(mat.kc11 / Math.pow(hm_peak, mc), 8000);
-            
             const fc_peak = kc_peak * ap * hm_peak; 
             const f_bend = fc_peak * 0.45; 
 
-            let coreFactor = 0.6; 
-            if (z <= 2) coreFactor = 0.50;
-            else if (z === 3) coreFactor = 0.55;
-            else if (z === 4) coreFactor = 0.65;
-            else if (z >= 5) coreFactor = 0.70;
-            
-            const D_core = D * coreFactor;
-            const W_b = (Math.PI * Math.pow(D_core, 3)) / 32;
+            let coreFactor = (z <= 2) ? 0.5 : (z === 3 ? 0.55 : (z === 4 ? 0.65 : 0.70));
+            const W_b = (Math.PI * Math.pow(D * coreFactor, 3)) / 32;
             const Leff = Math.max(Lmax - (ap / 2), Lmax * 0.1);
-            const M_b = f_bend * Leff; 
-            const sigma_b = M_b / W_b; 
+            const sigma_b = (f_bend * Leff) / W_b; 
 
-            if (sigma_b > 2500) {
-                warnings.push(`<div class="text-xs font-bold text-rose-700 bg-rose-50 p-2.5 rounded-xl border border-rose-200 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⚠️</span> <div><strong>BRUCHGEFAHR:</strong> Peak-Biegespannung (${sigma_b.toFixed(0)} MPa) überschreitet Limit!</div></div>`);
-            }
-
-            const warningBox = document.getElementById('calc-warnings');
-            if (warnings.length > 0) {
-                warningBox.innerHTML = warnings.join('');
-                warningBox.classList.remove('hidden');
-            } else {
-                warningBox.innerHTML = '';
-                warningBox.classList.add('hidden');
-            }
-
-            document.getElementById('physics-info').innerHTML = physicsInfoHtml;
-
-            currentCalculatedResults = { 
-                rpm: n_eff, vf: vf_eff, ap: ap, ae: ae, q: Q_cm3, power: power_kw, torque: torque_nm, fz_eff: effectiveFz, vc_eff: vc_eff_real, fc: fc_avg, stress: sigma_b
-            };
-
-            const rpmEl = document.getElementById('res-rpm');
-            const vfEl = document.getElementById('res-vf');
-            const powerEl = document.getElementById('res-power');
-            const torqueEl = document.getElementById('res-torque');
-            const fcEl = document.getElementById('res-fc');
-            const stressEl = document.getElementById('res-stress');
-
-            rpmEl.innerText = n_eff.toFixed(0) + " U/min";
-            rpmEl.className = n_theo > mach.max_rpm ? "text-xl font-black font-mono text-rose-600" : "text-xl font-black font-mono text-slate-900";
-            document.getElementById('res-vc-eff').innerText = `vc(eff): ${vc_eff_real.toFixed(0)} m/min`;
-
-            vfEl.innerText = vf_eff.toFixed(0) + " mm/min";
-            vfEl.className = (effectiveFz * z * n_theo > mach.max_vf) ? "text-xl font-black font-mono text-rose-600" : "text-xl font-black font-mono text-slate-900";
-            document.getElementById('res-fz-eff').innerText = `fz(eff): ${effectiveFz.toFixed(4)} mm`;
-
-            document.getElementById('res-apae').innerText = ap.toFixed(2) + " / " + ae.toFixed(2) + " mm";
-            
-            if (Q_cm3 < 0.01) {
-                document.getElementById('res-q').innerText = Q_mm3.toFixed(1) + " mm³/min";
-            } else {
-                document.getElementById('res-q').innerText = Q_cm3.toFixed(2) + " cm³/min";
-            }
-
-            if (power_kw < 0.01) {
-                const power_w = power_kw * 1000;
-                powerEl.innerText = power_w.toFixed(1) + " W";
-                powerEl.className = "text-base font-bold font-mono text-slate-800";
-            } else {
-                powerEl.innerText = power_kw.toFixed(2) + " kW";
-                powerEl.className = power_kw > (mach.max_kw * 0.85) ? "text-base font-bold font-mono text-rose-600 animate-pulse" : "text-base font-bold font-mono text-slate-800";
-            }
-
-            if(torqueEl) {
-                if (torque_nm < 0.1) {
-                    torqueEl.innerText = torque_nm.toFixed(2) + " Nm";
-                } else {
-                    torqueEl.innerText = torque_nm.toFixed(1) + " Nm";
-                }
-                torqueEl.className = torque_nm > mach_max_nm * 0.9 ? "text-base font-bold font-mono text-rose-600 animate-pulse" : "text-base font-bold font-mono text-slate-800";
-            }
-
-            fcEl.innerText = Math.max(fc_avg, 1).toFixed(0) + " N";
-            
-            if(stressEl) {
-                stressEl.innerHTML = Math.max(sigma_b, 1).toFixed(0) + " MPa";
-                if (sigma_b > 2500) stressEl.className = "text-base font-bold font-mono text-rose-600 animate-pulse";
-                else if (sigma_b > 1500) stressEl.className = "text-base font-bold font-mono text-amber-600";
-                else stressEl.className = "text-base font-bold font-mono text-slate-800";
-            }
-
-            calculateCamFeed();
+            return { n_eff, vf_eff, vc_eff_real, effectiveFz, Q_cm3, power_kw, torque_nm, fc_avg, sigma_b, logHtml };
         }
 
-        initSupabase();
-        initApp();
+        // --- CONTROLLER ---
+        function calculate() {
+            const setup = getSetupObj();
+            if(!setup.mach || !setup.tool || !setup.mat || !setup.profile) return;
+
+            const D = setup.customD > 0 ? setup.customD : setup.tool.diameter;
+            const warningsBox = document.getElementById('calc-warnings');
+            warningsBox.innerHTML = ''; warningsBox.classList.add('hidden');
+
+            if (expertMode) {
+                let ap = parseFloat(document.getElementById('input-ap-mm').value) || 0.01;
+                let ae = parseFloat(document.getElementById('input-ae-mm').value) || 0.01;
+                document.getElementById('val-ap-factor').innerText = `(${(ap/D).toFixed(2)} × D)`;
+                document.getElementById('val-ae-factor').innerText = `(${(ae/D).toFixed(2)} × D)`;
+
+                let res = runPhysicsEngine(ap, ae, setup);
+                lastSafeApCalculated = ap;
+                
+                // Globale Speicherung für History Button
+                currentCalculatedResults = { rpm: res.n_eff, vf: res.vf_eff, ap: ap, ae: ae, q: res.Q_cm3, power: res.power_kw, torque: res.torque_nm, fz_eff: res.effectiveFz, vc_eff: res.vc_eff_real, fc: res.fc_avg, stress: res.sigma_b };
+
+                renderExpertResults(res, setup.mach, ap, ae);
+
+                let warns = [];
+                if(res.sigma_b > 2500) warns.push(`⚠️ Bruchgefahr! Spannung (${res.sigma_b.toFixed(0)} MPa) zu hoch.`);
+                if(res.torque > setup.mach.max_nm * 0.9) warns.push(`⚠️ Spindel überlastet (${res.torque.toFixed(1)} Nm).`);
+                if((setup.customLmax || setup.tool.max_overhang || (D*3))/D > 8) warns.push(`⚠️ Extreme Auskragung (L/D > 8). Dynamik reduziert.`);
+                
+                if(warns.length > 0) {
+                    warningsBox.innerHTML = `<div class="p-3 bg-rose-50 text-rose-700 text-xs font-bold rounded-xl border border-rose-200 shadow-sm">${warns.join('<br>')}</div>`;
+                    warningsBox.classList.remove('hidden');
+                }
+                document.getElementById('physics-info').innerHTML = res.logHtml;
+
+            } else {
+                let z_total = parseFloat(document.getElementById('input-z-total').value) || 1.0;
+                let ae = D * setup.profile.ae_factor;
+                
+                let max_ap_theory = D * setup.profile.ap_factor;
+                if (setup.isCustomSetup && setup.customLc > 0) max_ap_theory = Math.min(max_ap_theory, setup.customLc);
+
+                let test_ap = max_ap_theory;
+                let res = runPhysicsEngine(test_ap, ae, setup);
+                
+                while ((res.sigma_b > 2500 || res.torque > setup.mach.max_nm * 0.9 || res.power > setup.mach.max_kw) && test_ap > 0.1) {
+                    test_ap -= 0.5; 
+                    res = runPhysicsEngine(test_ap, ae, setup);
+                }
+
+                if (test_ap <= 0.1) {
+                    renderStandardError();
+                    currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0, q: 0, power: 0, torque: 0, fz_eff: 0, vc_eff: 0, fc: 0, stress: 0 };
+                } else {
+                    let passes = Math.ceil(z_total / test_ap);
+                    let final_ap = z_total / passes;
+                    lastSafeApCalculated = final_ap;
+                    let finalRes = runPhysicsEngine(final_ap, ae, setup);
+                    
+                    // Globale Speicherung für History Button
+                    currentCalculatedResults = { rpm: finalRes.n_eff, vf: finalRes.vf_eff, ap: final_ap, ae: ae, q: finalRes.Q_cm3, power: finalRes.power_kw, torque: finalRes.torque_nm, fz_eff: finalRes.effectiveFz, vc_eff: finalRes.vc_eff_real, fc: finalRes.fc_avg, stress: finalRes.sigma_b };
+
+                    renderStandardResults(finalRes, final_ap, ae, passes, z_total);
+                }
+            }
+        }
+
+        function renderStandardResults(res, ap, ae, passes, z_total) {
+            document.getElementById('std-status-box').className = "bg-emerald-100 border border-emerald-300 p-3 rounded-xl flex items-center gap-3";
+            document.getElementById('std-status-icon').innerText = "✅";
+            document.getElementById('std-status-title').innerText = "Prozess sicher";
+            document.getElementById('std-status-title').className = "font-bold text-emerald-900 text-sm";
+            document.getElementById('std-status-desc').innerText = "Automatisch auf physikalisches Limit optimiert.";
+            document.getElementById('std-status-desc').className = "text-[10px] text-emerald-700 font-semibold";
+
+            document.getElementById('std-res-rpm').innerText = `${res.n_eff.toFixed(0)} U/min`;
+            document.getElementById('std-res-vf').innerText = `${res.vf_eff.toFixed(0)} mm/min`;
+            document.getElementById('std-res-ap').innerText = `${ap.toFixed(2)} mm`;
+            document.getElementById('std-res-ae').innerText = `${ae.toFixed(2)} mm`;
+
+            const passText = passes === 1 ? `(Tasche in 1 Schnitt komplett gefräst)` : `(Fahre ${z_total} mm in ${passes} Schnitten à ${ap.toFixed(2)} mm)`;
+            document.getElementById('std-res-passes').innerText = passText;
+        }
+
+        function renderStandardError() {
+            document.getElementById('std-status-box').className = "bg-rose-100 border border-rose-300 p-3 rounded-xl flex items-center gap-3";
+            document.getElementById('std-status-icon').innerText = "❌";
+            document.getElementById('std-status-title').innerText = "Unmöglich!";
+            document.getElementById('std-status-title').className = "font-bold text-rose-900 text-sm";
+            document.getElementById('std-status-desc').innerText = "Werkzeug bricht! Kürzere Aufspannung / dickerer Fräser nötig.";
+            document.getElementById('std-status-desc').className = "text-[10px] text-rose-700 font-bold";
+
+            document.getElementById('std-res-rpm').innerText = "--"; document.getElementById('std-res-vf').innerText = "--";
+            document.getElementById('std-res-ap').innerText = "--"; document.getElementById('std-res-ae').innerText = "--";
+            document.getElementById('std-res-passes').innerText = "";
+        }
+
+        function renderExpertResults(res, mach, ap, ae) {
+            document.getElementById('res-rpm').innerText = `${res.n_eff.toFixed(0)} U/min`;
+            document.getElementById('res-rpm').className = (res.n_eff >= mach.max_rpm) ? "text-xl font-black font-mono text-rose-600" : "text-xl font-black font-mono text-slate-900";
+            document.getElementById('res-vc-eff').innerText = `vc: ${res.vc_eff_real.toFixed(0)} m/min`;
+            document.getElementById('res-vf').innerText = `${res.vf_eff.toFixed(0)} mm/min`;
+            document.getElementById('res-fz-eff').innerText = `fz: ${res.effectiveFz.toFixed(4)} mm`;
+            document.getElementById('res-q').innerText = `${res.Q_cm3.toFixed(2)} cm³/min`;
+            document.getElementById('res-apae-exp').innerText = `${ap.toFixed(2)} / ${ae.toFixed(2)} mm`;
+            document.getElementById('res-power').innerText = `${res.power_kw.toFixed(2)} kW`;
+            
+            const torqueEl = document.getElementById('res-torque');
+            torqueEl.innerText = `${res.torque_nm.toFixed(1)} Nm`;
+            torqueEl.className = res.torque_nm > mach.max_nm * 0.9 ? "text-sm font-bold font-mono text-rose-600 animate-pulse" : "text-sm font-bold font-mono text-slate-800";
+            
+            document.getElementById('res-fc').innerText = `${Math.max(res.fc_avg, 1).toFixed(0)} N`;
+
+            const stressEl = document.getElementById('res-stress');
+            stressEl.innerText = `${res.sigma_b.toFixed(0)} MPa`;
+            if (res.sigma_b > 2500) stressEl.className = "text-sm font-bold font-mono text-rose-600 animate-pulse";
+            else if (res.sigma_b > 1500) stressEl.className = "text-sm font-bold font-mono text-amber-600";
+            else stressEl.className = "text-sm font-bold font-mono text-slate-800";
+        }
+
+        window.onload = initApp;
     </script>
 </body>
 </html>
