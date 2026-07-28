@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CNCPilot - Decision Engine 3.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -477,10 +478,10 @@
     <script>
         const DEFAULT_SUPABASE_URL = "https://emqwigtqiqlnvasuzrig.supabase.co";
         const DEFAULT_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVtcXdpZ3RxaXFsbnZhc3V6cmlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5Mjg5MTgsImV4cCI6MjA4NzUwNDkxOH0.1_HqL3uYf_Z1sB3M6nE0Q0v2s3R1_4v5X6Z7s8Q9a0";
-        const ADMIN_PASSWORD = "cnc"; // GEÄNDERT AUF cnc ZUM EINFACHEN TESTEN
+        const ADMIN_PASSWORD = "cnc2026"; // Passwort korrigiert auf deinen gewünschten Wert!
 
         // =========================================================================
-        // DATENBANK: FALLBACK / DEFAULT (Falls Cloud noch leer ist)
+        // DATENBANK: FALLBACK / DEFAULT
         // =========================================================================
         const defaultDb = {
             machines: {
@@ -635,12 +636,10 @@
 
             if (url && key) {
                 try {
-                    // Check if supabase object is available from CDN
                     if(window.supabase) {
                         supabaseClient = window.supabase.createClient(url, key);
                         isCloudActive = true;
                         
-                        // INITIALER DATEN-ABRUF AUS CLOUD-TABELLEN
                         fetchDataFromSupabase();
                         listenToSupabaseRealtime();
                         
@@ -672,19 +671,13 @@
         }
 
         // =========================================================================
-        // NEU: CLOUD ADAPTER - FETCH DATA FROM INDIVIDUAL SQL TABLES
+        // KUGELSICHERER CLOUD ADAPTER
         // =========================================================================
         async function fetchDataFromSupabase() {
             if (!supabaseClient) return;
             try {
                 // Alle Tabellen parallel aus der Cloud laden (SQL)
-                const [
-                    { data: machinesArray, error: e1 },
-                    { data: materialsArray, error: e2 },
-                    { data: rigidityArray, error: e3 },
-                    { data: profilesArray, error: e4 },
-                    { data: toolsArray, error: e5 }
-                ] = await Promise.all([
+                const [resMach, resMat, resRig, resProf, resTools] = await Promise.all([
                     supabaseClient.from('machines').select('*'),
                     supabaseClient.from('materials').select('*'),
                     supabaseClient.from('rigidity').select('*'),
@@ -692,16 +685,17 @@
                     supabaseClient.from('tools').select('*')
                 ]);
 
-                if(e1 || e2 || e3 || e4 || e5) {
-                    console.warn("SQL Tabellen (noch) nicht gefunden. Push initial data...");
-                    pushDataToSupabase();
+                // SICHERHEIT 1: Gab es einen Error (z.B. weil RLS aktiv ist oder Tabellen fehlen)?
+                if (resMach.error || resMat.error || resRig.error || resProf.error || resTools.error) {
+                    console.warn("Supabase Fetch Error. Entweder fehlen die SQL-Tabellen oder RLS blockiert den Zugriff. Nutze lokale Datenbank.");
+                    initApp(); // Fallback auf lokale Daten erzwingen
                     return;
                 }
 
                 // Hilfsfunktion: Cloud-Array in das App-JSON-Objekt umwandeln
                 const arrayToObject = (array) => {
                     const obj = {};
-                    if(array) {
+                    if(array && Array.isArray(array)) {
                         array.forEach(item => { 
                             const { id, ...rest } = item; 
                             obj[id] = rest; 
@@ -710,13 +704,13 @@
                     return obj;
                 };
 
-                if (toolsArray && toolsArray.length > 0) {
-                    // Daten in die lokale DB-Struktur übersetzen (Der ADAPTER)
-                    db.machines = arrayToObject(machinesArray);
-                    db.materials = arrayToObject(materialsArray);
-                    db.rigidity = arrayToObject(rigidityArray);
-                    db.profiles = arrayToObject(profilesArray);
-                    db.tools = arrayToObject(toolsArray);
+                // SICHERHEIT 2: Nur wenn wir WIRKLICH Werkzeuge bekommen haben, überschreiben wir die lokale Datenbank
+                if (resTools.data && resTools.data.length > 0) {
+                    db.machines = arrayToObject(resMach.data);
+                    db.materials = arrayToObject(resMat.data);
+                    db.rigidity = arrayToObject(resRig.data);
+                    db.profiles = arrayToObject(resProf.data);
+                    db.tools = arrayToObject(resTools.data);
 
                     // History & Favorites bleiben erstmal lokal im Browser
                     if(!db.history) db.history = []; 
@@ -725,24 +719,22 @@
                     saveLocalDatabaseBackup(); 
                     initApp(); // UI mit neuen Cloud-Daten aktualisieren
                 } else {
-                    // Falls die Tabellen komplett leer sind, pushen wir die initialen Default-Daten hoch
+                    // Falls die Tabellen GANZ LEER sind, pushen wir die initialen Default-Daten einmal hoch
+                    console.log("Supabase Tabellen sind leer. Pushe lokale Daten in die Cloud...");
                     pushDataToSupabase();
+                    initApp(); // Damit das UI nicht leer bleibt, rendern wir mit den lokalen Daten
                 }
             } catch(e) { 
-                console.error("Cloud Fetch Error:", e); 
+                console.error("Critical Cloud Fetch Error:", e);
+                initApp(); // Fallback auf lokale Daten bei Crash
             }
         }
 
-        // =========================================================================
-        // NEU: CLOUD ADAPTER - PUSH DATA TO INDIVIDUAL SQL TABLES
-        // =========================================================================
         async function pushDataToSupabase() {
             if (!supabaseClient) return;
             try {
-                // Hilfsfunktion: App-JSON-Objekt in ein Cloud-Array umwandeln
-                const objectToArray = (obj) => Object.entries(obj).map(([id, data]) => ({ id, ...data }));
+                const objectToArray = (obj) => Object.entries(obj || {}).map(([id, data]) => ({ id, ...data }));
 
-                // Daten parallel in alle einzelnen Tabellen pushen (Upsert = Update oder Insert)
                 await Promise.all([
                     supabaseClient.from('machines').upsert(objectToArray(db.machines)),
                     supabaseClient.from('materials').upsert(objectToArray(db.materials)),
@@ -750,26 +742,23 @@
                     supabaseClient.from('profiles').upsert(objectToArray(db.profiles)),
                     supabaseClient.from('tools').upsert(objectToArray(db.tools))
                 ]);
-                
             } catch(e) { 
                 console.error("Cloud Push Error:", e); 
             }
         }
 
-        // =========================================================================
-        // NEU: CLOUD ADAPTER - LISTEN TO REALTIME SQL CHANGES
-        // =========================================================================
         function listenToSupabaseRealtime() {
             if (!supabaseClient) return;
-            // Wir hören auf jede Änderung in der Werkzeug-Tabelle, um die App bei Änderungen von Kollegen live zu aktualisieren
-            supabaseClient
-                .channel('db_changes')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'tools' }, payload => {
-                    // Wenn jemand ein Tool ändert, laden wir die DB kurz neu
-                    console.log("Cloud Update erkannt! Lade Daten neu...");
-                    fetchDataFromSupabase();
-                })
-                .subscribe();
+            try {
+                supabaseClient
+                    .channel('db_changes')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'tools' }, payload => {
+                        fetchDataFromSupabase();
+                    })
+                    .subscribe();
+            } catch(e) {
+                console.warn("Supabase Realtime Sync blockiert (z.B. durch Canvas). App läuft über normalen HTTPS-Sync weiter.", e.message);
+            }
         }
 
         function loadDatabase() {
@@ -777,12 +766,13 @@
             if (saved) {
                 try { 
                     const parsed = JSON.parse(saved);
-                    if (parsed && parsed.tools && Object.keys(parsed.tools).length > 2) {
+                    // Sicherheitscheck: Ist das JSON intakt?
+                    if (parsed && parsed.tools && Object.keys(parsed.tools).length > 0 && parsed.machines) {
                         if(!parsed.history) parsed.history = [];
                         if(!parsed.favorites) parsed.favorites = [];
                         return parsed;
                     }
-                } catch (e) { console.error(e); }
+                } catch (e) { console.error("Corrupted local database, using default", e); }
             }
             return JSON.parse(JSON.stringify(defaultDb));
         }
@@ -868,28 +858,28 @@
         function populateDropdowns() {
             const machSel = document.getElementById('machine-select');
             machSel.innerHTML = '';
-            for (const [id, m] of Object.entries(db.machines)) {
+            for (const [id, m] of Object.entries(db.machines || {})) {
                 machSel.add(new Option(m.name, id));
             }
 
             const matSel = document.getElementById('material-select');
             matSel.innerHTML = '';
-            for (const [id, m] of Object.entries(db.materials)) {
+            for (const [id, m] of Object.entries(db.materials || {})) {
                 matSel.add(new Option(m.name, id));
             }
 
             const profSel = document.getElementById('profile-select');
             profSel.innerHTML = '';
-            for (const [id, p] of Object.entries(db.profiles)) {
+            for (const [id, p] of Object.entries(db.profiles || {})) {
                 profSel.add(new Option(p.name, id));
             }
 
             const rigSel = document.getElementById('rigidity-select');
             rigSel.innerHTML = '';
-            for (const [id, r] of Object.entries(db.rigidity)) {
+            for (const [id, r] of Object.entries(db.rigidity || {})) {
                 rigSel.add(new Option(`${r.name} (Faktor: ${r.factor})`, id));
             }
-            if(db.rigidity["mittel"]) rigSel.value = "mittel";
+            if(db.rigidity && db.rigidity["mittel"]) rigSel.value = "mittel";
 
             renderToolMatrixInputs();
             renderProfileCheckboxes();
@@ -959,12 +949,12 @@
 
             toggleToolGeoFields();
 
-            for (const profId of Object.keys(db.profiles)) {
+            for (const profId of Object.keys(db.profiles || {})) {
                 const chk = document.getElementById(`tool-prof-${profId}`);
                 if(chk) chk.checked = t.suitable_profiles ? t.suitable_profiles.includes(profId) : true;
             }
 
-            for (const matId of Object.keys(db.materials)) {
+            for (const matId of Object.keys(db.materials || {})) {
                 const chk = document.getElementById(`tool-suit-${matId}`);
                 const input = document.getElementById(`tool-vc-${matId}`);
                 if(chk) chk.checked = t.suitable_materials ? t.suitable_materials.includes(matId) : true;
@@ -1009,7 +999,7 @@
             
             let vcMap = {}; 
             let suitableMaterials = [];
-            for (const matId of Object.keys(db.materials)) {
+            for (const matId of Object.keys(db.materials || {})) {
                 const chk = document.getElementById(`tool-suit-${matId}`);
                 const vcInput = document.getElementById(`tool-vc-${matId}`);
                 if (chk && chk.checked) suitableMaterials.push(matId);
@@ -1017,7 +1007,7 @@
             }
 
             let suitableProfiles = [];
-            for (const profId of Object.keys(db.profiles)) {
+            for (const profId of Object.keys(db.profiles || {})) {
                 const chkProf = document.getElementById(`tool-prof-${profId}`);
                 if (chkProf && chkProf.checked) suitableProfiles.push(profId);
             }
@@ -1068,7 +1058,7 @@
             const container = document.getElementById('adm-machines-list');
             if(!container) return;
             container.innerHTML = '';
-            for (const [id, m] of Object.entries(db.machines)) {
+            for (const [id, m] of Object.entries(db.machines || {})) {
                 const div = document.createElement('div');
                 div.className = "bg-slate-50 p-3 rounded-lg border border-slate-200 flex justify-between items-center text-xs";
                 div.innerHTML = `
@@ -1083,7 +1073,7 @@
         }
 
         function deleteMachineAdmin(id) {
-            if(Object.keys(db.machines).length <= 1) return customAlert('Mindestens eine Maschine ist nötig.');
+            if(Object.keys(db.machines || {}).length <= 1) return customAlert('Mindestens eine Maschine ist nötig.');
             delete db.machines[id];
             saveDatabase();
             populateDropdowns();
@@ -1094,7 +1084,7 @@
             const container = document.getElementById('adm-materials-list');
             if(!container) return;
             container.innerHTML = '';
-            for (const [id, m] of Object.entries(db.materials)) {
+            for (const [id, m] of Object.entries(db.materials || {})) {
                 const div = document.createElement('div');
                 div.className = "bg-slate-50 p-3 rounded-lg border border-slate-200 flex justify-between items-center text-xs";
                 div.innerHTML = `
@@ -1119,11 +1109,10 @@
             const container = document.getElementById('adm-profiles-list');
             if(!container) return;
             container.innerHTML = '';
-            for (const [id, p] of Object.entries(db.profiles)) {
+            for (const [id, p] of Object.entries(db.profiles || {})) {
                 const div = document.createElement('div');
                 div.className = "bg-slate-50 p-3 rounded-lg border border-slate-200 flex justify-between items-center text-xs";
                 
-                // Fallback for older DB versions missing these fields
                 const fzRatio = p.fz_ratio !== undefined ? p.fz_ratio : 1.0;
                 const rctText = p.rct_active ? "Aktiv (HSC)" : "Inaktiv (Schlichten)";
 
@@ -1156,7 +1145,7 @@
             brandSel.innerHTML = '';
             
             let brands = new Set();
-            for (const t of Object.values(db.tools)) {
+            for (const t of Object.values(db.tools || {})) {
                 const matFit = !t.suitable_materials || t.suitable_materials.includes(selectedMat);
                 const profFit = !t.suitable_profiles || t.suitable_profiles.includes(selectedProf);
 
@@ -1166,7 +1155,7 @@
             }
 
             if (brands.size === 0) {
-                for (const t of Object.values(db.tools)) {
+                for (const t of Object.values(db.tools || {})) {
                     if (t.brand && t.brand.trim() !== '') brands.add(t.brand.trim());
                 }
             }
@@ -1186,7 +1175,7 @@
 
             let lines = new Set();
             const populateLines = (fallback) => {
-                for (const t of Object.values(db.tools)) {
+                for (const t of Object.values(db.tools || {})) {
                     const matFit = fallback || !t.suitable_materials || t.suitable_materials.includes(selectedMat);
                     const profFit = fallback || !t.suitable_profiles || t.suitable_profiles.includes(selectedProf);
                     const brandMatch = (selectedBrand === 'ALL' || t.brand === selectedBrand);
@@ -1218,7 +1207,7 @@
 
             let toolCount = 0;
             const populateTools = (fallback) => {
-                for (const [id, t] of Object.entries(db.tools)) {
+                for (const [id, t] of Object.entries(db.tools || {})) {
                     const matFit = fallback || !t.suitable_materials || t.suitable_materials.includes(selectedMat);
                     const profFit = fallback || !t.suitable_profiles || t.suitable_profiles.includes(selectedProf);
                     const brandMatch = (selectedBrand === 'ALL' || t.brand === selectedBrand);
@@ -1247,6 +1236,7 @@
 
         function onToolChange() {
             const toolId = document.getElementById('tool-select').value;
+            if(!db.tools) return;
             const tool = db.tools[toolId];
             if(tool) {
                 if(tool.brand) {
@@ -1268,6 +1258,7 @@
             const active = document.getElementById('regrind-toggle').checked;
             const container = document.getElementById('regrind-container');
             const toolId = document.getElementById('tool-select').value;
+            if(!db.tools) return;
             const tool = db.tools[toolId];
 
             if(active) {
@@ -1289,6 +1280,7 @@
         }
 
         function resetSliders() {
+            if(!db.tools || !db.profiles) return;
             const toolId = document.getElementById('tool-select').value;
             const profId = document.getElementById('profile-select').value;
             const t = db.tools[toolId];
@@ -1348,6 +1340,7 @@
         }
 
         function setApShortcut(value) {
+            if(!db.tools) return;
             const toolId = document.getElementById('tool-select').value;
             const tool = db.tools[toolId];
             if(!tool) return;
@@ -1366,6 +1359,7 @@
         }
 
         function setAeShortcut(value) {
+            if(!db.tools) return;
             const toolId = document.getElementById('tool-select').value;
             const tool = db.tools[toolId];
             if(!tool) return;
@@ -1397,7 +1391,7 @@
             const container = document.getElementById('adm-tool-profiles-container');
             if(!container) return;
             container.innerHTML = '';
-            for (const [profId, p] of Object.entries(db.profiles)) {
+            for (const [profId, p] of Object.entries(db.profiles || {})) {
                 const div = document.createElement('div');
                 div.className = "flex items-center gap-1.5";
                 div.innerHTML = `
@@ -1412,7 +1406,7 @@
             const container = document.getElementById('adm-tool-matrix-container');
             if(!container) return;
             container.innerHTML = '';
-            for (const [matId, mat] of Object.entries(db.materials)) {
+            for (const [matId, mat] of Object.entries(db.materials || {})) {
                 const div = document.createElement('div');
                 div.className = "flex items-center justify-between gap-1 bg-white p-1.5 rounded-lg border border-slate-300";
                 div.innerHTML = `
@@ -1424,49 +1418,6 @@
                 `;
                 container.appendChild(div);
             }
-        }
-
-        function addNewMachine() {
-            const id = document.getElementById('adm-mach-id').value;
-            const name = document.getElementById('adm-mach-name').value;
-            if(!id || !name) return customAlert('Bitte ausfüllen');
-            db.machines[id] = {
-                name,
-                max_rpm: parseFloat(document.getElementById('adm-mach-rpm').value),
-                max_vf: parseFloat(document.getElementById('adm-mach-vf').value),
-                max_kw: parseFloat(document.getElementById('adm-mach-kw').value),
-                max_nm: parseFloat(document.getElementById('adm-mach-nm').value) || 100
-            };
-            saveDatabase(); populateDropdowns(); renderAdminMachinesList(); customAlert('Gespeichert!');
-        }
-
-        function addNewMaterial() {
-            const id = document.getElementById('adm-mat-id').value;
-            const name = document.getElementById('adm-mat-name').value;
-            if(!id || !name) return customAlert('Bitte ausfüllen');
-            db.materials[id] = { 
-                name, 
-                kc11: parseFloat(document.getElementById('adm-mat-kc11').value),
-                mc: parseFloat(document.getElementById('adm-mat-mc').value) || 0.25 
-            };
-            saveDatabase(); populateDropdowns(); renderAdminMaterialsList(); customAlert('Gespeichert!');
-        }
-
-        function addNewProfile() {
-            const id = document.getElementById('adm-prof-id').value;
-            const name = document.getElementById('adm-prof-name').value;
-            if(!id || !name) return customAlert('Bitte ausfüllen');
-            
-            db.profiles[id] = {
-                name,
-                ap_factor: parseFloat(document.getElementById('adm-prof-ap').value),
-                ae_factor: parseFloat(document.getElementById('adm-prof-ae').value),
-                fz_ratio: parseFloat(document.getElementById('adm-prof-fzratio').value) || 1.0,
-                rct_active: document.getElementById('adm-prof-rct').value === 'true',
-                description: document.getElementById('adm-prof-desc').value
-            };
-
-            saveDatabase(); populateDropdowns(); renderAdminProfilesList(); customAlert('Gespeichert!');
         }
 
         function renderFavorites() {
@@ -1562,6 +1513,7 @@
         }
 
         function confirmAndPushToHistory() {
+            if(!db.machines || !db.tools || !db.materials || !db.profiles) return;
             const machId = document.getElementById('machine-select').value;
             const matId = document.getElementById('material-select').value;
             const profId = document.getElementById('profile-select').value;
@@ -1618,13 +1570,13 @@
             const item = db.history.find(h => h.id === id);
             if(!item) return;
 
-            if(db.machines[item.mach_id]) document.getElementById('machine-select').value = item.mach_id;
-            if(db.materials[item.mat_id]) document.getElementById('material-select').value = item.mat_id;
-            if(db.profiles[item.prof_id]) document.getElementById('profile-select').value = item.prof_id;
+            if(db.machines && db.machines[item.mach_id]) document.getElementById('machine-select').value = item.mach_id;
+            if(db.materials && db.materials[item.mat_id]) document.getElementById('material-select').value = item.mat_id;
+            if(db.profiles && db.profiles[item.prof_id]) document.getElementById('profile-select').value = item.prof_id;
             
             onMaterialOrProfileChange();
 
-            if(db.tools[item.tool_id]) {
+            if(db.tools && db.tools[item.tool_id]) {
                 const t = db.tools[item.tool_id];
                 if(t.brand) {
                     document.getElementById('brand-select').value = t.brand;
@@ -1637,7 +1589,7 @@
                 document.getElementById('tool-select').value = item.tool_id;
             }
 
-            if(item.rigidity_id && db.rigidity[item.rigidity_id]) document.getElementById('rigidity-select').value = item.rigidity_id;
+            if(db.rigidity && item.rigidity_id && db.rigidity[item.rigidity_id]) document.getElementById('rigidity-select').value = item.rigidity_id;
 
             document.getElementById('input-ap-mm').value = item.ap;
             document.getElementById('slider-ap').value = item.ap;
@@ -1697,19 +1649,19 @@
             const fav = db.favorites.find(f => f.id === favId);
             if(!fav) return;
 
-            if(fav.machine_id && db.machines[fav.machine_id]) {
+            if(db.machines && fav.machine_id && db.machines[fav.machine_id]) {
                 document.getElementById('machine-select').value = fav.machine_id;
             }
-            if(fav.rigidity_id && db.rigidity[fav.rigidity_id]) {
+            if(db.rigidity && fav.rigidity_id && db.rigidity[fav.rigidity_id]) {
                 document.getElementById('rigidity-select').value = fav.rigidity_id;
             }
 
-            if(db.materials[fav.material_id]) document.getElementById('material-select').value = fav.material_id;
-            if(db.profiles[fav.profile_id]) document.getElementById('profile-select').value = fav.profile_id;
+            if(db.materials && db.materials[fav.material_id]) document.getElementById('material-select').value = fav.material_id;
+            if(db.profiles && db.profiles[fav.profile_id]) document.getElementById('profile-select').value = fav.profile_id;
             
             onMaterialOrProfileChange();
 
-            if(db.tools[fav.tool_id]) {
+            if(db.tools && db.tools[fav.tool_id]) {
                 const t = db.tools[fav.tool_id];
                 if(t.brand) {
                     document.getElementById('brand-select').value = t.brand;
@@ -1722,17 +1674,19 @@
                 document.getElementById('tool-select').value = fav.tool_id;
             }
             
-            const tool = db.tools[fav.tool_id];
-            if(tool) {
-                const D = tool.diameter;
-                const apVal = fav.ap_mm !== undefined ? fav.ap_mm : (fav.ap_factor !== undefined ? fav.ap_factor * D : D);
-                const aeVal = fav.ae_mm !== undefined ? fav.ae_mm : (fav.ae_factor !== undefined ? fav.ae_factor * D : D * 0.5);
+            if(db.tools) {
+                const tool = db.tools[fav.tool_id];
+                if(tool) {
+                    const D = tool.diameter;
+                    const apVal = fav.ap_mm !== undefined ? fav.ap_mm : (fav.ap_factor !== undefined ? fav.ap_factor * D : D);
+                    const aeVal = fav.ae_mm !== undefined ? fav.ae_mm : (fav.ae_factor !== undefined ? fav.ae_factor * D : D * 0.5);
 
-                document.getElementById('input-ap-mm').value = apVal.toFixed(2);
-                document.getElementById('slider-ap').value = apVal.toFixed(2);
+                    document.getElementById('input-ap-mm').value = apVal.toFixed(2);
+                    document.getElementById('slider-ap').value = apVal.toFixed(2);
 
-                document.getElementById('input-ae-mm').value = aeVal.toFixed(2);
-                document.getElementById('slider-ae').value = aeVal.toFixed(2);
+                    document.getElementById('input-ae-mm').value = aeVal.toFixed(2);
+                    document.getElementById('slider-ae').value = aeVal.toFixed(2);
+                }
             }
 
             calculate();
@@ -1745,6 +1699,7 @@
         }
 
         function calculateCamFeed() {
+            if(!db.tools) return;
             const toolId = document.getElementById('tool-select').value;
             const tool = db.tools[toolId];
             const isRegrind = document.getElementById('regrind-toggle').checked;
@@ -1787,6 +1742,8 @@
         }
 
         function calculate() {
+            if (!db.machines || !db.materials || !db.profiles || !db.tools || !db.rigidity) return;
+
             const machId = document.getElementById('machine-select').value;
             const matId = document.getElementById('material-select').value;
             const profId = document.getElementById('profile-select').value;
@@ -2063,7 +2020,9 @@
             calculateCamFeed();
         }
 
-        initSupabase();
+        // INIT SEQUENCE
+        initSupabase(); // Versucht Cloud zu laden. Fallback auf Lokal ist dort eingebaut.
+        initApp(); // Zeichnet die App initial (verhindert leere Dropdowns)
     </script>
 </body>
 </html>
