@@ -1841,42 +1841,42 @@
             }
 
             let combined_thinning = rct_ratio * act_ratio;
-            combined_thinning = Math.max(combined_thinning, 0.20); 
+            combined_thinning = Math.max(combined_thinning, 0.05); // Clamp gesenkt für realistischere Physik bei Extremwerten
 
             let fz_geo = base_fz;
 
+            // IST RCT FÜR DIESES PROFIL AKTIV? (Schruppen/HSC = Ja, Schlichten = Nein)
             const isRctActive = profile.rct_active !== undefined ? profile.rct_active : (!profId.includes('schlichten'));
+
+            // VHM Kantenradius (Schneidkantenverrundung) liegt bei ca. 3-5 µm.
+            // Spandicke (hm) MUSS darüber liegen, sonst schabt/reibt der Fräser nur!
+            const hm_min = 0.004;
 
             if (physicsActive && isRctActive) {
                 fz_geo = base_fz / combined_thinning;
                 
-                if (fz_geo > fz_nom * 3.5) fz_geo = fz_nom * 3.5;
+                if (fz_geo > fz_nom * 4.0) fz_geo = fz_nom * 4.0; // Max 400% Boost
                 
                 let boostPercent = ((fz_geo / base_fz - 1) * 100).toFixed(0);
                 if (boostPercent > 0) {
                     physicsInfoHtml += `<div class="text-[11px] text-emerald-700 font-semibold">[3D-Chip Thinning] RCT & ACT aktiv: fz angehoben um +${boostPercent}% (${fz_geo.toFixed(4)} mm)</div>`;
                 }
             } else if (physicsActive && !isRctActive) {
-                physicsInfoHtml += `<div class="text-[11px] text-amber-700 font-semibold">[Intent Routing] RCT deaktiviert (Fokus auf Oberflächengüte / kleines fz)</div>`;
+                // SCHAB-SCHUTZ: Auch wenn RCT aus ist (wegen Oberfläche), MÜSSEN wir schaben zwingend verhindern!
+                let expected_hm = base_fz * combined_thinning;
+                
+                if (expected_hm < hm_min) {
+                    fz_geo = hm_min / combined_thinning;
+                    if (fz_geo > fz_nom * 3.0) fz_geo = fz_nom * 3.0; // Sicherungslimit
+                    physicsInfoHtml += `<div class="text-[11px] text-rose-600 font-semibold">⚠️ [Schab-Schutz aktiv!] hm wäre nur ${expected_hm.toFixed(4)} mm (Fräser verglüht). fz zwingend auf ${fz_geo.toFixed(4)} mm angehoben!</div>`;
+                } else {
+                    physicsInfoHtml += `<div class="text-[11px] text-amber-700 font-semibold">[Intent Routing] RCT deaktiviert (Oberflächen-Fokus). hm = ${expected_hm.toFixed(4)} mm (OK).</div>`;
+                }
             }
 
-            let k_vc_overhang = 1.0;
-            let k_fz_overhang = 1.0;
-            const ld_ratio = Lmax / D;
-
-            if (ld_ratio > 8.0) {
-                k_vc_overhang = 0.60; k_fz_overhang = 0.70;
-                warnings.push(`<div class="text-xs font-bold text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-300 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⚠️</span> <div><strong>EXTREME AUSKRAGUNG (L/D > 8):</strong> Dynamik stark gedrosselt (-40% vc, -30% fz)!</div></div>`);
-            } else if (ld_ratio > 6.0) {
-                k_vc_overhang = 0.85; k_fz_overhang = 0.90;
-                warnings.push(`<div class="text-xs font-bold text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-300 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⚠️</span> <div><strong>HOHE AUSKRAGUNG (L/D > 6):</strong> Leicht gedrosselt (-15% vc, -10% fz)!</div></div>`);
-            } else if (ld_ratio > 4.0) {
-                k_vc_overhang = 0.95; k_fz_overhang = 0.95;
-            }
-
-            let k_vc_holder = 1.0;
-            if (holderType === 'schrumpf') k_vc_holder = 1.08;
-            else if (holderType === 'hydro') k_vc_holder = 1.05;
+            // -----------------------------------------------------------------
+            // STUFE 4: SETUP-KORREKTUREN (AUSKRAGUNG, HALTER, STEIFIGKEIT)
+            // -----------------------------------------------------------------
             else if (holderType === 'weldon') k_vc_holder = 0.90;
 
             let k_fz_rigidity = rigidity.factor || 1.0;
