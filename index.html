@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CNCPilot - Decision Engine 3.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,9 +16,21 @@
         input[type=number]::-webkit-outer-spin-button { opacity: 0.5; }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800 p-4 lg:p-6 min-h-screen">
+<body class="bg-slate-100 text-slate-800 p-4 lg:p-6 min-h-screen relative">
+    
+    <!-- CUSTOM MODAL OVERLAY -->
+    <div id="custom-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm transition-opacity">
+        <div class="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full mx-4 border border-slate-200 transform scale-95 transition-transform" id="custom-modal-box">
+            <h3 class="text-lg font-bold text-slate-900 mb-2" id="custom-modal-title">Meldung</h3>
+            <p class="text-sm text-slate-600 mb-6" id="custom-modal-message">Nachricht hier...</p>
+            <div class="flex justify-end gap-3" id="custom-modal-actions">
+                <button id="custom-modal-cancel" class="hidden px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">Abbrechen</button>
+                <button id="custom-modal-ok" class="px-4 py-2 rounded-xl text-sm font-bold text-white bg-slate-800 hover:bg-slate-900 shadow-sm transition">OK</button>
+            </div>
+        </div>
+    </div>
+
     <div class="max-w-[1500px] mx-auto space-y-6">
-        
         <!-- HEADER -->
         <header class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div class="flex items-center gap-3">
@@ -28,10 +39,10 @@
                 </div>
                 <div>
                     <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 leading-none">CNCPilot</h1>
-                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Decision Engine 3.2 (Cloud Edition)</span>
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Decision Engine 3.2 (Intent-Routing & Schwarm-KI)</span>
                 </div>
             </div>
-            <div>
+            <div class="flex items-center gap-3">
                 <button onclick="toggleAdmin()" class="bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2 shadow-sm">
                     ⚙️ Admin-Konsole
                 </button>
@@ -466,7 +477,7 @@
                 <div id="tab-content-favorites" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
                 <div id="tab-content-history" class="hidden space-y-3">
                     <div class="flex justify-between items-center">
-                        <p class="text-xs text-slate-500">Manuell bestätigter Verlauf (max. 30 Einträge). Hier kannst du direkt Sterne vergeben, Notizen machen oder als Favorit speichern.</p>
+                        <p class="text-xs text-slate-500">Manuell bestätigter Verlauf (max. 30 Einträge). Hier kannst du mit einem Klick das reale Zerspanungs-Ergebnis für die Community bewerten.</p>
                         <button onclick="clearHistory()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1 rounded-lg font-semibold transition">Verlauf leeren</button>
                     </div>
                     <div id="history-container" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
@@ -478,10 +489,66 @@
     <script>
         const DEFAULT_SUPABASE_URL = "https://emqwigtqiqlnvasuzrig.supabase.co";
         const DEFAULT_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVtcXdpZ3RxaXFsbnZhc3V6cmlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5Mjg5MTgsImV4cCI6MjA4NzUwNDkxOH0.1_HqL3uYf_Z1sB3M6nE0Q0v2s3R1_4v5X6Z7s8Q9a0";
-        const ADMIN_PASSWORD = "cnc2026"; // Passwort korrigiert auf deinen gewünschten Wert!
+        const ADMIN_PASSWORD = "cnc2026";
 
         // =========================================================================
-        // DATENBANK: FALLBACK / DEFAULT
+        // CUSTOM ALERTS & CONFIRMS (Keine Browser-Standard-Popups)
+        // =========================================================================
+        function customAlert(message) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('custom-modal');
+                const box = document.getElementById('custom-modal-box');
+                const title = document.getElementById('custom-modal-title');
+                const msgEl = document.getElementById('custom-modal-message');
+                const btnOk = document.getElementById('custom-modal-ok');
+                const btnCancel = document.getElementById('custom-modal-cancel');
+
+                title.innerText = "Hinweis";
+                msgEl.innerText = message;
+                btnCancel.classList.add('hidden');
+                
+                modal.classList.remove('hidden');
+                setTimeout(() => box.classList.remove('scale-95'), 10);
+
+                btnOk.onclick = () => {
+                    box.classList.add('scale-95');
+                    setTimeout(() => modal.classList.add('hidden'), 150);
+                    resolve(true);
+                };
+            });
+        }
+
+        function customConfirm(message) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('custom-modal');
+                const box = document.getElementById('custom-modal-box');
+                const title = document.getElementById('custom-modal-title');
+                const msgEl = document.getElementById('custom-modal-message');
+                const btnOk = document.getElementById('custom-modal-ok');
+                const btnCancel = document.getElementById('custom-modal-cancel');
+
+                title.innerText = "Bestätigen";
+                msgEl.innerText = message;
+                btnCancel.classList.remove('hidden');
+                
+                modal.classList.remove('hidden');
+                setTimeout(() => box.classList.remove('scale-95'), 10);
+
+                btnOk.onclick = () => {
+                    box.classList.add('scale-95');
+                    setTimeout(() => modal.classList.add('hidden'), 150);
+                    resolve(true);
+                };
+                btnCancel.onclick = () => {
+                    box.classList.add('scale-95');
+                    setTimeout(() => modal.classList.add('hidden'), 150);
+                    resolve(false);
+                };
+            });
+        }
+
+        // =========================================================================
+        // DATENBANK: FALLBACK / DEFAULT (Lokal)
         // =========================================================================
         const defaultDb = {
             machines: {
@@ -510,12 +577,7 @@
                 "planfraesen": { "name": "Planfräsen (Face Milling)", "ap_factor": 0.5, "ae_factor": 0.8, "fz_ratio": 1.0, "rct_active": false, "description": "Konstanter Eingriff" }
             },
             tools: {
-                "yg1_x5070_d1_r01": { "name": "Torusfräser D1 R0.1 Z2", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.1, "material_schneidstoff": "VHM", "diameter": 1, "z": 2, "max_overhang": 3, "fz_nom": 0.005, "vc_per_material": { "stahl_c45": 140, "stahl_1200": 110, "gehaertet_55hrc": 90, "gehaertet_60hrc": 70, "gehaertet_65hrc": 50 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schlichten", "schlichten_gehaertet", "hsc_trochoidal"] },
-                "yg1_x5070_d2_r02": { "name": "Torusfräser D2 R0.2 Z2", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.2, "material_schneidstoff": "VHM", "diameter": 2, "z": 2, "max_overhang": 5, "fz_nom": 0.010, "vc_per_material": { "stahl_c45": 150, "stahl_1200": 120, "gehaertet_55hrc": 100, "gehaertet_60hrc": 80, "gehaertet_65hrc": 55 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schlichten", "schlichten_gehaertet", "hsc_trochoidal"] },
-                "yg1_x5070_d3_r02": { "name": "Torusfräser D3 R0.2 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.2, "material_schneidstoff": "VHM", "diameter": 3, "z": 4, "max_overhang": 8, "fz_nom": 0.018, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "schlichten_gehaertet", "hsc_trochoidal"] },
-                "yg1_x5070_d8_r05": { "name": "Torusfräser D8 R0.5 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 0.5, "material_schneidstoff": "VHM", "diameter": 8, "z": 4, "max_overhang": 24, "fz_nom": 0.055, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "schlichten_gehaertet", "hsc_trochoidal"] },
-                "yg1_x5070_d10_r10": { "name": "Torusfräser D10 R1.0 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 1, "material_schneidstoff": "VHM", "diameter": 10, "z": 4, "max_overhang": 30, "fz_nom": 0.065, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "schlichten_gehaertet", "hsc_trochoidal"] },
-                "premus_gp_d12": { "name": "PREMUS GP Universal D12 Z4", "brand": "PRECITOOL", "line": "PREMUS GP", "type": "Schaftfräser", "geo_type": "shaft", "radius": 0, "material_schneidstoff": "VHM", "diameter": 12, "z": 4, "max_overhang": 36, "fz_nom": 0.084, "vc_per_material": { "stahl_c45": 180, "stahl_1200": 110, "rostfrei": 90, "alu_wrought": 400 }, "suitable_materials": ["stahl_c45", "stahl_1200", "rostfrei", "alu_wrought"], "suitable_profiles": ["schruppen", "schlichten", "hsc_trochoidal", "planfraesen"] }
+                "yg1_x5070_d10_r10": { "name": "Torusfräser D10 R1.0 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 1, "material_schneidstoff": "VHM", "diameter": 10, "z": 4, "max_overhang": 30, "fz_nom": 0.065, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "schlichten_gehaertet", "hsc_trochoidal"] }
             },
             favorites: [],
             history: []
@@ -525,37 +587,6 @@
         let isCloudActive = false;
         let db = loadDatabase();
         let currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0, q: 0, power: 0, torque: 0, fz_eff: 0, vc_eff: 0, fc: 0, stress: 0 };
-
-        function customAlert(msg) {
-            const modal = document.createElement('div');
-            modal.className = "fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4";
-            modal.innerHTML = `
-                <div class="bg-white p-6 rounded-2xl shadow-2xl max-w-sm w-full text-center border border-slate-200 transform transition-all scale-100 opacity-100">
-                    <p class="text-slate-800 font-medium mb-6 text-sm">${msg}</p>
-                    <button class="bg-slate-800 text-white px-4 py-2 rounded-xl font-bold w-full hover:bg-slate-900 transition shadow-sm text-sm" onclick="this.parentElement.parentElement.remove()">Verstanden</button>
-                </div>
-            `;
-            document.body.appendChild(modal);
-        }
-
-        async function customConfirm(msg) {
-            return new Promise(resolve => {
-                const modal = document.createElement('div');
-                modal.className = "fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4";
-                modal.innerHTML = `
-                    <div class="bg-white p-6 rounded-2xl shadow-2xl max-w-sm w-full text-center border border-slate-200">
-                        <p class="text-slate-800 font-medium mb-6 text-sm">${msg}</p>
-                        <div class="flex gap-3">
-                            <button id="btn-cancel" class="flex-1 bg-slate-100 text-slate-700 px-4 py-2 rounded-xl font-bold hover:bg-slate-200 transition text-sm">Abbrechen</button>
-                            <button id="btn-ok" class="flex-1 bg-rose-600 text-white px-4 py-2 rounded-xl font-bold hover:bg-rose-700 transition shadow-sm text-sm">Bestätigen</button>
-                        </div>
-                    </div>
-                `;
-                document.body.appendChild(modal);
-                document.getElementById('btn-ok').onclick = () => { modal.remove(); resolve(true); };
-                document.getElementById('btn-cancel').onclick = () => { modal.remove(); resolve(false); };
-            });
-        }
 
         function switchAdminTab(tabName) {
             const tabs = ['tools', 'machines', 'materials', 'profiles', 'cloud'];
@@ -657,7 +688,7 @@
             }
         }
 
-        function saveSupabaseConfig() {
+        async function saveSupabaseConfig() {
             const url = document.getElementById('supabase-url').value.trim();
             const key = document.getElementById('supabase-key').value.trim();
 
@@ -667,12 +698,9 @@
             localStorage.setItem('toolpilot_supabase_key', key);
 
             initSupabase();
-            customAlert("Supabase Konfiguration gespeichert!");
+            await customAlert("Supabase Konfiguration gespeichert!");
         }
 
-        // =========================================================================
-        // KUGELSICHERER CLOUD ADAPTER
-        // =========================================================================
         async function fetchDataFromSupabase() {
             if (!supabaseClient) return;
             try {
@@ -685,14 +713,12 @@
                     supabaseClient.from('tools').select('*')
                 ]);
 
-                // SICHERHEIT 1: Gab es einen Error (z.B. weil RLS aktiv ist oder Tabellen fehlen)?
                 if (resMach.error || resMat.error || resRig.error || resProf.error || resTools.error) {
-                    console.warn("Supabase Fetch Error. Entweder fehlen die SQL-Tabellen oder RLS blockiert den Zugriff. Nutze lokale Datenbank.");
-                    initApp(); // Fallback auf lokale Daten erzwingen
+                    console.warn("Supabase Fetch Error. Nutze lokale Datenbank.");
+                    initApp(); 
                     return;
                 }
 
-                // Hilfsfunktion: Cloud-Array in das App-JSON-Objekt umwandeln
                 const arrayToObject = (array) => {
                     const obj = {};
                     if(array && Array.isArray(array)) {
@@ -704,7 +730,7 @@
                     return obj;
                 };
 
-                // SICHERHEIT 2: Nur wenn wir WIRKLICH Werkzeuge bekommen haben, überschreiben wir die lokale Datenbank
+                // Wenn Cloud-Daten da sind, überschreiben wir die lokale DB
                 if (resTools.data && resTools.data.length > 0) {
                     db.machines = arrayToObject(resMach.data);
                     db.materials = arrayToObject(resMat.data);
@@ -712,21 +738,19 @@
                     db.profiles = arrayToObject(resProf.data);
                     db.tools = arrayToObject(resTools.data);
 
-                    // History & Favorites bleiben erstmal lokal im Browser
                     if(!db.history) db.history = []; 
                     if(!db.favorites) db.favorites = []; 
                     
                     saveLocalDatabaseBackup(); 
-                    initApp(); // UI mit neuen Cloud-Daten aktualisieren
+                    initApp(); 
                 } else {
-                    // Falls die Tabellen GANZ LEER sind, pushen wir die initialen Default-Daten einmal hoch
-                    console.log("Supabase Tabellen sind leer. Pushe lokale Daten in die Cloud...");
+                    // Initial-Push wenn leer
                     pushDataToSupabase();
-                    initApp(); // Damit das UI nicht leer bleibt, rendern wir mit den lokalen Daten
+                    initApp(); 
                 }
             } catch(e) { 
                 console.error("Critical Cloud Fetch Error:", e);
-                initApp(); // Fallback auf lokale Daten bei Crash
+                initApp(); 
             }
         }
 
@@ -757,7 +781,7 @@
                     })
                     .subscribe();
             } catch(e) {
-                console.warn("Supabase Realtime Sync blockiert (z.B. durch Canvas). App läuft über normalen HTTPS-Sync weiter.", e.message);
+                console.warn("Supabase Realtime Sync blockiert (Canvas).", e.message);
             }
         }
 
@@ -766,7 +790,6 @@
             if (saved) {
                 try { 
                     const parsed = JSON.parse(saved);
-                    // Sicherheitscheck: Ist das JSON intakt?
                     if (parsed && parsed.tools && Object.keys(parsed.tools).length > 0 && parsed.machines) {
                         if(!parsed.history) parsed.history = [];
                         if(!parsed.favorites) parsed.favorites = [];
@@ -798,12 +821,12 @@
             dlAnchor.remove();
         }
 
-        function importDatabaseJSON(event) {
+        async function importDatabaseJSON(event) {
             const file = event.target.files[0];
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 try {
                     const importedDb = JSON.parse(e.target.result);
                     if (importedDb && importedDb.tools && importedDb.materials) {
@@ -812,12 +835,12 @@
                         if(!db.favorites) db.favorites = [];
                         saveDatabase();
                         initApp();
-                        customAlert("Datenbank erfolgreich importiert & synchronisiert!");
+                        await customAlert("Datenbank erfolgreich importiert & synchronisiert!");
                     } else {
-                        customAlert("Ungültiges Dateiformat.");
+                        await customAlert("Ungültiges Dateiformat.");
                     }
                 } catch (err) {
-                    customAlert("Fehler beim Lesen der JSON-Datei.");
+                    await customAlert("Fehler beim Lesen der JSON-Datei.");
                 }
             };
             reader.readAsText(file);
@@ -828,7 +851,7 @@
                 db = JSON.parse(JSON.stringify(defaultDb));
                 saveDatabase();
                 initApp();
-                customAlert("Erfolgreich zurückgesetzt!");
+                await customAlert("Erfolgreich zurückgesetzt!");
             }
         }
 
@@ -840,7 +863,7 @@
             renderAdminToolTable();
         }
 
-        function toggleAdmin() {
+        async function toggleAdmin() {
             const panel = document.getElementById('admin-panel');
             if (panel.classList.contains('hidden')) {
                 const pwd = prompt("Bitte Admin-Passwort eingeben:");
@@ -848,7 +871,7 @@
                     panel.classList.remove('hidden');
                     renderAdminToolTable();
                 } else if (pwd !== null) {
-                    customAlert("Falsches Passwort!");
+                    await customAlert("Falsches Passwort!");
                 }
             } else {
                 panel.classList.add('hidden');
@@ -975,7 +998,7 @@
             document.getElementById('adm-tool-fznom').value = 0.065;
         }
 
-        function saveToolFromForm() {
+        async function saveToolFromForm() {
             const editId = document.getElementById('adm-editing-tool-id').value;
             const geoType = document.getElementById('adm-tool-geotype').value;
             const brand = document.getElementById('adm-tool-brand').value.trim();
@@ -985,7 +1008,7 @@
             const radius = parseFloat(document.getElementById('adm-tool-radius').value) || 0;
             const fz_nom = parseFloat(document.getElementById('adm-tool-fznom').value) || (d * 0.007);
             
-            if(isNaN(d) || isNaN(z)) return customAlert('Bitte Durchmesser und Zähnezahl prüfen.');
+            if(isNaN(d) || isNaN(z)) return await customAlert('Bitte Durchmesser und Zähnezahl prüfen.');
 
             let baseTitle = document.getElementById('adm-tool-name').value.trim();
             if(!baseTitle) {
@@ -1032,7 +1055,7 @@
             saveDatabase(); 
             populateDropdowns(); 
             resetToolForm();
-            customAlert('Werkzeug erfolgreich gespeichert!');
+            await customAlert('Werkzeug erfolgreich gespeichert!');
         }
 
         function duplicateToolAdmin(id) {
@@ -1072,8 +1095,8 @@
             }
         }
 
-        function deleteMachineAdmin(id) {
-            if(Object.keys(db.machines || {}).length <= 1) return customAlert('Mindestens eine Maschine ist nötig.');
+        async function deleteMachineAdmin(id) {
+            if(Object.keys(db.machines || {}).length <= 1) return await customAlert('Mindestens eine Maschine ist nötig.');
             delete db.machines[id];
             saveDatabase();
             populateDropdowns();
@@ -1480,6 +1503,18 @@
             db.history.slice(-30).reverse().forEach(item => {
                 const card = document.createElement('div');
                 card.className = "bg-slate-50 p-3.5 rounded-xl border border-slate-200 hover:border-slate-400 transition flex flex-col justify-between space-y-3 shadow-sm";
+                
+                // 1-KLICK FEEDBACK HTML
+                const hasFeedback = !!item.feedback_status;
+                const feedbackHtml = hasFeedback 
+                    ? `<div class="w-full text-center bg-slate-100 border border-slate-200 text-slate-500 text-[10px] py-1.5 rounded-lg font-bold">✔ Feedback gesendet</div>`
+                    : `<div id="feedback-actions-${item.id}" class="flex gap-1.5 w-full">
+                           <button onclick="submitFeedback('${item.id}', 'success')" class="flex-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] py-1.5 rounded-lg font-bold transition">🟢 Top</button>
+                           <button onclick="submitFeedback('${item.id}', 'chatter')" class="flex-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] py-1.5 rounded-lg font-bold transition">🟡 Rattert</button>
+                           <button onclick="submitFeedback('${item.id}', 'break')" class="flex-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] py-1.5 rounded-lg font-bold transition">🔴 Bruch</button>
+                       </div>
+                       <div id="feedback-done-${item.id}" class="hidden w-full text-center bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] py-1.5 rounded-lg font-bold">✔ Feedback gesendet</div>`;
+
                 card.innerHTML = `
                     <div>
                         <div class="flex justify-between items-start">
@@ -1492,19 +1527,10 @@
                         </div>
                     </div>
                     <div class="space-y-2 pt-2 border-t border-slate-200">
-                        <div class="flex justify-between items-center gap-2">
-                            <select id="hist-rating-${item.id}" class="bg-white border border-slate-200 rounded px-1.5 py-1 text-[11px] text-slate-800 font-medium">
-                                <option value="5" ${item.rating == 5 ? 'selected' : ''}>⭐⭐⭐⭐⭐</option>
-                                <option value="4" ${item.rating == 4 ? 'selected' : ''}>⭐⭐⭐⭐</option>
-                                <option value="3" ${item.rating == 3 ? 'selected' : ''}>⭐⭐⭐</option>
-                                <option value="2" ${item.rating == 2 ? 'selected' : ''}>⭐⭐</option>
-                                <option value="1" ${item.rating == 1 ? 'selected' : ''}>⭐</option>
-                            </select>
-                            <input type="text" id="hist-note-${item.id}" value="${item.note || ''}" placeholder="Notiz..." class="flex-1 bg-white border border-slate-200 rounded px-2 py-1 text-[11px] text-slate-800 outline-none">
-                        </div>
+                        ${feedbackHtml}
                         <div class="flex gap-2">
-                            <button onclick="loadHistoryItem('${item.id}')" class="flex-1 bg-white hover:bg-slate-100 text-slate-800 text-xs py-1 rounded-lg border border-slate-200 font-semibold transition">Laden</button>
-                            <button onclick="saveHistoryAsFavorite('${item.id}')" class="bg-slate-800 hover:bg-slate-900 text-white text-xs px-3 py-1 rounded-lg font-semibold transition">⭐ Speichern</button>
+                            <button onclick="loadHistoryItem('${item.id}')" class="flex-1 bg-white hover:bg-slate-100 text-slate-800 text-[10px] py-1.5 rounded-lg border border-slate-200 font-semibold transition">🔄 Laden</button>
+                            <button onclick="saveHistoryAsFavorite('${item.id}')" class="flex-1 bg-slate-800 hover:bg-slate-900 text-white text-[10px] py-1.5 rounded-lg font-semibold transition">⭐ Favorit</button>
                         </div>
                     </div>
                 `;
@@ -1512,7 +1538,20 @@
             });
         }
 
-        function confirmAndPushToHistory() {
+        function submitFeedback(id, status) {
+            // Finde den Job im Verlauf
+            const item = db.history.find(h => h.id === id);
+            if(item) {
+                item.feedback_status = status;
+                saveDatabase(); // Sendet das Feedback leise an Supabase!
+            }
+
+            // UI anpassen (Buttons weg, Danke-Text zeigen)
+            document.getElementById(`feedback-actions-${id}`).classList.add('hidden');
+            document.getElementById(`feedback-done-${id}`).classList.remove('hidden');
+        }
+
+        async function confirmAndPushToHistory() {
             if(!db.machines || !db.tools || !db.materials || !db.profiles) return;
             const machId = document.getElementById('machine-select').value;
             const matId = document.getElementById('material-select').value;
@@ -1525,7 +1564,7 @@
             const profile = db.profiles[profId];
             const tool = db.tools[toolId];
 
-            if(!mach || !tool || !mat || !profile) return customAlert("Bitte wähle alle Konfigurationsparameter aus.");
+            if(!mach || !tool || !mat || !profile) return await customAlert("Bitte wähle alle Konfigurationsparameter aus.");
 
             const ap = parseFloat(document.getElementById('input-ap-mm').value) || 0.01;
             const ae = parseFloat(document.getElementById('input-ae-mm').value) || 0.01;
@@ -1599,15 +1638,16 @@
             calculate();
         }
 
-        function saveHistoryAsFavorite(id) {
+        async function saveHistoryAsFavorite(id) {
             const item = db.history.find(h => h.id === id);
             if(!item) return;
 
-            const ratingSelect = document.getElementById(`hist-rating-${id}`);
-            const noteInput = document.getElementById(`hist-note-${id}`);
-
-            const rating = ratingSelect ? parseInt(ratingSelect.value) : 5;
-            const note = noteInput ? noteInput.value.trim() : "";
+            // Da wir das Textfeld gelöscht haben, generieren wir eine automatische Notiz
+            const rating = 5;
+            let note = "Aus Verlauf übernommen";
+            if (item.feedback_status === 'success') note = "Lief wie Butter";
+            else if (item.feedback_status === 'chatter') note = "Hat leicht gerattert";
+            else if (item.feedback_status === 'break') note = "Bruch / Verschleiß";
 
             item.rating = rating;
             item.note = note;
@@ -1634,7 +1674,7 @@
             saveDatabase();
             renderFavorites();
             switchBottomTab('favorites');
-            customAlert('Erfolgreich als Favorit gespeichert!');
+            await customAlert('Erfolgreich als Favorit gespeichert!');
         }
 
         async function clearHistory() {
@@ -1798,11 +1838,17 @@
             const warnings = [];
             let physicsInfoHtml = "";
 
+            // -----------------------------------------------------------------
+            // STUFE 1: KATALOG-GRUNDWERTE
+            // -----------------------------------------------------------------
             const baseVc = tool.vc_per_material ? (tool.vc_per_material[matId] || 150) : 150;
             const fz_nom = tool.fz_nom || (D * 0.007); 
             
             physicsInfoHtml += `<div class="text-[11px] text-slate-500">[Katalog] Base vc: ${baseVc} m/min | Nominal fz(50%D): ${fz_nom.toFixed(3)} mm</div>`;
 
+            // -----------------------------------------------------------------
+            // STUFE 2: EFFEKTIVER DURCHMESSER (Deff)
+            // -----------------------------------------------------------------
             let Deff = D;
             if (tool.geo_type === "ball") {
                 let effectiveAp = Math.min(ap, D / 2);
@@ -1825,6 +1871,9 @@
 
             physicsInfoHtml += `<div class="text-[11px] text-indigo-700 font-semibold">[Profil-Intent] Basis fz (Ratio ${fz_ratio.toFixed(2)}): ${base_fz.toFixed(4)} mm</div>`;
 
+            // -----------------------------------------------------------------
+            // STUFE 3: 3D CHIP-THINNING (INTENT ROUTING: EIN ODER AUS?)
+            // -----------------------------------------------------------------
             let ae_ratio = Math.min(ae / Deff, 1.0);
             let phi_s_rad = Math.acos(Math.max(-1, 1 - 2 * ae_ratio)); 
 
@@ -1841,20 +1890,15 @@
             }
 
             let combined_thinning = rct_ratio * act_ratio;
-            combined_thinning = Math.max(combined_thinning, 0.05); // Clamp gesenkt für realistischere Physik bei Extremwerten
+            combined_thinning = Math.max(combined_thinning, 0.05); // Clamp
 
             let fz_geo = base_fz;
 
-            // IST RCT FÜR DIESES PROFIL AKTIV? (Schruppen/HSC = Ja, Schlichten = Nein)
             const isRctActive = profile.rct_active !== undefined ? profile.rct_active : (!profId.includes('schlichten'));
-
-            // VHM Kantenradius (Schneidkantenverrundung) liegt bei ca. 3-5 µm.
-            // Spandicke (hm) MUSS darüber liegen, sonst schabt/reibt der Fräser nur!
             const hm_min = 0.004;
 
             if (physicsActive && isRctActive) {
                 fz_geo = base_fz / combined_thinning;
-                
                 if (fz_geo > fz_nom * 4.0) fz_geo = fz_nom * 4.0; // Max 400% Boost
                 
                 let boostPercent = ((fz_geo / base_fz - 1) * 100).toFixed(0);
@@ -1862,9 +1906,7 @@
                     physicsInfoHtml += `<div class="text-[11px] text-emerald-700 font-semibold">[3D-Chip Thinning] RCT & ACT aktiv: fz angehoben um +${boostPercent}% (${fz_geo.toFixed(4)} mm)</div>`;
                 }
             } else if (physicsActive && !isRctActive) {
-                // SCHAB-SCHUTZ: Auch wenn RCT aus ist (wegen Oberfläche), MÜSSEN wir schaben zwingend verhindern!
                 let expected_hm = base_fz * combined_thinning;
-                
                 if (expected_hm < hm_min) {
                     fz_geo = hm_min / combined_thinning;
                     if (fz_geo > fz_nom * 3.0) fz_geo = fz_nom * 3.0; // Sicherungslimit
@@ -1912,6 +1954,9 @@
 
             physicsInfoHtml += `<div class="text-[11px] text-slate-600">[Setup-Check] L/D=${ld_ratio.toFixed(1)} | Halter=${holderType} | vc(korr): ${effectiveVc.toFixed(0)} m/min</div>`;
 
+            // -----------------------------------------------------------------
+            // STUFE 5: DYNAMIK & KINEMATIK DER MASCHINE
+            // -----------------------------------------------------------------
             let n_theo = (effectiveVc * 1000) / (Math.PI * Deff);
             let n_eff = Math.min(n_theo, mach.max_rpm);
             let vf_eff = effectiveFz * z * n_eff;
@@ -1919,6 +1964,9 @@
 
             let vc_eff_real = (Math.PI * Deff * n_eff) / 1000;
 
+            // -----------------------------------------------------------------
+            // STUFE 6: PHYSIKALISCHE PRÜFUNG (KIENZLE, Fc, POWER, STRESS)
+            // -----------------------------------------------------------------
             let hm_real = 0.0005;
             if (phi_s_rad > 0) {
                 hm_real = (effectiveFz * act_ratio * 2 * ae) / (Deff * phi_s_rad);
@@ -2037,9 +2085,8 @@
             calculateCamFeed();
         }
 
-        // INIT SEQUENCE
-        initSupabase(); // Versucht Cloud zu laden. Fallback auf Lokal ist dort eingebaut.
-        initApp(); // Zeichnet die App initial (verhindert leere Dropdowns)
+        initSupabase();
+        initApp();
     </script>
 </body>
 </html>
