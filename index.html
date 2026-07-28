@@ -1877,6 +1877,23 @@
             // -----------------------------------------------------------------
             // STUFE 4: SETUP-KORREKTUREN (AUSKRAGUNG, HALTER, STEIFIGKEIT)
             // -----------------------------------------------------------------
+            let k_vc_overhang = 1.0;
+            let k_fz_overhang = 1.0;
+            const ld_ratio = Lmax / D;
+
+            if (ld_ratio > 8.0) {
+                k_vc_overhang = 0.60; k_fz_overhang = 0.70;
+                warnings.push(`<div class="text-xs font-bold text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-300 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⚠️</span> <div><strong>EXTREME AUSKRAGUNG (L/D > 8):</strong> Dynamik stark gedrosselt (-40% vc, -30% fz)!</div></div>`);
+            } else if (ld_ratio > 6.0) {
+                k_vc_overhang = 0.85; k_fz_overhang = 0.90;
+                warnings.push(`<div class="text-xs font-bold text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-300 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⚠️</span> <div><strong>HOHE AUSKRAGUNG (L/D > 6):</strong> Leicht gedrosselt (-15% vc, -10% fz)!</div></div>`);
+            } else if (ld_ratio > 4.0) {
+                k_vc_overhang = 0.95; k_fz_overhang = 0.95;
+            }
+
+            let k_vc_holder = 1.0;
+            if (holderType === 'schrumpf') k_vc_holder = 1.08;
+            else if (holderType === 'hydro') k_vc_holder = 1.05;
             else if (holderType === 'weldon') k_vc_holder = 0.90;
 
             let k_fz_rigidity = rigidity.factor || 1.0;
