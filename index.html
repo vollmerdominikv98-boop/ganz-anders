@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CNCPilot - Decision Engine 3.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -31,6 +32,7 @@
     </div>
 
     <div class="max-w-[1500px] mx-auto space-y-6">
+        
         <!-- HEADER -->
         <header class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div class="flex items-center gap-3">
@@ -42,7 +44,7 @@
                     <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Decision Engine 3.2 (Intent-Routing & Schwarm-KI)</span>
                 </div>
             </div>
-            <div class="flex items-center gap-3">
+            <div>
                 <button onclick="toggleAdmin()" class="bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2 shadow-sm">
                     ⚙️ Admin-Konsole
                 </button>
@@ -477,7 +479,7 @@
                 <div id="tab-content-favorites" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
                 <div id="tab-content-history" class="hidden space-y-3">
                     <div class="flex justify-between items-center">
-                        <p class="text-xs text-slate-500">Manuell bestätigter Verlauf (max. 30 Einträge). Hier kannst du mit einem Klick das reale Zerspanungs-Ergebnis für die Community bewerten.</p>
+                        <p class="text-xs text-slate-500">Manuell bestätigter Verlauf. Hier kannst du mit einem Klick das reale Ergebnis der Maschine bewerten.</p>
                         <button onclick="clearHistory()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1 rounded-lg font-semibold transition">Verlauf leeren</button>
                     </div>
                     <div id="history-container" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
@@ -580,7 +582,8 @@
                 "yg1_x5070_d10_r10": { "name": "Torusfräser D10 R1.0 Z4", "brand": "YG-1", "line": "X5070", "type": "Torusfräser", "geo_type": "torus", "radius": 1, "material_schneidstoff": "VHM", "diameter": 10, "z": 4, "max_overhang": 30, "fz_nom": 0.065, "vc_per_material": { "stahl_c45": 160, "stahl_1200": 130, "gehaertet_55hrc": 110, "gehaertet_60hrc": 85, "gehaertet_65hrc": 60 }, "suitable_materials": ["stahl_c45", "stahl_1200", "gehaertet_55hrc", "gehaertet_60hrc", "gehaertet_65hrc"], "suitable_profiles": ["schruppen", "schlichten", "schlichten_gehaertet", "hsc_trochoidal"] }
             },
             favorites: [],
-            history: []
+            history: [],
+            swarm_data: [] // NEU: Unendliches Langzeitgedächtnis für KI
         };
 
         let supabaseClient = null;
@@ -701,56 +704,64 @@
             await customAlert("Supabase Konfiguration gespeichert!");
         }
 
+        // =========================================================================
+        // SUPABASE ADAPTER (Holt einzelne SQL Tabellen und baut sie in JSON um)
+        // =========================================================================
         async function fetchDataFromSupabase() {
             if (!supabaseClient) return;
             try {
-                // Alle Tabellen parallel aus der Cloud laden (SQL)
-                const [resMach, resMat, resRig, resProf, resTools] = await Promise.all([
+                const [
+                    { data: machinesArray },
+                    { data: materialsArray },
+                    { data: rigidityArray },
+                    { data: profilesArray },
+                    { data: toolsArray },
+                    { data: appState } // Wir nutzen app_state nur noch für History/Favorites/Swarm_Data
+                ] = await Promise.all([
                     supabaseClient.from('machines').select('*'),
                     supabaseClient.from('materials').select('*'),
                     supabaseClient.from('rigidity').select('*'),
                     supabaseClient.from('profiles').select('*'),
-                    supabaseClient.from('tools').select('*')
+                    supabaseClient.from('tools').select('*'),
+                    supabaseClient.from('app_state').select('data').eq('id', 'global_db').single()
                 ]);
 
-                if (resMach.error || resMat.error || resRig.error || resProf.error || resTools.error) {
-                    console.warn("Supabase Fetch Error. Nutze lokale Datenbank.");
-                    initApp(); 
-                    return;
-                }
-
+                // Adapter-Funktion: SQL Array -> JSON Object
                 const arrayToObject = (array) => {
                     const obj = {};
-                    if(array && Array.isArray(array)) {
-                        array.forEach(item => { 
-                            const { id, ...rest } = item; 
-                            obj[id] = rest; 
-                        });
-                    }
+                    (array || []).forEach(item => {
+                        const { id, ...rest } = item;
+                        obj[id] = rest;
+                    });
                     return obj;
                 };
 
-                // Wenn Cloud-Daten da sind, überschreiben wir die lokale DB
-                if (resTools.data && resTools.data.length > 0) {
-                    db.machines = arrayToObject(resMach.data);
-                    db.materials = arrayToObject(resMat.data);
-                    db.rigidity = arrayToObject(resRig.data);
-                    db.profiles = arrayToObject(resProf.data);
-                    db.tools = arrayToObject(resTools.data);
-
-                    if(!db.history) db.history = []; 
-                    if(!db.favorites) db.favorites = []; 
-                    
-                    saveLocalDatabaseBackup(); 
-                    initApp(); 
-                } else {
-                    // Initial-Push wenn leer
-                    pushDataToSupabase();
-                    initApp(); 
+                // Wenn Daten aus der SQL-Tabelle kommen, überschreiben wir die lokale DB.
+                // Wenn die SQL Tabelle leer ist, behalten wir die lokalen Daten (Sicherheits-Fallback)
+                if (toolsArray && toolsArray.length > 0) {
+                    db.machines = arrayToObject(machinesArray);
+                    db.materials = arrayToObject(materialsArray);
+                    db.rigidity = arrayToObject(rigidityArray);
+                    db.profiles = arrayToObject(profilesArray);
+                    db.tools = arrayToObject(toolsArray);
                 }
+
+                // Lade History/Favs/Swarm Data aus dem app_state Blob (falls vorhanden)
+                if (appState && appState.data) {
+                    if(appState.data.history) db.history = appState.data.history;
+                    if(appState.data.favorites) db.favorites = appState.data.favorites;
+                    if(appState.data.swarm_data) db.swarm_data = appState.data.swarm_data;
+                }
+                
+                if(!db.history) db.history = [];
+                if(!db.favorites) db.favorites = [];
+                if(!db.swarm_data) db.swarm_data = [];
+
+                saveLocalDatabaseBackup(); 
+                initApp();
+
             } catch(e) { 
-                console.error("Critical Cloud Fetch Error:", e);
-                initApp(); 
+                console.error("Cloud Fetch Error:", e); 
             }
         }
 
@@ -759,6 +770,7 @@
             try {
                 const objectToArray = (obj) => Object.entries(obj || {}).map(([id, data]) => ({ id, ...data }));
 
+                // 1. Die reinen Konfigurationsdaten in die sauberen SQL-Tabellen pushen
                 await Promise.all([
                     supabaseClient.from('machines').upsert(objectToArray(db.machines)),
                     supabaseClient.from('materials').upsert(objectToArray(db.materials)),
@@ -766,6 +778,15 @@
                     supabaseClient.from('profiles').upsert(objectToArray(db.profiles)),
                     supabaseClient.from('tools').upsert(objectToArray(db.tools))
                 ]);
+
+                // 2. History, Favorites und Swarm Data pushen wir gesammelt in app_state
+                const userStateData = {
+                    history: db.history,
+                    favorites: db.favorites,
+                    swarm_data: db.swarm_data
+                };
+                await supabaseClient.from('app_state').upsert({ id: 'global_db', data: userStateData, updated_at: new Date() });
+
             } catch(e) { 
                 console.error("Cloud Push Error:", e); 
             }
@@ -774,10 +795,18 @@
         function listenToSupabaseRealtime() {
             if (!supabaseClient) return;
             try {
+                // Nur den app_state channel abonieren für History/Favorites Sync
                 supabaseClient
                     .channel('db_changes')
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'tools' }, payload => {
-                        fetchDataFromSupabase();
+                    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_state', filter: 'id=eq.global_db' }, payload => {
+                        if (payload.new && payload.new.data) {
+                            if(payload.new.data.history) db.history = payload.new.data.history;
+                            if(payload.new.data.favorites) db.favorites = payload.new.data.favorites;
+                            if(payload.new.data.swarm_data) db.swarm_data = payload.new.data.swarm_data;
+                            
+                            saveLocalDatabaseBackup();
+                            initApp();
+                        }
                     })
                     .subscribe();
             } catch(e) {
@@ -790,12 +819,13 @@
             if (saved) {
                 try { 
                     const parsed = JSON.parse(saved);
-                    if (parsed && parsed.tools && Object.keys(parsed.tools).length > 0 && parsed.machines) {
+                    if (parsed && parsed.tools && Object.keys(parsed.tools).length > 2) {
                         if(!parsed.history) parsed.history = [];
                         if(!parsed.favorites) parsed.favorites = [];
+                        if(!parsed.swarm_data) parsed.swarm_data = [];
                         return parsed;
                     }
-                } catch (e) { console.error("Corrupted local database, using default", e); }
+                } catch (e) { console.error(e); }
             }
             return JSON.parse(JSON.stringify(defaultDb));
         }
@@ -833,6 +863,7 @@
                         db = importedDb;
                         if(!db.history) db.history = [];
                         if(!db.favorites) db.favorites = [];
+                        if(!db.swarm_data) db.swarm_data = [];
                         saveDatabase();
                         initApp();
                         await customAlert("Datenbank erfolgreich importiert & synchronisiert!");
@@ -1121,11 +1152,13 @@
             }
         }
 
-        function deleteMaterialAdmin(id) {
-            delete db.materials[id];
-            saveDatabase();
-            populateDropdowns();
-            renderAdminMaterialsList();
+        async function deleteMaterialAdmin(id) {
+            if(await customConfirm("Material wirklich löschen?")) {
+                delete db.materials[id];
+                saveDatabase();
+                populateDropdowns();
+                renderAdminMaterialsList();
+            }
         }
 
         function renderAdminProfilesList() {
@@ -1150,11 +1183,13 @@
             }
         }
 
-        function deleteProfileAdmin(id) {
-            delete db.profiles[id];
-            saveDatabase();
-            populateDropdowns();
-            renderAdminProfilesList();
+        async function deleteProfileAdmin(id) {
+            if(await customConfirm("Profil wirklich löschen?")) {
+                delete db.profiles[id];
+                saveDatabase();
+                populateDropdowns();
+                renderAdminProfilesList();
+            }
         }
 
         function onMaterialOrProfileChange() {
@@ -1543,10 +1578,21 @@
             const item = db.history.find(h => h.id === id);
             if(item) {
                 item.feedback_status = status;
-                saveDatabase(); // Sendet das Feedback leise an Supabase!
+                
+                // Dauerhaftes Speichern in der KI-Datenbank (wird nie gelöscht)
+                if(!db.swarm_data) db.swarm_data = [];
+                db.swarm_data.push({
+                    tool_id: item.tool_id,
+                    mat_id: item.mat_id,
+                    prof_id: item.prof_id,
+                    status: status,
+                    timestamp: Date.now()
+                });
+
+                saveDatabase(); // Sendet das Feedback an Supabase
             }
 
-            // UI anpassen (Buttons weg, Danke-Text zeigen)
+            // UI anpassen
             document.getElementById(`feedback-actions-${id}`).classList.add('hidden');
             document.getElementById(`feedback-done-${id}`).classList.remove('hidden');
         }
@@ -1642,7 +1688,6 @@
             const item = db.history.find(h => h.id === id);
             if(!item) return;
 
-            // Da wir das Textfeld gelöscht haben, generieren wir eine automatische Notiz
             const rating = 5;
             let note = "Aus Verlauf übernommen";
             if (item.feedback_status === 'success') note = "Lief wie Butter";
@@ -1665,7 +1710,7 @@
                 ap_mm: parseFloat(item.ap),
                 ae_mm: parseFloat(item.ae),
                 rating: rating,
-                feedback: note || "Aus Verlauf übernommen",
+                feedback: note,
                 rpm: parseFloat(item.rpm),
                 feed_rate_vf: parseFloat(item.vf)
             };
@@ -1841,10 +1886,51 @@
             // -----------------------------------------------------------------
             // STUFE 1: KATALOG-GRUNDWERTE
             // -----------------------------------------------------------------
-            const baseVc = tool.vc_per_material ? (tool.vc_per_material[matId] || 150) : 150;
-            const fz_nom = tool.fz_nom || (D * 0.007); 
+            let baseVc = tool.vc_per_material ? (tool.vc_per_material[matId] || 150) : 150;
+            let fz_nom = tool.fz_nom || (D * 0.007); 
             
-            physicsInfoHtml += `<div class="text-[11px] text-slate-500">[Katalog] Base vc: ${baseVc} m/min | Nominal fz(50%D): ${fz_nom.toFixed(3)} mm</div>`;
+            physicsInfoHtml += `<div class="text-[11px] text-slate-500">[Katalog] Base vc: ${baseVc.toFixed(0)} m/min | Nominal fz(50%D): ${fz_nom.toFixed(3)} mm</div>`;
+
+            // -----------------------------------------------------------------
+            // STUFE 1.5: SCHWARM-KI (REINFORCEMENT LEARNING)
+            // -----------------------------------------------------------------
+            let swarmFeedback = { success: 0, chatter: 0, break: 0 };
+            
+            if (db.swarm_data) {
+                db.swarm_data.forEach(item => {
+                    if (item.tool_id === toolId && item.mat_id === matId && item.prof_id === profId) {
+                        if (item.status === 'success') swarmFeedback.success++;
+                        if (item.status === 'chatter') swarmFeedback.chatter++;
+                        if (item.status === 'break') swarmFeedback.break++;
+                    }
+                });
+            } else if (db.history) {
+                db.history.forEach(item => {
+                    if (item.tool_id === toolId && item.mat_id === matId && item.prof_id === profId) {
+                        if (item.feedback_status === 'success') swarmFeedback.success++;
+                        if (item.feedback_status === 'chatter') swarmFeedback.chatter++;
+                        if (item.feedback_status === 'break') swarmFeedback.break++;
+                    }
+                });
+            }
+
+            let swarm_k = 1.0;
+            if (swarmFeedback.break > 0) {
+                swarm_k = Math.pow(0.90, swarmFeedback.break); 
+                physicsInfoHtml += `<div class="text-[11px] text-rose-600 font-bold">🧠 [Schwarm-KI] ${swarmFeedback.break}x Bruch gemeldet! Drossele Schnittdaten (-${((1-swarm_k)*100).toFixed(0)}%)!</div>`;
+                warnings.push(`<div class="text-xs font-bold text-rose-700 bg-rose-50 p-2.5 rounded-xl border border-rose-200 shadow-sm flex items-start gap-2"><span class="text-base leading-none">🧠</span> <div><strong>KI-VETO (BRUCHGEFAHR):</strong> Der Schwarm hat bei diesem Setup Fräserbruch gemeldet! Werte wurden massiv gedrosselt.</div></div>`);
+            } else if (swarmFeedback.chatter > 0) {
+                swarm_k = Math.pow(0.95, swarmFeedback.chatter);
+                physicsInfoHtml += `<div class="text-[11px] text-amber-600 font-bold">🧠 [Schwarm-KI] ${swarmFeedback.chatter}x Rattern gemeldet! Drossele Dynamik (-${((1-swarm_k)*100).toFixed(0)}%).</div>`;
+            } else if (swarmFeedback.success >= 3) {
+                swarm_k = 1.05; 
+                physicsInfoHtml += `<div class="text-[11px] text-emerald-600 font-bold">🧠 [Schwarm-KI] ${swarmFeedback.success}x "Top" gemeldet! Setup ist hochsicher (+5% Performance-Boost).</div>`;
+            } else {
+                physicsInfoHtml += `<div class="text-[11px] text-slate-400 font-medium">🧠 [Schwarm-KI] Zu wenig Schwarm-Daten. Nutze reine Physik-Berechnung.</div>`;
+            }
+
+            baseVc = baseVc * swarm_k;
+            fz_nom = fz_nom * swarm_k;
 
             // -----------------------------------------------------------------
             // STUFE 2: EFFEKTIVER DURCHMESSER (Deff)
@@ -1890,7 +1976,7 @@
             }
 
             let combined_thinning = rct_ratio * act_ratio;
-            combined_thinning = Math.max(combined_thinning, 0.05); // Clamp
+            combined_thinning = Math.max(combined_thinning, 0.05);
 
             let fz_geo = base_fz;
 
