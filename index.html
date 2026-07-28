@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CNCPilot - Decision Engine 3.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,7 +27,7 @@
                 </div>
                 <div>
                     <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 leading-none">CNCPilot</h1>
-                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Decision Engine 3.2 (Intent-Routing & RCT Control)</span>
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Decision Engine 3.2 (Cloud Edition)</span>
                 </div>
             </div>
             <div>
@@ -478,10 +477,10 @@
     <script>
         const DEFAULT_SUPABASE_URL = "https://emqwigtqiqlnvasuzrig.supabase.co";
         const DEFAULT_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVtcXdpZ3RxaXFsbnZhc3V6cmlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5Mjg5MTgsImV4cCI6MjA4NzUwNDkxOH0.1_HqL3uYf_Z1sB3M6nE0Q0v2s3R1_4v5X6Z7s8Q9a0";
-        const ADMIN_PASSWORD = "cnc2026";
+        const ADMIN_PASSWORD = "cnc"; // GEÄNDERT AUF cnc ZUM EINFACHEN TESTEN
 
         // =========================================================================
-        // DATENBANK: PROFILE MIT "rct_active" (INTENT-ROUTING)
+        // DATENBANK: FALLBACK / DEFAULT (Falls Cloud noch leer ist)
         // =========================================================================
         const defaultDb = {
             machines: {
@@ -525,6 +524,37 @@
         let isCloudActive = false;
         let db = loadDatabase();
         let currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0, q: 0, power: 0, torque: 0, fz_eff: 0, vc_eff: 0, fc: 0, stress: 0 };
+
+        function customAlert(msg) {
+            const modal = document.createElement('div');
+            modal.className = "fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4";
+            modal.innerHTML = `
+                <div class="bg-white p-6 rounded-2xl shadow-2xl max-w-sm w-full text-center border border-slate-200 transform transition-all scale-100 opacity-100">
+                    <p class="text-slate-800 font-medium mb-6 text-sm">${msg}</p>
+                    <button class="bg-slate-800 text-white px-4 py-2 rounded-xl font-bold w-full hover:bg-slate-900 transition shadow-sm text-sm" onclick="this.parentElement.parentElement.remove()">Verstanden</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        async function customConfirm(msg) {
+            return new Promise(resolve => {
+                const modal = document.createElement('div');
+                modal.className = "fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4";
+                modal.innerHTML = `
+                    <div class="bg-white p-6 rounded-2xl shadow-2xl max-w-sm w-full text-center border border-slate-200">
+                        <p class="text-slate-800 font-medium mb-6 text-sm">${msg}</p>
+                        <div class="flex gap-3">
+                            <button id="btn-cancel" class="flex-1 bg-slate-100 text-slate-700 px-4 py-2 rounded-xl font-bold hover:bg-slate-200 transition text-sm">Abbrechen</button>
+                            <button id="btn-ok" class="flex-1 bg-rose-600 text-white px-4 py-2 rounded-xl font-bold hover:bg-rose-700 transition shadow-sm text-sm">Bestätigen</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                document.getElementById('btn-ok').onclick = () => { modal.remove(); resolve(true); };
+                document.getElementById('btn-cancel').onclick = () => { modal.remove(); resolve(false); };
+            });
+        }
 
         function switchAdminTab(tabName) {
             const tabs = ['tools', 'machines', 'materials', 'profiles', 'cloud'];
@@ -605,15 +635,22 @@
 
             if (url && key) {
                 try {
-                    supabaseClient = window.supabase.createClient(url, key);
-                    isCloudActive = true;
-                    fetchDataFromSupabase();
-                    listenToSupabaseRealtime();
-                    
-                    const statusText = document.getElementById('supabase-conn-text');
-                    if(statusText) {
-                        statusText.innerText = "✅ Verbunden";
-                        statusText.className = "text-[11px] font-bold text-emerald-600";
+                    // Check if supabase object is available from CDN
+                    if(window.supabase) {
+                        supabaseClient = window.supabase.createClient(url, key);
+                        isCloudActive = true;
+                        
+                        // INITIALER DATEN-ABRUF AUS CLOUD-TABELLEN
+                        fetchDataFromSupabase();
+                        listenToSupabaseRealtime();
+                        
+                        const statusText = document.getElementById('supabase-conn-text');
+                        if(statusText) {
+                            statusText.innerText = "✅ Verbunden (SQL Adapter aktiv)";
+                            statusText.className = "text-[11px] font-bold text-emerald-600";
+                        }
+                    } else {
+                        console.error("Supabase CDN Skript wurde noch nicht geladen.");
                     }
                 } catch(e) { 
                     console.error("Supabase Init Error:", e); 
@@ -625,26 +662,70 @@
             const url = document.getElementById('supabase-url').value.trim();
             const key = document.getElementById('supabase-key').value.trim();
 
-            if (!url || !key) return alert("Bitte URL und Key eingeben.");
+            if (!url || !key) return customAlert("Bitte URL und Key eingeben.");
 
             localStorage.setItem('toolpilot_supabase_url', url);
             localStorage.setItem('toolpilot_supabase_key', key);
 
             initSupabase();
-            alert("Supabase Konfiguration gespeichert!");
+            customAlert("Supabase Konfiguration gespeichert!");
         }
 
+        // =========================================================================
+        // NEU: CLOUD ADAPTER - FETCH DATA FROM INDIVIDUAL SQL TABLES
+        // =========================================================================
         async function fetchDataFromSupabase() {
             if (!supabaseClient) return;
             try {
-                const { data, error } = await supabaseClient.from('app_state').select('data').eq('id', 'global_db').single();
-                if (data && data.data && data.data.tools) {
-                    db = data.data; 
+                // Alle Tabellen parallel aus der Cloud laden (SQL)
+                const [
+                    { data: machinesArray, error: e1 },
+                    { data: materialsArray, error: e2 },
+                    { data: rigidityArray, error: e3 },
+                    { data: profilesArray, error: e4 },
+                    { data: toolsArray, error: e5 }
+                ] = await Promise.all([
+                    supabaseClient.from('machines').select('*'),
+                    supabaseClient.from('materials').select('*'),
+                    supabaseClient.from('rigidity').select('*'),
+                    supabaseClient.from('profiles').select('*'),
+                    supabaseClient.from('tools').select('*')
+                ]);
+
+                if(e1 || e2 || e3 || e4 || e5) {
+                    console.warn("SQL Tabellen (noch) nicht gefunden. Push initial data...");
+                    pushDataToSupabase();
+                    return;
+                }
+
+                // Hilfsfunktion: Cloud-Array in das App-JSON-Objekt umwandeln
+                const arrayToObject = (array) => {
+                    const obj = {};
+                    if(array) {
+                        array.forEach(item => { 
+                            const { id, ...rest } = item; 
+                            obj[id] = rest; 
+                        });
+                    }
+                    return obj;
+                };
+
+                if (toolsArray && toolsArray.length > 0) {
+                    // Daten in die lokale DB-Struktur übersetzen (Der ADAPTER)
+                    db.machines = arrayToObject(machinesArray);
+                    db.materials = arrayToObject(materialsArray);
+                    db.rigidity = arrayToObject(rigidityArray);
+                    db.profiles = arrayToObject(profilesArray);
+                    db.tools = arrayToObject(toolsArray);
+
+                    // History & Favorites bleiben erstmal lokal im Browser
                     if(!db.history) db.history = []; 
                     if(!db.favorites) db.favorites = []; 
+                    
                     saveLocalDatabaseBackup(); 
-                    initApp();
+                    initApp(); // UI mit neuen Cloud-Daten aktualisieren
                 } else {
+                    // Falls die Tabellen komplett leer sind, pushen wir die initialen Default-Daten hoch
                     pushDataToSupabase();
                 }
             } catch(e) { 
@@ -652,27 +733,41 @@
             }
         }
 
+        // =========================================================================
+        // NEU: CLOUD ADAPTER - PUSH DATA TO INDIVIDUAL SQL TABLES
+        // =========================================================================
         async function pushDataToSupabase() {
             if (!supabaseClient) return;
             try {
-                await supabaseClient.from('app_state').upsert({ id: 'global_db', data: db, updated_at: new Date() });
+                // Hilfsfunktion: App-JSON-Objekt in ein Cloud-Array umwandeln
+                const objectToArray = (obj) => Object.entries(obj).map(([id, data]) => ({ id, ...data }));
+
+                // Daten parallel in alle einzelnen Tabellen pushen (Upsert = Update oder Insert)
+                await Promise.all([
+                    supabaseClient.from('machines').upsert(objectToArray(db.machines)),
+                    supabaseClient.from('materials').upsert(objectToArray(db.materials)),
+                    supabaseClient.from('rigidity').upsert(objectToArray(db.rigidity)),
+                    supabaseClient.from('profiles').upsert(objectToArray(db.profiles)),
+                    supabaseClient.from('tools').upsert(objectToArray(db.tools))
+                ]);
+                
             } catch(e) { 
                 console.error("Cloud Push Error:", e); 
             }
         }
 
+        // =========================================================================
+        // NEU: CLOUD ADAPTER - LISTEN TO REALTIME SQL CHANGES
+        // =========================================================================
         function listenToSupabaseRealtime() {
             if (!supabaseClient) return;
+            // Wir hören auf jede Änderung in der Werkzeug-Tabelle, um die App bei Änderungen von Kollegen live zu aktualisieren
             supabaseClient
                 .channel('db_changes')
-                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_state', filter: 'id=eq.global_db' }, payload => {
-                    if (payload.new && payload.new.data) {
-                        db = payload.new.data;
-                        if(!db.history) db.history = [];
-                        if(!db.favorites) db.favorites = [];
-                        saveLocalDatabaseBackup();
-                        initApp();
-                    }
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'tools' }, payload => {
+                    // Wenn jemand ein Tool ändert, laden wir die DB kurz neu
+                    console.log("Cloud Update erkannt! Lade Daten neu...");
+                    fetchDataFromSupabase();
                 })
                 .subscribe();
         }
@@ -727,23 +822,23 @@
                         if(!db.favorites) db.favorites = [];
                         saveDatabase();
                         initApp();
-                        alert("Datenbank erfolgreich importiert & synchronisiert!");
+                        customAlert("Datenbank erfolgreich importiert & synchronisiert!");
                     } else {
-                        alert("Ungültiges Dateiformat.");
+                        customAlert("Ungültiges Dateiformat.");
                     }
                 } catch (err) {
-                    alert("Fehler beim Lesen der JSON-Datei.");
+                    customAlert("Fehler beim Lesen der JSON-Datei.");
                 }
             };
             reader.readAsText(file);
         }
 
-        function resetToDefaultData() {
-            if(confirm("Datenbank auf Werkseinstellungen zurücksetzen? Dies überschreibt auch die Cloud-Datenbank!")) {
+        async function resetToDefaultData() {
+            if(await customConfirm("Datenbank auf Werkseinstellungen zurücksetzen? Dies überschreibt auch die Cloud-Datenbank!")) {
                 db = JSON.parse(JSON.stringify(defaultDb));
                 saveDatabase();
                 initApp();
-                alert("Erfolgreich zurückgesetzt!");
+                customAlert("Erfolgreich zurückgesetzt!");
             }
         }
 
@@ -763,7 +858,7 @@
                     panel.classList.remove('hidden');
                     renderAdminToolTable();
                 } else if (pwd !== null) {
-                    alert("Falsches Passwort!");
+                    customAlert("Falsches Passwort!");
                 }
             } else {
                 panel.classList.add('hidden');
@@ -900,7 +995,7 @@
             const radius = parseFloat(document.getElementById('adm-tool-radius').value) || 0;
             const fz_nom = parseFloat(document.getElementById('adm-tool-fznom').value) || (d * 0.007);
             
-            if(isNaN(d) || isNaN(z)) return alert('Bitte Durchmesser und Zähnezahl prüfen.');
+            if(isNaN(d) || isNaN(z)) return customAlert('Bitte Durchmesser und Zähnezahl prüfen.');
 
             let baseTitle = document.getElementById('adm-tool-name').value.trim();
             if(!baseTitle) {
@@ -947,7 +1042,7 @@
             saveDatabase(); 
             populateDropdowns(); 
             resetToolForm();
-            alert('Werkzeug erfolgreich gespeichert!');
+            customAlert('Werkzeug erfolgreich gespeichert!');
         }
 
         function duplicateToolAdmin(id) {
@@ -961,8 +1056,8 @@
             populateDropdowns();
         }
 
-        function deleteToolAdmin(id) {
-            if(confirm("Werkzeug wirklich löschen?")) {
+        async function deleteToolAdmin(id) {
+            if(await customConfirm("Werkzeug wirklich löschen?")) {
                 delete db.tools[id];
                 saveDatabase();
                 populateDropdowns();
@@ -988,7 +1083,7 @@
         }
 
         function deleteMachineAdmin(id) {
-            if(Object.keys(db.machines).length <= 1) return alert('Mindestens eine Maschine ist nötig.');
+            if(Object.keys(db.machines).length <= 1) return customAlert('Mindestens eine Maschine ist nötig.');
             delete db.machines[id];
             saveDatabase();
             populateDropdowns();
@@ -1334,7 +1429,7 @@
         function addNewMachine() {
             const id = document.getElementById('adm-mach-id').value;
             const name = document.getElementById('adm-mach-name').value;
-            if(!id || !name) return alert('Bitte ausfüllen');
+            if(!id || !name) return customAlert('Bitte ausfüllen');
             db.machines[id] = {
                 name,
                 max_rpm: parseFloat(document.getElementById('adm-mach-rpm').value),
@@ -1342,25 +1437,25 @@
                 max_kw: parseFloat(document.getElementById('adm-mach-kw').value),
                 max_nm: parseFloat(document.getElementById('adm-mach-nm').value) || 100
             };
-            saveDatabase(); populateDropdowns(); renderAdminMachinesList(); alert('Gespeichert!');
+            saveDatabase(); populateDropdowns(); renderAdminMachinesList(); customAlert('Gespeichert!');
         }
 
         function addNewMaterial() {
             const id = document.getElementById('adm-mat-id').value;
             const name = document.getElementById('adm-mat-name').value;
-            if(!id || !name) return alert('Bitte ausfüllen');
+            if(!id || !name) return customAlert('Bitte ausfüllen');
             db.materials[id] = { 
                 name, 
                 kc11: parseFloat(document.getElementById('adm-mat-kc11').value),
                 mc: parseFloat(document.getElementById('adm-mat-mc').value) || 0.25 
             };
-            saveDatabase(); populateDropdowns(); renderAdminMaterialsList(); alert('Gespeichert!');
+            saveDatabase(); populateDropdowns(); renderAdminMaterialsList(); customAlert('Gespeichert!');
         }
 
         function addNewProfile() {
             const id = document.getElementById('adm-prof-id').value;
             const name = document.getElementById('adm-prof-name').value;
-            if(!id || !name) return alert('Bitte ausfüllen');
+            if(!id || !name) return customAlert('Bitte ausfüllen');
             
             db.profiles[id] = {
                 name,
@@ -1371,7 +1466,7 @@
                 description: document.getElementById('adm-prof-desc').value
             };
 
-            saveDatabase(); populateDropdowns(); renderAdminProfilesList(); alert('Gespeichert!');
+            saveDatabase(); populateDropdowns(); renderAdminProfilesList(); customAlert('Gespeichert!');
         }
 
         function renderFavorites() {
@@ -1478,7 +1573,7 @@
             const profile = db.profiles[profId];
             const tool = db.tools[toolId];
 
-            if(!mach || !tool || !mat || !profile) return alert("Bitte wähle alle Konfigurationsparameter aus.");
+            if(!mach || !tool || !mat || !profile) return customAlert("Bitte wähle alle Konfigurationsparameter aus.");
 
             const ap = parseFloat(document.getElementById('input-ap-mm').value) || 0.01;
             const ae = parseFloat(document.getElementById('input-ae-mm').value) || 0.01;
@@ -1587,11 +1682,11 @@
             saveDatabase();
             renderFavorites();
             switchBottomTab('favorites');
-            alert('Erfolgreich als Favorit gespeichert!');
+            customAlert('Erfolgreich als Favorit gespeichert!');
         }
 
-        function clearHistory() {
-            if(confirm("Verlauf wirklich leeren?")) {
+        async function clearHistory() {
+            if(await customConfirm("Verlauf wirklich leeren?")) {
                 db.history = [];
                 saveDatabase();
                 renderHistory();
@@ -1691,9 +1786,6 @@
             }
         }
 
-        // =========================================================================
-        // HAUPTBERECHNUNG 3.2: ENTSCHEIDUNGSMASCHINE MIT INTENT-ROUTING (RCT CONTROL)
-        // =========================================================================
         function calculate() {
             const machId = document.getElementById('machine-select').value;
             const matId = document.getElementById('material-select').value;
@@ -1749,17 +1841,11 @@
             const warnings = [];
             let physicsInfoHtml = "";
 
-            // -----------------------------------------------------------------
-            // STUFE 1: KATALOG-GRUNDWERTE
-            // -----------------------------------------------------------------
             const baseVc = tool.vc_per_material ? (tool.vc_per_material[matId] || 150) : 150;
             const fz_nom = tool.fz_nom || (D * 0.007); 
             
             physicsInfoHtml += `<div class="text-[11px] text-slate-500">[Katalog] Base vc: ${baseVc} m/min | Nominal fz(50%D): ${fz_nom.toFixed(3)} mm</div>`;
 
-            // -----------------------------------------------------------------
-            // STUFE 2: EFFEKTIVER DURCHMESSER (Deff)
-            // -----------------------------------------------------------------
             let Deff = D;
             if (tool.geo_type === "ball") {
                 let effectiveAp = Math.min(ap, D / 2);
@@ -1777,15 +1863,11 @@
                 physicsInfoHtml += `<div class="text-[11px] text-cyan-800 font-semibold">[Geometrie] Torusfräser Deff: ${Deff.toFixed(2)} mm</div>`;
             }
 
-            // Basis-Zahnvorschub anhand des Profil-Faktors (z.B. 0.6 für Schlichten)
             const fz_ratio = profile.fz_ratio !== undefined ? profile.fz_ratio : 1.0;
             let base_fz = fz_nom * fz_ratio;
 
             physicsInfoHtml += `<div class="text-[11px] text-indigo-700 font-semibold">[Profil-Intent] Basis fz (Ratio ${fz_ratio.toFixed(2)}): ${base_fz.toFixed(4)} mm</div>`;
 
-            // -----------------------------------------------------------------
-            // STUFE 3: 3D CHIP-THINNING (INTENT ROUTING: EIN ODER AUS?)
-            // -----------------------------------------------------------------
             let ae_ratio = Math.min(ae / Deff, 1.0);
             let phi_s_rad = Math.acos(Math.max(-1, 1 - 2 * ae_ratio)); 
 
@@ -1806,7 +1888,6 @@
 
             let fz_geo = base_fz;
 
-            // IST RCT FÜR DIESES PROFIL AKTIV? (Schruppen/HSC = Ja, Schlichten = Nein)
             const isRctActive = profile.rct_active !== undefined ? profile.rct_active : (!profId.includes('schlichten'));
 
             if (physicsActive && isRctActive) {
@@ -1822,9 +1903,6 @@
                 physicsInfoHtml += `<div class="text-[11px] text-amber-700 font-semibold">[Intent Routing] RCT deaktiviert (Fokus auf Oberflächengüte / kleines fz)</div>`;
             }
 
-            // -----------------------------------------------------------------
-            // STUFE 4: SETUP-KORREKTUREN (AUSKRAGUNG, HALTER, STEIFIGKEIT)
-            // -----------------------------------------------------------------
             let k_vc_overhang = 1.0;
             let k_fz_overhang = 1.0;
             const ld_ratio = Lmax / D;
@@ -1860,9 +1938,6 @@
 
             physicsInfoHtml += `<div class="text-[11px] text-slate-600">[Setup-Check] L/D=${ld_ratio.toFixed(1)} | Halter=${holderType} | vc(korr): ${effectiveVc.toFixed(0)} m/min</div>`;
 
-            // -----------------------------------------------------------------
-            // STUFE 5: DYNAMIK & KINEMATIK DER MASCHINE
-            // -----------------------------------------------------------------
             let n_theo = (effectiveVc * 1000) / (Math.PI * Deff);
             let n_eff = Math.min(n_theo, mach.max_rpm);
             let vf_eff = effectiveFz * z * n_eff;
@@ -1870,9 +1945,6 @@
 
             let vc_eff_real = (Math.PI * Deff * n_eff) / 1000;
 
-            // -----------------------------------------------------------------
-            // STUFE 6: PHYSIKALISCHE PRÜFUNG (KIENZLE, Fc, POWER, STRESS)
-            // -----------------------------------------------------------------
             let hm_real = 0.0005;
             if (phi_s_rad > 0) {
                 hm_real = (effectiveFz * act_ratio * 2 * ae) / (Deff * phi_s_rad);
@@ -1992,7 +2064,6 @@
         }
 
         initSupabase();
-        initApp();
     </script>
 </body>
 </html>
