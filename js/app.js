@@ -753,7 +753,6 @@ window.applyMatchmakerResult = (toolId, apSuggested, aeSuggested) => {
         window.onToolChange();
     }
 
-    // Setze das vom Matchmaker berechnete, STABILE ap/ae ein
     if (typeof apSuggested === 'number' && apSuggested > 0) {
         document.getElementById('input-ap-mm').value = apSuggested.toFixed(2);
         if (document.getElementById('slider-ap')) document.getElementById('slider-ap').value = apSuggested;
