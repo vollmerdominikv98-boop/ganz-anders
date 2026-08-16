@@ -25,7 +25,12 @@ function loadDatabase() {
     if (saved) {
         try { 
             const parsed = JSON.parse(saved);
-            if (parsed && parsed.tools && Object.keys(parsed.tools).length >= 1) {
+            if (parsed && parsed.tools && Object.keys(parsed.tools).length > 0) {
+                parsed.machines = Object.assign({}, defaultDb.machines, parsed.machines || {});
+                parsed.materials = Object.assign({}, defaultDb.materials, parsed.materials || {});
+                parsed.rigidity = Object.assign({}, defaultDb.rigidity, parsed.rigidity || {});
+                parsed.profiles = Object.assign({}, defaultDb.profiles, parsed.profiles || {});
+                parsed.tools = Object.assign({}, defaultDb.tools, parsed.tools || {});
                 if(!parsed.history) parsed.history = [];
                 if(!parsed.favorites) parsed.favorites = [];
                 if(!parsed.swarm_data) parsed.swarm_data = [];
@@ -44,27 +49,18 @@ function saveDatabase() {
 }
 
 // -------------------------------------------------------------
-// Initialisierung & UI Handlers
+// UI Navigation & Handlers
 // -------------------------------------------------------------
-export function initApp() {
-    populateDropdowns();
-    resetSliders(); 
-    renderFavorites();
-    renderHistory();
-    renderAdminToolTable(db);
-    // Starte direkt einen initialen Scan für den Hero-Matchmaker
-    runMatchmaker();
-}
-
 export function toggleExpertMode() {
     const panel = document.getElementById('expert-panel');
     const icon = document.getElementById('expert-toggle-icon');
+    if (!panel) return;
     if (panel.classList.contains('hidden')) {
         panel.classList.remove('hidden');
-        icon.innerText = '▲ Zuklappen';
+        if (icon) icon.innerText = '▲ Zuklappen';
     } else {
         panel.classList.add('hidden');
-        icon.innerText = '▼ Aufklappen';
+        if (icon) icon.innerText = '▼ Aufklappen';
     }
 }
 
@@ -145,41 +141,54 @@ export function toggleBottomSection() {
 export function populateDropdowns() {
     const machSel = document.getElementById('machine-select');
     const mmMachSel = document.getElementById('mm-machine-select');
-    machSel.innerHTML = '';
-    mmMachSel.innerHTML = '';
+    if (machSel) machSel.innerHTML = '';
+    if (mmMachSel) mmMachSel.innerHTML = '';
     for (const [id, m] of Object.entries(db.machines || {})) {
-        machSel.add(new Option(m.name, id));
-        mmMachSel.add(new Option(m.name, id));
+        if (machSel) machSel.add(new Option(m.name, id));
+        if (mmMachSel) mmMachSel.add(new Option(m.name, id));
     }
 
     const matSel = document.getElementById('material-select');
     const mmMatSel = document.getElementById('mm-material-select');
-    matSel.innerHTML = '';
-    mmMatSel.innerHTML = '';
+    if (matSel) matSel.innerHTML = '';
+    if (mmMatSel) mmMatSel.innerHTML = '';
     for (const [id, m] of Object.entries(db.materials || {})) {
-        matSel.add(new Option(m.name, id));
-        mmMatSel.add(new Option(m.name, id));
+        if (matSel) matSel.add(new Option(m.name, id));
+        if (mmMatSel) mmMatSel.add(new Option(m.name, id));
     }
 
     const profSel = document.getElementById('profile-select');
     const mmProfSel = document.getElementById('mm-profile-select');
-    profSel.innerHTML = '';
-    mmProfSel.innerHTML = '';
+    if (profSel) profSel.innerHTML = '';
+    if (mmProfSel) mmProfSel.innerHTML = '';
     for (const [id, p] of Object.entries(db.profiles || {})) {
-        profSel.add(new Option(p.name, id));
-        mmProfSel.add(new Option(p.name, id));
+        if (profSel) profSel.add(new Option(p.name, id));
+        if (mmProfSel) mmProfSel.add(new Option(p.name, id));
     }
 
     const rigSel = document.getElementById('rigidity-select');
-    rigSel.innerHTML = '';
-    for (const [id, r] of Object.entries(db.rigidity || {})) {
-        rigSel.add(new Option(`${r.name} (Faktor: ${r.factor})`, id));
+    if (rigSel) {
+        rigSel.innerHTML = '';
+        for (const [id, r] of Object.entries(db.rigidity || {})) {
+            rigSel.add(new Option(`${r.name} (Faktor: ${r.factor})`, id));
+        }
+        if(db.rigidity && db.rigidity["mittel"]) rigSel.value = "mittel";
     }
-    if(db.rigidity && db.rigidity["mittel"]) rigSel.value = "mittel";
 
     renderToolMatrixInputs();
     renderProfileCheckboxes();
     populateBrandDropdown();
+}
+
+export function syncMmToExpert() {
+    const mmMach = document.getElementById('mm-machine-select')?.value;
+    const mmMat = document.getElementById('mm-material-select')?.value;
+    const mmProf = document.getElementById('mm-profile-select')?.value;
+    if (mmMach) document.getElementById('machine-select').value = mmMach;
+    if (mmMat) document.getElementById('material-select').value = mmMat;
+    if (mmProf) document.getElementById('profile-select').value = mmProf;
+    onMaterialOrProfileChange();
+    triggerMatchmaker();
 }
 
 function renderProfileCheckboxes() {
@@ -220,9 +229,10 @@ export function onMaterialOrProfileChange() {
 }
 
 export function populateBrandDropdown() {
-    const selectedMat = document.getElementById('material-select').value;
-    const selectedProf = document.getElementById('profile-select').value;
+    const selectedMat = document.getElementById('material-select')?.value;
+    const selectedProf = document.getElementById('profile-select')?.value;
     const brandSel = document.getElementById('brand-select');
+    if (!brandSel) return;
     brandSel.innerHTML = '';
     
     let brands = new Set();
@@ -244,10 +254,11 @@ export function populateBrandDropdown() {
 }
 
 export function onBrandChange() {
-    const selectedMat = document.getElementById('material-select').value;
-    const selectedProf = document.getElementById('profile-select').value;
-    const selectedBrand = document.getElementById('brand-select').value;
+    const selectedMat = document.getElementById('material-select')?.value;
+    const selectedProf = document.getElementById('profile-select')?.value;
+    const selectedBrand = document.getElementById('brand-select')?.value;
     const lineSel = document.getElementById('line-select');
+    if (!lineSel) return;
     lineSel.innerHTML = '';
 
     let lines = new Set();
@@ -272,11 +283,12 @@ export function onBrandChange() {
 }
 
 export function onLineChange() {
-    const selectedMat = document.getElementById('material-select').value;
-    const selectedProf = document.getElementById('profile-select').value;
-    const selectedBrand = document.getElementById('brand-select').value;
-    const selectedLine = document.getElementById('line-select').value;
+    const selectedMat = document.getElementById('material-select')?.value;
+    const selectedProf = document.getElementById('profile-select')?.value;
+    const selectedBrand = document.getElementById('brand-select')?.value;
+    const selectedLine = document.getElementById('line-select')?.value;
     const toolSel = document.getElementById('tool-select');
+    if (!toolSel) return;
     
     const previousToolId = toolSel.value;
     toolSel.innerHTML = '';
@@ -311,30 +323,30 @@ export function onLineChange() {
 }
 
 export function onToolChange() {
-    const toolId = document.getElementById('tool-select').value;
-    if(!db.tools) return;
+    const toolId = document.getElementById('tool-select')?.value;
+    if(!db.tools || !toolId) return;
     const tool = db.tools[toolId];
     if(tool) {
-        if(tool.brand) {
+        if(tool.brand && document.getElementById('brand-select')) {
             document.getElementById('brand-select').value = tool.brand;
             onBrandChange();
         }
-        if(tool.line) {
+        if(tool.line && document.getElementById('line-select')) {
             document.getElementById('line-select').value = tool.line;
             onLineChange();
             document.getElementById('tool-select').value = toolId;
         }
-        document.getElementById('input-d-ist').value = tool.diameter.toFixed(2);
-        document.getElementById('input-r-ist').value = (tool.radius || 0).toFixed(2);
+        if (document.getElementById('input-d-ist')) document.getElementById('input-d-ist').value = tool.diameter.toFixed(2);
+        if (document.getElementById('input-r-ist')) document.getElementById('input-r-ist').value = (tool.radius || 0).toFixed(2);
     }
     resetSliders();
 }
 
 export function toggleRegrindFields() {
-    const active = document.getElementById('regrind-toggle').checked;
+    const active = document.getElementById('regrind-toggle')?.checked;
     const container = document.getElementById('regrind-container');
-    const toolId = document.getElementById('tool-select').value;
-    if(!db.tools) return;
+    const toolId = document.getElementById('tool-select')?.value;
+    if(!db.tools || !container) return;
     const tool = db.tools[toolId];
 
     if(active) {
@@ -356,18 +368,18 @@ export function toggleRegrindFields() {
 }
 
 // -------------------------------------------------------------
-// Slider & Shortcuts
+// Slider & Synchronisation
 // -------------------------------------------------------------
 export function resetSliders() {
     if(!db.tools || !db.profiles) return;
-    const toolId = document.getElementById('tool-select').value;
-    const profId = document.getElementById('profile-select').value;
+    const toolId = document.getElementById('tool-select')?.value;
+    const profId = document.getElementById('profile-select')?.value;
     const t = db.tools[toolId];
     const p = db.profiles[profId];
     
     if (t && p) {
         let D = t.diameter;
-        if (document.getElementById('regrind-toggle').checked) {
+        if (document.getElementById('regrind-toggle')?.checked) {
             D = parseFloat(document.getElementById('input-d-ist').value) || D;
         }
         
@@ -375,8 +387,8 @@ export function resetSliders() {
         const apS = document.getElementById('slider-ap');
         const aeS = document.getElementById('slider-ae');
         
-        apS.max = Lmax.toFixed(2);
-        aeS.max = D.toFixed(2);
+        if (apS) apS.max = Lmax.toFixed(2);
+        if (aeS) aeS.max = D.toFixed(2);
         
         let targetAp = D * p.ap_factor;
         let targetAe = D * p.ae_factor;
@@ -386,10 +398,10 @@ export function resetSliders() {
             targetAe = Math.min(D * p.ae_factor, 0.20); 
         }
         
-        document.getElementById('input-ap-mm').value = targetAp.toFixed(2);
-        apS.value = targetAp.toFixed(2);
-        document.getElementById('input-ae-mm').value = targetAe.toFixed(2);
-        aeS.value = targetAe.toFixed(2);
+        if (document.getElementById('input-ap-mm')) document.getElementById('input-ap-mm').value = targetAp.toFixed(2);
+        if (apS) apS.value = targetAp.toFixed(2);
+        if (document.getElementById('input-ae-mm')) document.getElementById('input-ae-mm').value = targetAe.toFixed(2);
+        if (aeS) aeS.value = targetAe.toFixed(2);
     }
     calculate();
 }
@@ -423,18 +435,18 @@ export function syncAeFromInput() {
 // -------------------------------------------------------------
 export function calculateCamFeed() {
     if(!db.tools) return;
-    const toolId = document.getElementById('tool-select').value;
+    const toolId = document.getElementById('tool-select')?.value;
     const tool = db.tools[toolId];
-    const isRegrind = document.getElementById('regrind-toggle').checked;
+    const isRegrind = document.getElementById('regrind-toggle')?.checked;
     const rInput = document.getElementById('input-cam-r');
     const resPercent = document.getElementById('res-cam-percent');
     const warning = document.getElementById('cam-calc-warning');
 
-    if (!tool || !rInput) return;
+    if (!tool || !rInput || !resPercent) return;
 
     let D = tool.diameter;
     if (isRegrind) {
-        const customD = parseFloat(document.getElementById('input-d-ist').value);
+        const customD = parseFloat(document.getElementById('input-d-ist')?.value);
         if (!isNaN(customD) && customD > 0) D = customD;
     }
 
@@ -443,66 +455,73 @@ export function calculateCamFeed() {
 
     if (isNaN(rContour) || rContour <= 0) {
         resPercent.innerText = "-- %";
-        warning.classList.add('hidden');
+        if (warning) warning.classList.add('hidden');
         return;
     }
 
     if (rContour <= rTool) {
         resPercent.innerText = "0 %";
-        warning.innerHTML = `⚠️ Kontur-Radius (${rContour} mm) ist zu klein für Fräser (R${rTool} mm)!`;
-        warning.classList.remove('hidden');
+        if (warning) {
+            warning.innerHTML = `⚠️ Kontur-Radius (${rContour} mm) ist zu klein für Fräser (R${rTool} mm)!`;
+            warning.classList.remove('hidden');
+        }
     } else {
         const percent = ((rContour - rTool) / rContour) * 100;
         resPercent.innerText = percent.toFixed(1) + " %";
-        warning.classList.add('hidden');
+        if (warning) warning.classList.add('hidden');
     }
 }
 
 export function calculate() {
+    const toolId = document.getElementById('tool-select')?.value;
+    if (!toolId || !db.tools || !db.tools[toolId]) return;
+
     const res = calculatePhysics({
         db,
-        machId: document.getElementById('machine-select').value,
-        matId: document.getElementById('material-select').value,
-        profId: document.getElementById('profile-select').value,
-        toolId: document.getElementById('tool-select').value,
-        rigId: document.getElementById('rigidity-select').value,
-        holderType: document.getElementById('holder-select').value,
-        physicsActive: document.getElementById('physics-toggle').checked,
-        isRegrind: document.getElementById('regrind-toggle').checked,
-        customD: parseFloat(document.getElementById('input-d-ist').value),
-        customR: parseFloat(document.getElementById('input-r-ist').value),
-        ap: parseFloat(document.getElementById('input-ap-mm').value) || 0.01,
-        ae: parseFloat(document.getElementById('input-ae-mm').value) || 0.01
+        machId: document.getElementById('machine-select')?.value,
+        matId: document.getElementById('material-select')?.value,
+        profId: document.getElementById('profile-select')?.value,
+        toolId: toolId,
+        rigId: document.getElementById('rigidity-select')?.value,
+        holderType: document.getElementById('holder-select')?.value,
+        physicsActive: document.getElementById('physics-toggle')?.checked,
+        isRegrind: document.getElementById('regrind-toggle')?.checked,
+        customD: parseFloat(document.getElementById('input-d-ist')?.value),
+        customR: parseFloat(document.getElementById('input-r-ist')?.value),
+        ap: parseFloat(document.getElementById('input-ap-mm')?.value) || 0.01,
+        ae: parseFloat(document.getElementById('input-ae-mm')?.value) || 0.01
     });
 
     if(!res) return;
 
     currentCalculatedResults = res;
 
-    document.getElementById('val-ap-factor').innerText = `(${res.ap_factor.toFixed(2)} × D)`;
-    document.getElementById('val-ae-factor').innerText = `(${res.ae_factor.toFixed(2)} × D)`;
+    if (document.getElementById('val-ap-factor')) document.getElementById('val-ap-factor').innerText = `(${res.ap_factor.toFixed(2)} × D)`;
+    if (document.getElementById('val-ae-factor')) document.getElementById('val-ae-factor').innerText = `(${res.ae_factor.toFixed(2)} × D)`;
 
     const warningBox = document.getElementById('calc-warnings');
-    if (res.warnings.length > 0) {
-        warningBox.innerHTML = res.warnings.join('');
-        warningBox.classList.remove('hidden');
-    } else {
-        warningBox.innerHTML = '';
-        warningBox.classList.add('hidden');
+    if (warningBox) {
+        if (res.warnings.length > 0) {
+            warningBox.innerHTML = res.warnings.join('');
+            warningBox.classList.remove('hidden');
+        } else {
+            warningBox.innerHTML = '';
+            warningBox.classList.add('hidden');
+        }
     }
 
-    document.getElementById('physics-info').innerHTML = res.physicsInfoHtml;
+    if (document.getElementById('physics-info')) document.getElementById('physics-info').innerHTML = res.physicsInfoHtml;
 
-    document.getElementById('res-rpm').innerText = res.rpm.toFixed(0) + " U/min";
-    document.getElementById('res-vc-eff').innerText = `vc: ${res.vc_eff.toFixed(0)} m/min`;
-    document.getElementById('res-vf').innerText = res.vf.toFixed(0) + " mm/min";
-    document.getElementById('res-fz-eff').innerText = `fz: ${res.fz_eff.toFixed(4)} mm`;
-    document.getElementById('res-apae').innerText = res.ap.toFixed(2) + " / " + res.ae.toFixed(2) + " mm";
-    document.getElementById('res-q').innerText = res.q.toFixed(2) + " cm³/min";
-    document.getElementById('res-power').innerText = res.power.toFixed(2) + " kW";
-    document.getElementById('res-torque').innerText = res.torque.toFixed(1) + " Nm";
-    document.getElementById('res-fc').innerText = res.fc.toFixed(0) + " N";
-    document.getElementById('res-stress').innerText = res.stress.toFixed(0) + " MPa";
+    if (document.getElementById('res-rpm')) document.getElementById('res-rpm').innerText = res.rpm.toFixed(0) + " U/min";
+    if (document.getElementById('res-vc-eff')) document.getElementById('res-vc-eff').innerText = `vc: ${res.vc_eff.toFixed(0)} m/min`;
+    if (document.getElementById('res-vf')) document.getElementById('res-vf').innerText = res.vf.toFixed(0) + " mm/min";
+    if (document.getElementById('res-fz-eff')) document.getElementById('res-fz-eff').innerText = `fz: ${res.fz_eff.toFixed(4)} mm`;
+    if (document.getElementById('res-apae')) document.getElementById('res-apae').innerText = res.ap.toFixed(2) + " / " + res.ae.toFixed(2) + " mm";
+    if (document.getElementById('res-q')) document.getElementById('res-q').innerText = res.q.toFixed(2) + " cm³/min";
+    if (document.getElementById('res-power')) document.getElementById('res-power').innerText = res.power.toFixed(2) + " kW";
+    if (document.getElementById('res-torque')) document.getElementById('res-torque').innerText = res.torque.toFixed(1) + " Nm";
+    if (document.getElementById('res-fc')) document.getElementById('res-fc').innerText = res.fc.toFixed(0) + " N";
+    if (document.getElementById('res-stress')) document.getElementById('res-stress').innerText = res.stress.toFixed(0) + " MPa";
 
     calculateCamFeed();
 }
@@ -514,6 +533,7 @@ export function renderFavorites() {
     const container = document.getElementById('tab-content-favorites');
     const searchInput = document.getElementById('fav-search-input');
     const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    if (!container) return;
     
     container.innerHTML = '';
     let filteredFavs = db.favorites || [];
@@ -549,7 +569,7 @@ export function renderHistory() {
     if(!container) return;
 
     if(!db.history) db.history = [];
-    countEl.innerText = db.history.length;
+    if (countEl) countEl.innerText = db.history.length;
     container.innerHTML = '';
 
     if (db.history.length === 0) {
@@ -589,10 +609,10 @@ export function submitFeedback(id, status) {
 }
 
 export async function confirmAndPushToHistory() {
-    const machId = document.getElementById('machine-select').value;
-    const matId = document.getElementById('material-select').value;
-    const profId = document.getElementById('profile-select').value;
-    const toolId = document.getElementById('tool-select').value;
+    const machId = document.getElementById('machine-select')?.value;
+    const matId = document.getElementById('material-select')?.value;
+    const profId = document.getElementById('profile-select')?.value;
+    const toolId = document.getElementById('tool-select')?.value;
     const tool = db.tools[toolId];
 
     if(!tool) return;
@@ -621,11 +641,11 @@ export async function confirmAndPushToHistory() {
 export function loadFavorite(favId) {
     const fav = db.favorites.find(f => f.id === favId);
     if(!fav) return;
-    if(fav.machine_id) document.getElementById('machine-select').value = fav.machine_id;
-    if(fav.material_id) document.getElementById('material-select').value = fav.material_id;
-    if(fav.profile_id) document.getElementById('profile-select').value = fav.profile_id;
+    if(fav.machine_id && document.getElementById('machine-select')) document.getElementById('machine-select').value = fav.machine_id;
+    if(fav.material_id && document.getElementById('material-select')) document.getElementById('material-select').value = fav.material_id;
+    if(fav.profile_id && document.getElementById('profile-select')) document.getElementById('profile-select').value = fav.profile_id;
     onMaterialOrProfileChange();
-    if(fav.tool_id) document.getElementById('tool-select').value = fav.tool_id;
+    if(fav.tool_id && document.getElementById('tool-select')) document.getElementById('tool-select').value = fav.tool_id;
     onToolChange();
     calculate();
 }
@@ -677,54 +697,16 @@ export async function importDatabaseJSON(event) {
     reader.readAsText(file);
 }
 
-// -------------------------------------------------------------
-// Window Registrierungen
-// -------------------------------------------------------------
-window.runMatchmaker = () => {
-    const machId = document.getElementById('mm-machine-select').value;
-    const matId = document.getElementById('mm-material-select').value;
+export function triggerMatchmaker() {
+    const machId = document.getElementById('mm-machine-select')?.value || document.getElementById('machine-select')?.value;
+    const matId = document.getElementById('mm-material-select')?.value || document.getElementById('material-select')?.value;
     const rigId = document.getElementById('rigidity-select')?.value || 'mittel';
     runMatchmaker(db, machId, matId, rigId);
-};
+}
 
-window.applyMatchmakerResult = (toolId) => {
-    // 1. Werte in Experten-Modus übertragen
-    document.getElementById('machine-select').value = document.getElementById('mm-machine-select').value;
-    document.getElementById('material-select').value = document.getElementById('mm-material-select').value;
-    document.getElementById('profile-select').value = document.getElementById('mm-profile-select').value;
-    
-    window.onMaterialOrProfileChange();
-    
-    const tool = db.tools[toolId];
-    if(tool) {
-        if(tool.brand) document.getElementById('brand-select').value = tool.brand;
-        if(tool.line) document.getElementById('line-select').value = tool.line;
-        document.getElementById('tool-select').value = toolId;
-        window.onToolChange();
-    }
-
-    // Wenn manuell ap/ae im Matchmaker stand, übertragen
-    const mmAp = parseFloat(document.getElementById('mm-ap').value);
-    const mmAe = parseFloat(document.getElementById('mm-ae').value);
-    if (!isNaN(mmAp) && mmAp > 0) {
-        document.getElementById('input-ap-mm').value = mmAp.toFixed(2);
-        document.getElementById('slider-ap').value = mmAp;
-    }
-    if (!isNaN(mmAe) && mmAe > 0) {
-        document.getElementById('input-ae-mm').value = mmAe.toFixed(2);
-        document.getElementById('slider-ae').value = mmAe;
-    }
-
-    calculate();
-
-    // 2. Experten-Modus öffnen & nach unten scrollen
-    const panel = document.getElementById('expert-panel');
-    const icon = document.getElementById('expert-toggle-icon');
-    panel.classList.remove('hidden');
-    icon.innerText = '▲ Zuklappen';
-    panel.scrollIntoView({ behavior: 'smooth' });
-};
-
+// -------------------------------------------------------------
+// Globale Registrierungen (Window-Zuweisung)
+// -------------------------------------------------------------
 window.toggleExpertMode = toggleExpertMode;
 window.toggleAdmin = toggleAdmin;
 window.switchAdminTab = switchAdminTab;
@@ -749,6 +731,49 @@ window.confirmAndPushToHistory = confirmAndPushToHistory;
 window.saveSupabaseConfig = () => saveSupabaseConfig(handleSupabaseData);
 window.exportDatabaseJSON = exportDatabaseJSON;
 window.importDatabaseJSON = importDatabaseJSON;
+window.triggerMatchmaker = triggerMatchmaker;
+window.syncMmToExpert = syncMmToExpert;
+
+window.applyMatchmakerResult = (toolId) => {
+    const mmMach = document.getElementById('mm-machine-select')?.value;
+    const mmMat = document.getElementById('mm-material-select')?.value;
+    const mmProf = document.getElementById('mm-profile-select')?.value;
+    
+    if (mmMach) document.getElementById('machine-select').value = mmMach;
+    if (mmMat) document.getElementById('material-select').value = mmMat;
+    if (mmProf) document.getElementById('profile-select').value = mmProf;
+    
+    window.onMaterialOrProfileChange();
+    
+    const tool = db.tools[toolId];
+    if(tool) {
+        if(tool.brand && document.getElementById('brand-select')) document.getElementById('brand-select').value = tool.brand;
+        if(tool.line && document.getElementById('line-select')) document.getElementById('line-select').value = tool.line;
+        if(document.getElementById('tool-select')) document.getElementById('tool-select').value = toolId;
+        window.onToolChange();
+    }
+
+    const mmAp = parseFloat(document.getElementById('mm-ap')?.value);
+    const mmAe = parseFloat(document.getElementById('mm-ae')?.value);
+    if (!isNaN(mmAp) && mmAp > 0) {
+        document.getElementById('input-ap-mm').value = mmAp.toFixed(2);
+        if (document.getElementById('slider-ap')) document.getElementById('slider-ap').value = mmAp;
+    }
+    if (!isNaN(mmAe) && mmAe > 0) {
+        document.getElementById('input-ae-mm').value = mmAe.toFixed(2);
+        if (document.getElementById('slider-ae')) document.getElementById('slider-ae').value = mmAe;
+    }
+
+    calculate();
+
+    const panel = document.getElementById('expert-panel');
+    const icon = document.getElementById('expert-toggle-icon');
+    if (panel) {
+        panel.classList.remove('hidden');
+        if (icon) icon.innerText = '▲ Zuklappen';
+        panel.scrollIntoView({ behavior: 'smooth' });
+    }
+};
 
 // Admin Werkzeug-Handler
 window.renderAdminToolTable = () => renderAdminToolTable(db);
@@ -771,11 +796,12 @@ window.addNewMaterial = () => addNewMaterial(db, () => { saveDatabase(); populat
 window.addNewProfile = () => addNewProfile(db, () => { saveDatabase(); populateDropdowns(); renderAdminProfilesList(db); });
 
 function handleSupabaseData(data) {
-    if (data.machines) db.machines = data.machines;
-    if (data.materials) db.materials = data.materials;
-    if (data.rigidity) db.rigidity = data.rigidity;
-    if (data.profiles) db.profiles = data.profiles;
-    if (data.tools) db.tools = data.tools;
+    if (!data) return;
+    if (data.machines && Object.keys(data.machines).length > 0) db.machines = Object.assign({}, defaultDb.machines, data.machines);
+    if (data.materials && Object.keys(data.materials).length > 0) db.materials = Object.assign({}, defaultDb.materials, data.materials);
+    if (data.rigidity && Object.keys(data.rigidity).length > 0) db.rigidity = Object.assign({}, defaultDb.rigidity, data.rigidity);
+    if (data.profiles && Object.keys(data.profiles).length > 0) db.profiles = Object.assign({}, defaultDb.profiles, data.profiles);
+    if (data.tools && Object.keys(data.tools).length > 0) db.tools = Object.assign({}, defaultDb.tools, data.tools);
     if (data.appStateData) {
         if (data.appStateData.history) db.history = data.appStateData.history;
         if (data.appStateData.favorites) db.favorites = data.appStateData.favorites;
@@ -783,6 +809,18 @@ function handleSupabaseData(data) {
     }
     localStorage.setItem('toolpilot_master_db', JSON.stringify(db));
     initApp();
+}
+
+// -------------------------------------------------------------
+// App Initialisierung
+// -------------------------------------------------------------
+export function initApp() {
+    populateDropdowns();
+    resetSliders(); 
+    renderFavorites();
+    renderHistory();
+    renderAdminToolTable(db);
+    triggerMatchmaker();
 }
 
 initSupabase(handleSupabaseData);
