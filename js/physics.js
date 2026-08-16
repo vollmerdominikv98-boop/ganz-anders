@@ -1,6 +1,5 @@
 import { evaluateSwarmAI } from './swarm.js';
 
-// --- ZENTRALE RATTERGRENZE (DRY-Prinzip) ---
 export function getChatterLimit(D, Lmax, geo_type, lc_max) {
     const ld_ratio = Lmax / D;
     if (geo_type === 'torus') {
@@ -32,7 +31,6 @@ export function calculatePhysics({ db, machId, matId, profId, toolId, rigId, hol
     const warnings = [];
     let physicsInfoHtml = "";
 
-    // SCHNEIDENLÄNGEN-CHECK
     if (ap > lc_max * 1.05) {
         warnings.push(`<div class="text-xs font-bold text-rose-700 bg-rose-50 p-2.5 rounded-xl border border-rose-300 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⛔</span> <div><strong>SCHAFT-KOLLISION:</strong> ap (${ap.toFixed(1)}mm) > Schneidenlänge (${lc_max.toFixed(1)}mm)!</div></div>`);
     }
@@ -78,7 +76,6 @@ export function calculatePhysics({ db, machId, matId, profId, toolId, rigId, hol
     let n_eff = Math.min(n_theo, mach.max_rpm);
     let vf_eff = Math.min(effectiveFz * z * n_eff, mach.max_vf);
 
-    // Limit-Warnungen
     if (n_theo > mach.max_rpm) warnings.push(`<div class="text-[11px] font-bold text-amber-700 bg-amber-50 p-2 rounded border border-amber-200">⚠️ <strong>Drehzahl-Limit:</strong> Maschine limitiert auf ${mach.max_rpm} U/min.</div>`);
     if ((effectiveFz * z * n_theo) > mach.max_vf) warnings.push(`<div class="text-[11px] font-bold text-amber-700 bg-amber-50 p-2 rounded border border-amber-200">⚠️ <strong>Vorschub-Limit:</strong> Maschine limitiert auf ${mach.max_vf} mm/min.</div>`);
 
