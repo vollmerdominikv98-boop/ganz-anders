@@ -131,6 +131,7 @@ export async function saveToolFromForm(db, onSave) {
         radius: parseFloat(document.getElementById('adm-tool-radius').value) || 0,
         fz_nom: parseFloat(document.getElementById('adm-tool-fznom').value) || (d * 0.007),
         max_overhang: parseFloat(document.getElementById('adm-tool-overhang').value) || (d * 3),
+        flute_len: parseFloat(document.getElementById('adm-tool-d').value) * 1.5, 
         vc_per_material: vcMap,
         suitable_materials: suitableMaterials,
         suitable_profiles: suitableProfiles
@@ -171,7 +172,10 @@ export async function addNewMachine(db, onSave) {
 }
 
 export function deleteMachineAdmin(id, db, onSave) {
-    if(Object.keys(db.machines || {}).length <= 1) return customAlert('Mindestens eine Maschine ist nötig.');
+    if(Object.keys(db.machines || {}).length <= 1) {
+        customAlert('Mindestens eine Maschine ist nötig.');
+        return;
+    }
     delete db.machines[id];
     if(typeof onSave === 'function') onSave();
 }
@@ -203,7 +207,10 @@ export async function addNewMaterial(db, onSave) {
 }
 
 export function deleteMaterialAdmin(id, db, onSave) {
-    if(Object.keys(db.materials || {}).length <= 1) return customAlert('Mindestens ein Material ist nötig.');
+    if(Object.keys(db.materials || {}).length <= 1) {
+        customAlert('Mindestens ein Material ist nötig.');
+        return;
+    }
     delete db.materials[id];
     if(typeof onSave === 'function') onSave();
 }
@@ -237,7 +244,10 @@ export async function addNewProfile(db, onSave) {
 }
 
 export function deleteProfileAdmin(id, db, onSave) {
-    if(Object.keys(db.profiles || {}).length <= 1) return customAlert('Mindestens ein Profil ist nötig.');
+    if(Object.keys(db.profiles || {}).length <= 1) {
+        customAlert('Mindestens ein Profil ist nötig.');
+        return;
+    }
     delete db.profiles[id];
     if(typeof onSave === 'function') onSave();
 }
