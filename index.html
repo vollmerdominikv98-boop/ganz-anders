@@ -44,7 +44,11 @@
                     <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Decision Engine 3.2 (Intent-Routing & Schwarm-KI)</span>
                 </div>
             </div>
-            <div>
+            <div class="flex flex-wrap items-center gap-2">
+                <!-- NEU: MATCHMAKER BUTTON -->
+                <button onclick="toggleMatchmaker()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-sm">
+                    🤖 KI-Matchmaker
+                </button>
                 <button onclick="toggleAdmin()" class="bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2 shadow-sm">
                     ⚙️ Admin-Konsole
                 </button>
@@ -216,6 +220,46 @@
                 <div class="pt-2 flex justify-between items-center border-t border-slate-100">
                     <span class="text-xs text-slate-400">Werkseinstellungen wiederherstellen?</span>
                     <button onclick="resetToDefaultData()" class="bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300 text-xs px-3 py-1.5 rounded-lg font-semibold transition">🔄 Auf Werkseinstellungen zurücksetzen</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MATCHMAKER BEREICH -->
+        <div id="matchmaker-panel" class="hidden bg-white p-6 rounded-2xl border border-indigo-200 shadow-lg space-y-5 relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-4 opacity-10 pointer-events-none text-9xl">🤖</div>
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 pb-4 relative z-10">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">KI-Matchmaker <span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-[10px] uppercase tracking-wider">Reverse Search</span></h2>
+                    <p class="text-xs text-slate-500">Sag mir, was du fräsen willst. Ich finde das effizienteste Werkzeug aus deinem Bestand.</p>
+                </div>
+                <button onclick="toggleMatchmaker()" class="text-slate-400 hover:text-slate-600 font-bold">✖ Schließen</button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 relative z-10">
+                <div class="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Feature-Tiefe (Z mm)</label>
+                        <input type="number" id="mm-depth" placeholder="z.B. 35" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-sm font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Kleinster Innenradius (R mm)</label>
+                        <input type="number" id="mm-radius" placeholder="z.B. 5" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-sm font-mono">
+                        <p class="text-[9px] text-slate-400 mt-1">Limitiert den maximalen Fräser-Ø</p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Intent (Profil)</label>
+                        <select id="mm-profile-select" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs"></select>
+                    </div>
+                    <button onclick="runMatchmaker()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white p-2.5 rounded-lg text-xs font-bold transition shadow-sm flex items-center justify-center gap-2 mt-4">
+                        🔍 Werkzeuge scannen
+                    </button>
+                </div>
+
+                <div class="md:col-span-3 space-y-3">
+                    <h3 class="font-bold text-xs uppercase tracking-wider text-slate-800 border-b border-slate-200 pb-2">Ergebnis (Top-Rankings nach Zeitspanvolumen)</h3>
+                    <div id="mm-results" class="space-y-2 max-h-[300px] overflow-y-auto">
+                        <div class="text-xs text-slate-400 italic p-4 text-center">Warte auf Eingabe...</div>
+                    </div>
                 </div>
             </div>
         </div>
