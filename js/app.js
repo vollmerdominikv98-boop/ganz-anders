@@ -734,6 +734,7 @@ window.importDatabaseJSON = importDatabaseJSON;
 window.triggerMatchmaker = triggerMatchmaker;
 window.syncMmToExpert = syncMmToExpert;
 
+// LEISE ÜBERNAHME: Werte werden synchronisiert, Nerd-Modus bleibt geschlossen!
 window.applyMatchmakerResult = (toolId, apSuggested, aeSuggested) => {
     const mmMach = document.getElementById('mm-machine-select')?.value;
     const mmMat = document.getElementById('mm-material-select')?.value;
@@ -764,12 +765,13 @@ window.applyMatchmakerResult = (toolId, apSuggested, aeSuggested) => {
 
     calculate();
 
-    const panel = document.getElementById('expert-panel');
-    const icon = document.getElementById('expert-toggle-icon');
-    if (panel) {
-        panel.classList.remove('hidden');
-        if (icon) icon.innerText = '▲ Zuklappen';
-        panel.scrollIntoView({ behavior: 'smooth' });
+    // Optisches Feedback direkt auf der gewählten Karte
+    document.querySelectorAll('[id^="match-card-"]').forEach(card => {
+        card.classList.remove('ring-2', 'ring-emerald-500', 'border-emerald-500');
+    });
+    const activeCard = document.getElementById(`match-card-${toolId}`);
+    if (activeCard) {
+        activeCard.classList.add('ring-2', 'ring-emerald-500', 'border-emerald-500');
     }
 };
 
