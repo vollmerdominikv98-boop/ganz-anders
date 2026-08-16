@@ -3,11 +3,13 @@ import { calculatePhysics } from './physics.js';
 export function runMatchmaker(db, machId, matId, rigId) {
     const depthInput = parseFloat(document.getElementById('mm-depth').value);
     const radiusInput = parseFloat(document.getElementById('mm-radius').value);
+    const customAp = parseFloat(document.getElementById('mm-ap').value);
+    const customAe = parseFloat(document.getElementById('mm-ae').value);
     const profId = document.getElementById('mm-profile-select').value;
     const resultsContainer = document.getElementById('mm-results');
 
     if (isNaN(depthInput) || isNaN(radiusInput) || !profId) {
-        alert("Bitte fülle Tiefe und kleinsten Radius aus.");
+        alert("Bitte fülle Feature-Tiefe Z und den kleinsten Radius aus.");
         return;
     }
 
@@ -16,16 +18,16 @@ export function runMatchmaker(db, machId, matId, rigId) {
     setTimeout(() => {
         let validTools = [];
 
-        // 1. FILTERN: Alle Werkzeuge prüfen
+        // 1. FILTERN: Passen Durchmesser und Auskragung?
         for (const [toolId, tool] of Object.entries(db.tools || {})) {
             if (tool.suitable_materials && !tool.suitable_materials.includes(matId)) continue;
             if (tool.suitable_profiles && !tool.suitable_profiles.includes(profId)) continue;
             
-            const maxD = radiusInput * 2;
+            const maxD = radiusInput * 2; // Fräser muss in die Ecke passen
             if (tool.diameter > maxD) continue; 
             
             const overhang = tool.max_overhang || (tool.diameter * 3);
-            if (overhang < depthInput) continue; 
+            if (overhang < depthInput) continue; // Zu kurz für die Tiefe
 
             validTools.push(toolId);
         }
@@ -37,13 +39,14 @@ export function runMatchmaker(db, machId, matId, rigId) {
 
         // 2. SIMULATION
         let rankedResults = [];
+        const profile = db.profiles[profId];
         
         validTools.forEach(toolId => {
             const tool = db.tools[toolId];
-            const profile = db.profiles[profId];
             
-            const ap = tool.diameter * profile.ap_factor;
-            const ae = tool.diameter * profile.ae_factor;
+            // Wenn ap/ae manuell eingegeben wurden, nutze diese – sonst Profil-Standardfaktoren
+            const ap = !isNaN(customAp) && customAp > 0 ? customAp : tool.diameter * profile.ap_factor;
+            const ae = !isNaN(customAe) && customAe > 0 ? customAe : tool.diameter * profile.ae_factor;
 
             const res = calculatePhysics({
                 db,
@@ -60,6 +63,7 @@ export function runMatchmaker(db, machId, matId, rigId) {
             });
 
             if (res) {
+                // Nur aufnehmen, wenn Spindel nicht überlastet und Biegespannung sicher
                 if (!res.isOverPower && res.stress < 2500) {
                     rankedResults.push({
                         toolId: toolId,
@@ -76,13 +80,13 @@ export function runMatchmaker(db, machId, matId, rigId) {
             }
         });
 
-        // 3. RANKING
+        // 3. RANKING nach Zeitspanvolumen (Q)
         rankedResults.sort((a, b) => b.q - a.q);
 
         // 4. AUSGABE
         resultsContainer.innerHTML = '';
         if (rankedResults.length === 0) {
-            resultsContainer.innerHTML = '<div class="text-xs text-amber-600 bg-amber-50 p-4 rounded-xl border border-amber-200">Werkzeuge gefunden, aber alle würden bei dieser Belastung brechen oder die Spindel überlasten.</div>';
+            resultsContainer.innerHTML = '<div class="text-xs text-amber-600 bg-amber-50 p-4 rounded-xl border border-amber-200">Werkzeuge gefunden, aber alle würden bei dieser Belastung (ap/ae) brechen oder die Spindel überlasten.</div>';
             return;
         }
 
@@ -99,7 +103,7 @@ export function runMatchmaker(db, machId, matId, rigId) {
                         ${badge}
                     </div>
                     <div class="text-[11px] text-slate-500 font-mono mt-1">
-                        Ø${item.diameter}mm | ap: ${item.ap.toFixed(1)}mm | ae: ${item.ae.toFixed(1)}mm
+                        Ø${item.diameter}mm | ap: ${item.ap.toFixed(2)}mm | ae: ${item.ae.toFixed(2)}mm
                     </div>
                 </div>
                 <div class="flex-shrink-0 text-right">
