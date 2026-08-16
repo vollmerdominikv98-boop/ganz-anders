@@ -1,15 +1,15 @@
-import { defaultDb, escapeHTML, ADMIN_PASSWORD } from './config.js?v=6';
-import { customAlert, customConfirm } from './modal.js?v=6';
-import { initSupabase, saveSupabaseConfig, pushDataToSupabase } from './supabase.js?v=6';
-import { calculatePhysics } from './physics.js?v=6';
-import { runMatchmaker } from './matchmaker.js?v=6';
+import { defaultDb, escapeHTML, ADMIN_PASSWORD } from './config.js';
+import { customAlert, customConfirm } from './modal.js';
+import { initSupabase, saveSupabaseConfig, pushDataToSupabase } from './supabase.js';
+import { calculatePhysics } from './physics.js';
+import { runMatchmaker } from './matchmaker.js';
 import {
     renderAdminToolTable, editToolFromAdmin, resetToolForm, saveToolFromForm,
     duplicateToolAdmin, deleteMachineAdmin, deleteMaterialAdmin, deleteProfileAdmin, toggleToolGeoFields,
     addNewMachine, addNewMaterial, addNewProfile,
     renderAdminMachinesList, renderAdminMaterialsList, renderAdminProfilesList,
     renderToolMatrixInputs, renderProfileCheckboxes
-} from './admin.js?v=6';
+} from './admin.js';
 
 let db = loadDatabase();
 let currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0, q: 0, power: 0, torque: 0, fz_eff: 0, vc_eff: 0, fc: 0, stress: 0 };
@@ -444,7 +444,6 @@ export function calculate() {
     });
 
     if(!res) return;
-
     currentCalculatedResults = res;
 
     if (document.getElementById('val-ap-factor')) document.getElementById('val-ap-factor').innerText = `(${res.ap_factor.toFixed(2)} × D)`;
@@ -705,7 +704,6 @@ window.deleteFavorite = deleteFavorite;
 window.clearHistory = clearHistory;
 window.submitFeedback = submitFeedback;
 window.confirmAndPushToHistory = confirmAndPushToHistory;
-window.saveSupabaseConfig = () => saveSupabaseConfig(handleSupabaseData);
 window.exportDatabaseJSON = exportDatabaseJSON;
 window.importDatabaseJSON = importDatabaseJSON;
 window.resetToDefaultData = resetToDefaultData;
@@ -790,6 +788,8 @@ function handleSupabaseData(data) {
     localStorage.setItem('toolpilot_master_db', JSON.stringify(db));
     initApp();
 }
+
+window.saveSupabaseConfig = () => saveSupabaseConfig(handleSupabaseData);
 
 function initApp() {
     populateDropdowns();
