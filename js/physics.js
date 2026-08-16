@@ -1,11 +1,11 @@
-import { evaluateSwarmAI } from './swarm.js';
+import { evaluateSwarmAI } from './swarm.js?v=6';
 
 export function getChatterLimit(D, Lmax, geo_type, lc_max) {
     const ld_ratio = Lmax / D;
     if (geo_type === 'torus') {
         return Math.min(D * 0.8, lc_max);
     } else if (geo_type === 'ball') {
-        return D / 2; // R
+        return D / 2;
     } else {
         const ld_safe = Math.max(ld_ratio, 2.0);
         return Math.min(D * (6.0 / Math.pow(ld_safe, 1.3)), lc_max);
