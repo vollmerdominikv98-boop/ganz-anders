@@ -3,10 +3,13 @@ import { customAlert, customConfirm } from './modal.js';
 import { initSupabase, saveSupabaseConfig, pushDataToSupabase } from './supabase.js';
 import { calculatePhysics } from './physics.js';
 import { runMatchmaker } from './matchmaker.js';
+
+// WICHTIG: Alle Funktionen fehlerfrei aus admin.js importiert!
 import {
     renderAdminToolTable, editToolFromAdmin, resetToolForm, saveToolFromForm,
     duplicateToolAdmin, deleteMachineAdmin, deleteMaterialAdmin, deleteProfileAdmin, toggleToolGeoFields,
-    addNewMachine, addNewMaterial, addNewProfile
+    addNewMachine, addNewMaterial, addNewProfile,
+    renderAdminMachinesList, renderAdminMaterialsList, renderAdminProfilesList
 } from './admin.js';
 
 let db = loadDatabase();
@@ -28,13 +31,12 @@ function loadDatabase() {
                 if(!p.swarm_data) p.swarm_data = [];
                 return p;
             }
-        } catch (e) { }
+        } catch (e) { console.error(e); }
     }
     return JSON.parse(JSON.stringify(defaultDb));
 }
 
 function saveDatabase() {
-    // Robustheit: Limits gegen Quota-Exceeded
     if (db.swarm_data && db.swarm_data.length > 500) db.swarm_data = db.swarm_data.slice(-500);
     if (db.history && db.history.length > 50) db.history = db.history.slice(-50);
     try {
@@ -44,12 +46,6 @@ function saveDatabase() {
         alert("Lokaler Speicher voll! Bitte Verlauf oder Favoriten leeren.");
     }
 }
-
-// -- Admin Funktionen ans Window binden --
-window.duplicateToolAdmin = (id) => duplicateToolAdmin(id, db, () => { saveDatabase(); window.renderAdminToolTable(); populateDropdowns(); });
-window.deleteMachineAdmin = async (id) => { if(await customConfirm("Löschen?")) { deleteMachineAdmin(id, db, () => { saveDatabase(); populateDropdowns(); }); }};
-window.deleteMaterialAdmin = async (id) => { if(await customConfirm("Löschen?")) { deleteMaterialAdmin(id, db, () => { saveDatabase(); populateDropdowns(); }); }};
-window.deleteProfileAdmin = async (id) => { if(await customConfirm("Löschen?")) { deleteProfileAdmin(id, db, () => { saveDatabase(); populateDropdowns(); }); }};
 
 export function toggleExpertMode() {
     const panel = document.getElementById('expert-panel');
@@ -80,7 +76,10 @@ export function switchAdminTab(tabName) {
         }
     });
 
-    if (tabName === 'tools') renderAdminToolTable(db);
+    if (tabName === 'tools') window.renderAdminToolTable();
+    if (tabName === 'machines') renderAdminMachinesList(db);
+    if (tabName === 'materials') renderAdminMaterialsList(db);
+    if (tabName === 'profiles') renderAdminProfilesList(db);
 }
 
 export async function toggleAdmin() {
@@ -89,7 +88,7 @@ export async function toggleAdmin() {
         const pwd = prompt("Bitte Admin-Passwort eingeben:");
         if (pwd === ADMIN_PASSWORD) {
             panel.classList.remove('hidden');
-            renderAdminToolTable(db);
+            window.renderAdminToolTable();
         } else if (pwd !== null) {
             await customAlert("Falsches Passwort!");
         }
@@ -169,6 +168,8 @@ export function populateDropdowns() {
         if(db.rigidity && db.rigidity["mittel"]) rigSel.value = "mittel";
     }
 
+    renderToolMatrixInputs();
+    renderProfileCheckboxes();
     populateBrandDropdown();
 }
 
@@ -181,6 +182,39 @@ export function syncMmToExpert() {
     if (mmProf) document.getElementById('profile-select').value = mmProf;
     onMaterialOrProfileChange();
     triggerMatchmaker();
+}
+
+function renderProfileCheckboxes() {
+    const container = document.getElementById('adm-tool-profiles-container');
+    if(!container) return;
+    container.innerHTML = '';
+    for (const [profId, p] of Object.entries(db.profiles || {})) {
+        const div = document.createElement('div');
+        div.className = "flex items-center gap-1.5";
+        div.innerHTML = `
+            <input type="checkbox" id="tool-prof-${profId}" checked class="rounded border-slate-300 text-slate-800">
+            <label for="tool-prof-${profId}" class="text-slate-700 cursor-pointer text-[11px] font-medium truncate" title="${escapeHTML(p.name)}">${escapeHTML(p.name)}</label>
+        `;
+        container.appendChild(div);
+    }
+}
+
+function renderToolMatrixInputs() {
+    const container = document.getElementById('adm-tool-matrix-container');
+    if(!container) return;
+    container.innerHTML = '';
+    for (const [matId, mat] of Object.entries(db.materials || {})) {
+        const div = document.createElement('div');
+        div.className = "flex items-center justify-between gap-1 bg-white p-1.5 rounded-lg border border-slate-300";
+        div.innerHTML = `
+            <label class="flex items-center gap-1.5 truncate text-slate-700 cursor-pointer flex-1 text-[11px]">
+                <input type="checkbox" id="tool-suit-${matId}" checked class="rounded border-slate-300 text-slate-800">
+                <span class="truncate font-medium">${escapeHTML(mat.name)}</span>
+            </label>
+            <input type="number" id="tool-vc-${matId}" placeholder="vc..." class="w-12 bg-slate-50 border border-slate-300 rounded p-0.5 text-slate-900 text-right text-xs font-mono">
+        `;
+        container.appendChild(div);
+    }
 }
 
 export function onMaterialOrProfileChange() {
@@ -261,7 +295,7 @@ export function onLineChange() {
             const lineMatch = (selectedLine === 'ALL' || t.line === selectedLine);
 
             if (matFit && profFit && brandMatch && lineMatch) {
-                const label = `${t.line ? '[' + t.line + '] ' : ''}${t.name}` + (fallback ? " (Bedingt geeignet)" : "");
+                const label = `${t.line ? '[' + escapeHTML(t.line) + '] ' : ''}${escapeHTML(t.name)}` + (fallback ? " (Bedingt geeignet)" : "");
                 toolSel.add(new Option(label, id));
                 toolCount++;
             }
@@ -584,31 +618,6 @@ export async function confirmAndPushToHistory() {
     switchBottomTab('history');
 }
 
-window.saveCurrentToFavorites = async () => {
-    const toolId = document.getElementById('tool-select')?.value;
-    if (!toolId || !db.tools[toolId]) return await customAlert("Kein Werkzeug ausgewählt.");
-    
-    const title = prompt("Name für diesen Favoriten:", "Mein perfektes Setup");
-    if (!title) return;
-    
-    db.favorites.push({
-        id: 'fav_' + Date.now(),
-        title: title,
-        tool_id: toolId,
-        material_id: document.getElementById('material-select')?.value,
-        profile_id: document.getElementById('profile-select')?.value,
-        machine_id: document.getElementById('machine-select')?.value,
-        rpm: document.getElementById('res-rpm').innerText.split(' ')[0],
-        feed_rate_vf: document.getElementById('res-vf').innerText.split(' ')[0],
-        ap_mm: parseFloat(document.getElementById('input-ap-mm').value),
-        ae_mm: parseFloat(document.getElementById('input-ae-mm').value)
-    });
-    saveDatabase();
-    renderFavorites();
-    switchBottomTab('favorites');
-    await customAlert("Erfolgreich als Favorit gespeichert!");
-};
-
 export function loadFavorite(favId) {
     const fav = db.favorites.find(f => f.id === favId);
     if(!fav) return;
@@ -627,7 +636,6 @@ export function loadFavorite(favId) {
         document.getElementById('input-ae-mm').value = fav.ae_mm.toFixed(2);
         if(document.getElementById('slider-ae')) document.getElementById('slider-ae').value = fav.ae_mm;
     }
-    
     calculate();
 }
 
@@ -676,12 +684,12 @@ export async function importDatabaseJSON(event) {
 }
 
 export async function resetToDefaultData() {
-    if(await customConfirm("Datenbank auf Werkseinstellungen zurücksetzen? Dies überschreibt die lokalen Werkzeuge mit dem bereinigten Standard-Katalog!")) {
+    if(await customConfirm("Datenbank auf Werkseinstellungen zurücksetzen? Dies überschreibt die lokalen Werkzeuge!")) {
         localStorage.removeItem('toolpilot_master_db');
         db = JSON.parse(JSON.stringify(defaultDb));
         saveDatabase();
         initApp();
-        await customAlert("Erfolgreich auf Werkseinstellungen zurückgesetzt! Der bereinigte Werkzeugstamm ist jetzt aktiv.");
+        await customAlert("Erfolgreich auf Werkseinstellungen zurückgesetzt!");
     }
 }
 
@@ -692,7 +700,23 @@ export function triggerMatchmaker() {
     runMatchmaker(db, machId, matId, rigId);
 }
 
-// Window Registrierungen
+// -------------------------------------------------------------
+// Globale Registrierungen (Window-Zuweisung)
+// -------------------------------------------------------------
+window.renderAdminToolTable = () => renderAdminToolTable(db);
+window.editToolFromAdmin = (id) => editToolFromAdmin(id, db);
+window.resetToolForm = resetToolForm;
+window.saveToolFromForm = () => saveToolFromForm(db, () => { saveDatabase(); populateDropdowns(); window.renderAdminToolTable(); });
+window.duplicateToolAdmin = (id) => duplicateToolAdmin(id, db, () => { saveDatabase(); window.renderAdminToolTable(); populateDropdowns(); });
+window.deleteToolAdmin = async (id) => { if(await customConfirm("Löschen?")) { delete db.tools[id]; saveDatabase(); populateDropdowns(); window.renderAdminToolTable(); }};
+window.toggleToolGeoFields = toggleToolGeoFields;
+window.addNewMachine = () => addNewMachine(db, () => { saveDatabase(); populateDropdowns(); renderAdminMachinesList(db); });
+window.deleteMachineAdmin = async (id) => { if(await customConfirm("Löschen?")) { deleteMachineAdmin(id, db, () => { saveDatabase(); populateDropdowns(); renderAdminMachinesList(db); }); }};
+window.addNewMaterial = () => addNewMaterial(db, () => { saveDatabase(); populateDropdowns(); renderAdminMaterialsList(db); });
+window.deleteMaterialAdmin = async (id) => { if(await customConfirm("Löschen?")) { deleteMaterialAdmin(id, db, () => { saveDatabase(); populateDropdowns(); renderAdminMaterialsList(db); }); }};
+window.addNewProfile = () => addNewProfile(db, () => { saveDatabase(); populateDropdowns(); renderAdminProfilesList(db); });
+window.deleteProfileAdmin = async (id) => { if(await customConfirm("Löschen?")) { deleteProfileAdmin(id, db, () => { saveDatabase(); populateDropdowns(); renderAdminProfilesList(db); }); }};
+
 window.toggleExpertMode = toggleExpertMode;
 window.toggleAdmin = toggleAdmin;
 window.switchAdminTab = switchAdminTab;
@@ -721,17 +745,37 @@ window.triggerMatchmaker = triggerMatchmaker;
 window.syncMmToExpert = syncMmToExpert;
 window.calculateCamFeed = calculateCamFeed;
 
+window.saveCurrentToFavorites = async () => {
+    const toolId = document.getElementById('tool-select')?.value;
+    if (!toolId || !db.tools[toolId]) return await customAlert("Kein Werkzeug ausgewählt.");
+    const title = prompt("Name für diesen Favoriten:", "Mein perfektes Setup");
+    if (!title) return;
+    db.favorites.push({
+        id: 'fav_' + Date.now(),
+        title: title,
+        tool_id: toolId,
+        material_id: document.getElementById('material-select')?.value,
+        profile_id: document.getElementById('profile-select')?.value,
+        machine_id: document.getElementById('machine-select')?.value,
+        rpm: document.getElementById('res-rpm').innerText.split(' ')[0],
+        feed_rate_vf: document.getElementById('res-vf').innerText.split(' ')[0],
+        ap_mm: parseFloat(document.getElementById('input-ap-mm').value),
+        ae_mm: parseFloat(document.getElementById('input-ae-mm').value)
+    });
+    saveDatabase();
+    renderFavorites();
+    switchBottomTab('favorites');
+    await customAlert("Erfolgreich als Favorit gespeichert!");
+};
+
 window.applyMatchmakerResult = (toolId, apSuggested, aeSuggested) => {
     const mmMach = document.getElementById('mm-machine-select')?.value;
     const mmMat = document.getElementById('mm-material-select')?.value;
     const mmProf = document.getElementById('mm-profile-select')?.value;
-    
     if (mmMach) document.getElementById('machine-select').value = mmMach;
     if (mmMat) document.getElementById('material-select').value = mmMat;
     if (mmProf) document.getElementById('profile-select').value = mmProf;
-    
     window.onMaterialOrProfileChange();
-    
     const tool = db.tools[toolId];
     if(tool) {
         if(tool.brand && document.getElementById('brand-select')) document.getElementById('brand-select').value = tool.brand;
@@ -739,7 +783,6 @@ window.applyMatchmakerResult = (toolId, apSuggested, aeSuggested) => {
         if(document.getElementById('tool-select')) document.getElementById('tool-select').value = toolId;
         window.onToolChange();
     }
-
     if (typeof apSuggested === 'number' && apSuggested > 0) {
         document.getElementById('input-ap-mm').value = apSuggested.toFixed(2);
         if (document.getElementById('slider-ap')) document.getElementById('slider-ap').value = apSuggested;
@@ -748,29 +791,10 @@ window.applyMatchmakerResult = (toolId, apSuggested, aeSuggested) => {
         document.getElementById('input-ae-mm').value = aeSuggested.toFixed(2);
         if (document.getElementById('slider-ae')) document.getElementById('slider-ae').value = aeSuggested;
     }
-
     calculate();
-
-    document.querySelectorAll('[id^="match-card-"]').forEach(card => {
-        card.classList.remove('ring-2', 'ring-emerald-500', 'border-emerald-500');
-    });
+    document.querySelectorAll('[id^="match-card-"]').forEach(card => card.classList.remove('ring-2', 'ring-emerald-500', 'border-emerald-500'));
     const activeCard = document.getElementById(`match-card-${toolId}`);
-    if (activeCard) {
-        activeCard.classList.add('ring-2', 'ring-emerald-500', 'border-emerald-500');
-    }
-};
-
-window.renderAdminToolTable = () => renderAdminToolTable(db);
-window.editToolFromAdmin = (id) => editToolFromAdmin(id, db);
-window.resetToolForm = resetToolForm;
-window.saveToolFromForm = () => saveToolFromForm(db, () => { saveDatabase(); populateDropdowns(); });
-window.deleteToolAdmin = async (id) => {
-    if(await customConfirm("Werkzeug löschen?")) {
-        delete db.tools[id];
-        saveDatabase();
-        populateDropdowns();
-        window.renderAdminToolTable();
-    }
+    if (activeCard) activeCard.classList.add('ring-2', 'ring-emerald-500', 'border-emerald-500');
 };
 
 function handleSupabaseData(data) {
@@ -794,8 +818,8 @@ window.saveSupabaseConfig = () => saveSupabaseConfig(handleSupabaseData);
 function initApp() {
     populateDropdowns();
     resetSliders(); 
-    window.renderFavorites();
-    window.renderHistory();
+    renderFavorites();
+    renderHistory();
     window.renderAdminToolTable();
     triggerMatchmaker();
 }
