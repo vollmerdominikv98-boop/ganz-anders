@@ -9,7 +9,8 @@ import {
     renderAdminToolTable, editToolFromAdmin, resetToolForm, saveToolFromForm,
     duplicateToolAdmin, deleteMachineAdmin, deleteMaterialAdmin, deleteProfileAdmin, toggleToolGeoFields,
     addNewMachine, addNewMaterial, addNewProfile,
-    renderAdminMachinesList, renderAdminMaterialsList, renderAdminProfilesList
+    renderAdminMachinesList, renderAdminMaterialsList, renderAdminProfilesList,
+    renderToolMatrixInputs, renderProfileCheckboxes
 } from './admin.js';
 
 let db = loadDatabase();
@@ -76,7 +77,7 @@ export function switchAdminTab(tabName) {
         }
     });
 
-    if (tabName === 'tools') window.renderAdminToolTable();
+    if (tabName === 'tools') renderAdminToolTable(db);
     if (tabName === 'machines') renderAdminMachinesList(db);
     if (tabName === 'materials') renderAdminMaterialsList(db);
     if (tabName === 'profiles') renderAdminProfilesList(db);
@@ -88,7 +89,7 @@ export async function toggleAdmin() {
         const pwd = prompt("Bitte Admin-Passwort eingeben:");
         if (pwd === ADMIN_PASSWORD) {
             panel.classList.remove('hidden');
-            window.renderAdminToolTable();
+            renderAdminToolTable(db);
         } else if (pwd !== null) {
             await customAlert("Falsches Passwort!");
         }
@@ -168,8 +169,8 @@ export function populateDropdowns() {
         if(db.rigidity && db.rigidity["mittel"]) rigSel.value = "mittel";
     }
 
-    renderToolMatrixInputs();
-    renderProfileCheckboxes();
+    renderToolMatrixInputs(db);
+    renderProfileCheckboxes(db);
     populateBrandDropdown();
 }
 
@@ -182,39 +183,6 @@ export function syncMmToExpert() {
     if (mmProf) document.getElementById('profile-select').value = mmProf;
     onMaterialOrProfileChange();
     triggerMatchmaker();
-}
-
-function renderProfileCheckboxes() {
-    const container = document.getElementById('adm-tool-profiles-container');
-    if(!container) return;
-    container.innerHTML = '';
-    for (const [profId, p] of Object.entries(db.profiles || {})) {
-        const div = document.createElement('div');
-        div.className = "flex items-center gap-1.5";
-        div.innerHTML = `
-            <input type="checkbox" id="tool-prof-${profId}" checked class="rounded border-slate-300 text-slate-800">
-            <label for="tool-prof-${profId}" class="text-slate-700 cursor-pointer text-[11px] font-medium truncate" title="${escapeHTML(p.name)}">${escapeHTML(p.name)}</label>
-        `;
-        container.appendChild(div);
-    }
-}
-
-function renderToolMatrixInputs() {
-    const container = document.getElementById('adm-tool-matrix-container');
-    if(!container) return;
-    container.innerHTML = '';
-    for (const [matId, mat] of Object.entries(db.materials || {})) {
-        const div = document.createElement('div');
-        div.className = "flex items-center justify-between gap-1 bg-white p-1.5 rounded-lg border border-slate-300";
-        div.innerHTML = `
-            <label class="flex items-center gap-1.5 truncate text-slate-700 cursor-pointer flex-1 text-[11px]">
-                <input type="checkbox" id="tool-suit-${matId}" checked class="rounded border-slate-300 text-slate-800">
-                <span class="truncate font-medium">${escapeHTML(mat.name)}</span>
-            </label>
-            <input type="number" id="tool-vc-${matId}" placeholder="vc..." class="w-12 bg-slate-50 border border-slate-300 rounded p-0.5 text-slate-900 text-right text-xs font-mono">
-        `;
-        container.appendChild(div);
-    }
 }
 
 export function onMaterialOrProfileChange() {
@@ -706,9 +674,9 @@ export function triggerMatchmaker() {
 window.renderAdminToolTable = () => renderAdminToolTable(db);
 window.editToolFromAdmin = (id) => editToolFromAdmin(id, db);
 window.resetToolForm = resetToolForm;
-window.saveToolFromForm = () => saveToolFromForm(db, () => { saveDatabase(); populateDropdowns(); window.renderAdminToolTable(); });
-window.duplicateToolAdmin = (id) => duplicateToolAdmin(id, db, () => { saveDatabase(); window.renderAdminToolTable(); populateDropdowns(); });
-window.deleteToolAdmin = async (id) => { if(await customConfirm("Löschen?")) { delete db.tools[id]; saveDatabase(); populateDropdowns(); window.renderAdminToolTable(); }};
+window.saveToolFromForm = () => saveToolFromForm(db, () => { saveDatabase(); populateDropdowns(); renderAdminToolTable(db); });
+window.duplicateToolAdmin = (id) => duplicateToolAdmin(id, db, () => { saveDatabase(); populateDropdowns(); renderAdminToolTable(db); });
+window.deleteToolAdmin = async (id) => { if(await customConfirm("Löschen?")) { delete db.tools[id]; saveDatabase(); populateDropdowns(); renderAdminToolTable(db); }};
 window.toggleToolGeoFields = toggleToolGeoFields;
 window.addNewMachine = () => addNewMachine(db, () => { saveDatabase(); populateDropdowns(); renderAdminMachinesList(db); });
 window.deleteMachineAdmin = async (id) => { if(await customConfirm("Löschen?")) { deleteMachineAdmin(id, db, () => { saveDatabase(); populateDropdowns(); renderAdminMachinesList(db); }); }};
@@ -772,10 +740,13 @@ window.applyMatchmakerResult = (toolId, apSuggested, aeSuggested) => {
     const mmMach = document.getElementById('mm-machine-select')?.value;
     const mmMat = document.getElementById('mm-material-select')?.value;
     const mmProf = document.getElementById('mm-profile-select')?.value;
+    
     if (mmMach) document.getElementById('machine-select').value = mmMach;
     if (mmMat) document.getElementById('material-select').value = mmMat;
     if (mmProf) document.getElementById('profile-select').value = mmProf;
+    
     window.onMaterialOrProfileChange();
+    
     const tool = db.tools[toolId];
     if(tool) {
         if(tool.brand && document.getElementById('brand-select')) document.getElementById('brand-select').value = tool.brand;
@@ -783,6 +754,7 @@ window.applyMatchmakerResult = (toolId, apSuggested, aeSuggested) => {
         if(document.getElementById('tool-select')) document.getElementById('tool-select').value = toolId;
         window.onToolChange();
     }
+
     if (typeof apSuggested === 'number' && apSuggested > 0) {
         document.getElementById('input-ap-mm').value = apSuggested.toFixed(2);
         if (document.getElementById('slider-ap')) document.getElementById('slider-ap').value = apSuggested;
@@ -791,10 +763,16 @@ window.applyMatchmakerResult = (toolId, apSuggested, aeSuggested) => {
         document.getElementById('input-ae-mm').value = aeSuggested.toFixed(2);
         if (document.getElementById('slider-ae')) document.getElementById('slider-ae').value = aeSuggested;
     }
+
     calculate();
-    document.querySelectorAll('[id^="match-card-"]').forEach(card => card.classList.remove('ring-2', 'ring-emerald-500', 'border-emerald-500'));
+
+    document.querySelectorAll('[id^="match-card-"]').forEach(card => {
+        card.classList.remove('ring-2', 'ring-emerald-500', 'border-emerald-500');
+    });
     const activeCard = document.getElementById(`match-card-${toolId}`);
-    if (activeCard) activeCard.classList.add('ring-2', 'ring-emerald-500', 'border-emerald-500');
+    if (activeCard) {
+        activeCard.classList.add('ring-2', 'ring-emerald-500', 'border-emerald-500');
+    }
 };
 
 function handleSupabaseData(data) {
@@ -818,8 +796,8 @@ window.saveSupabaseConfig = () => saveSupabaseConfig(handleSupabaseData);
 function initApp() {
     populateDropdowns();
     resetSliders(); 
-    renderFavorites();
-    renderHistory();
+    window.renderFavorites();
+    window.renderHistory();
     window.renderAdminToolTable();
     triggerMatchmaker();
 }
