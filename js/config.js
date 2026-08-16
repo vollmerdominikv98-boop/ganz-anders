@@ -95,7 +95,6 @@ export const defaultDb = {
     swarm_data: []
 };
 
-// Security Helper (XSS Protection)
 export function escapeHTML(str) {
     if (typeof str !== 'string') return '';
     return str.replace(/[&<>'"]/g, tag => ({
