@@ -1,4 +1,4 @@
-import { evaluateSwarmAI } from './swarm.js?v=6';
+import { evaluateSwarmAI } from './swarm.js';
 
 export function getChatterLimit(D, Lmax, geo_type, lc_max) {
     const ld_ratio = Lmax / D;
