@@ -489,7 +489,7 @@
     </div>
 
     <script>
-        const DEFAULT_SUPABASE_URL = "https://emqwigtqiqlnvasuzrig.supabase.co";
+        const DEFAULT_SUPABASE_URL = "https://zmyxigtqkqkwwxssritg.supabase.co";
         const DEFAULT_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVtcXdpZ3RxaXFsbnZhc3V6cmlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5Mjg5MTgsImV4cCI6MjA4NzUwNDkxOH0.1_HqL3uYf_Z1sB3M6nE0Q0v2s3R1_4v5X6Z7s8Q9a0";
         const ADMIN_PASSWORD = "cnc2026";
 
@@ -583,7 +583,7 @@
             },
             favorites: [],
             history: [],
-            swarm_data: [] // NEU: Unendliches Langzeitgedächtnis für KI
+            swarm_data: []
         };
 
         let supabaseClient = null;
@@ -716,17 +716,16 @@
                     { data: rigidityArray },
                     { data: profilesArray },
                     { data: toolsArray },
-                    { data: appState } // Wir nutzen app_state nur noch für History/Favorites/Swarm_Data
+                    { data: appState }
                 ] = await Promise.all([
                     supabaseClient.from('machines').select('*'),
                     supabaseClient.from('materials').select('*'),
                     supabaseClient.from('rigidity').select('*'),
                     supabaseClient.from('profiles').select('*'),
                     supabaseClient.from('tools').select('*'),
-                    supabaseClient.from('app_state').select('data').eq('id', 'global_db').single()
+                    supabaseClient.from('app_state').select('data').eq('id', 'global_db').maybeSingle()
                 ]);
 
-                // Adapter-Funktion: SQL Array -> JSON Object
                 const arrayToObject = (array) => {
                     const obj = {};
                     (array || []).forEach(item => {
@@ -736,8 +735,6 @@
                     return obj;
                 };
 
-                // Wenn Daten aus der SQL-Tabelle kommen, überschreiben wir die lokale DB.
-                // Wenn die SQL Tabelle leer ist, behalten wir die lokalen Daten (Sicherheits-Fallback)
                 if (toolsArray && toolsArray.length > 0) {
                     db.machines = arrayToObject(machinesArray);
                     db.materials = arrayToObject(materialsArray);
@@ -746,7 +743,6 @@
                     db.tools = arrayToObject(toolsArray);
                 }
 
-                // Lade History/Favs/Swarm Data aus dem app_state Blob (falls vorhanden)
                 if (appState && appState.data) {
                     if(appState.data.history) db.history = appState.data.history;
                     if(appState.data.favorites) db.favorites = appState.data.favorites;
@@ -770,7 +766,6 @@
             try {
                 const objectToArray = (obj) => Object.entries(obj || {}).map(([id, data]) => ({ id, ...data }));
 
-                // 1. Die reinen Konfigurationsdaten in die sauberen SQL-Tabellen pushen
                 await Promise.all([
                     supabaseClient.from('machines').upsert(objectToArray(db.machines)),
                     supabaseClient.from('materials').upsert(objectToArray(db.materials)),
@@ -779,7 +774,6 @@
                     supabaseClient.from('tools').upsert(objectToArray(db.tools))
                 ]);
 
-                // 2. History, Favorites und Swarm Data pushen wir gesammelt in app_state
                 const userStateData = {
                     history: db.history,
                     favorites: db.favorites,
@@ -795,10 +789,9 @@
         function listenToSupabaseRealtime() {
             if (!supabaseClient) return;
             try {
-                // Nur den app_state channel abonieren für History/Favorites Sync
                 supabaseClient
                     .channel('db_changes')
-                    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_state', filter: 'id=eq.global_db' }, payload => {
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'app_state', filter: 'id=eq.global_db' }, payload => {
                         if (payload.new && payload.new.data) {
                             if(payload.new.data.history) db.history = payload.new.data.history;
                             if(payload.new.data.favorites) db.favorites = payload.new.data.favorites;
@@ -810,7 +803,7 @@
                     })
                     .subscribe();
             } catch(e) {
-                console.warn("Supabase Realtime Sync blockiert (Canvas).", e.message);
+                console.warn("Supabase Realtime Sync blockiert.", e.message);
             }
         }
 
@@ -819,7 +812,7 @@
             if (saved) {
                 try { 
                     const parsed = JSON.parse(saved);
-                    if (parsed && parsed.tools && Object.keys(parsed.tools).length > 2) {
+                    if (parsed && parsed.tools && Object.keys(parsed.tools).length >= 1) {
                         if(!parsed.history) parsed.history = [];
                         if(!parsed.favorites) parsed.favorites = [];
                         if(!parsed.swarm_data) parsed.swarm_data = [];
@@ -1126,12 +1119,38 @@
             }
         }
 
-        async function deleteMachineAdmin(id) {
-            if(Object.keys(db.machines || {}).length <= 1) return await customAlert('Mindestens eine Maschine ist nötig.');
-            delete db.machines[id];
+        async function addNewMachine() {
+            const id = document.getElementById('adm-mach-id').value.trim();
+            const name = document.getElementById('adm-mach-name').value.trim();
+            const rpm = parseFloat(document.getElementById('adm-mach-rpm').value);
+            const vf = parseFloat(document.getElementById('adm-mach-vf').value);
+            const kw = parseFloat(document.getElementById('adm-mach-kw').value);
+            const nm = parseFloat(document.getElementById('adm-mach-nm').value);
+
+            if (!id || !name || isNaN(rpm) || isNaN(vf) || isNaN(kw) || isNaN(nm)) {
+                return await customAlert("Bitte fülle alle Maschinenfelder korrekt aus.");
+            }
+
+            if (!db.machines) db.machines = {};
+            db.machines[id] = { name, max_rpm: rpm, max_vf: vf, max_kw: kw, max_nm: nm };
+
             saveDatabase();
             populateDropdowns();
             renderAdminMachinesList();
+
+            document.getElementById('adm-mach-id').value = '';
+            document.getElementById('adm-mach-name').value = '';
+            await customAlert("Maschine erfolgreich hinzugefügt!");
+        }
+
+        async function deleteMachineAdmin(id) {
+            if(Object.keys(db.machines || {}).length <= 1) return await customAlert('Mindestens eine Maschine ist nötig.');
+            if(await customConfirm("Maschine wirklich löschen?")) {
+                delete db.machines[id];
+                saveDatabase();
+                populateDropdowns();
+                renderAdminMachinesList();
+            }
         }
 
         function renderAdminMaterialsList() {
@@ -1152,7 +1171,30 @@
             }
         }
 
+        async function addNewMaterial() {
+            const id = document.getElementById('adm-mat-id').value.trim();
+            const name = document.getElementById('adm-mat-name').value.trim();
+            const kc11 = parseFloat(document.getElementById('adm-mat-kc11').value);
+            const mc = parseFloat(document.getElementById('adm-mat-mc').value);
+
+            if (!id || !name || isNaN(kc11) || isNaN(mc)) {
+                return await customAlert("Bitte fülle alle Materialfelder korrekt aus.");
+            }
+
+            if (!db.materials) db.materials = {};
+            db.materials[id] = { name, kc11, mc };
+
+            saveDatabase();
+            populateDropdowns();
+            renderAdminMaterialsList();
+
+            document.getElementById('adm-mat-id').value = '';
+            document.getElementById('adm-mat-name').value = '';
+            await customAlert("Material erfolgreich hinzugefügt!");
+        }
+
         async function deleteMaterialAdmin(id) {
+            if(Object.keys(db.materials || {}).length <= 1) return await customAlert('Mindestens ein Material ist nötig.');
             if(await customConfirm("Material wirklich löschen?")) {
                 delete db.materials[id];
                 saveDatabase();
@@ -1183,7 +1225,34 @@
             }
         }
 
+        async function addNewProfile() {
+            const id = document.getElementById('adm-prof-id').value.trim();
+            const name = document.getElementById('adm-prof-name').value.trim();
+            const ap_factor = parseFloat(document.getElementById('adm-prof-ap').value);
+            const ae_factor = parseFloat(document.getElementById('adm-prof-ae').value);
+            const fz_ratio = parseFloat(document.getElementById('adm-prof-fzratio').value);
+            const rct_active = document.getElementById('adm-prof-rct').value === 'true';
+            const desc = document.getElementById('adm-prof-desc').value.trim();
+
+            if (!id || !name || isNaN(ap_factor) || isNaN(ae_factor) || isNaN(fz_ratio)) {
+                return await customAlert("Bitte fülle alle Profilfelder korrekt aus.");
+            }
+
+            if (!db.profiles) db.profiles = {};
+            db.profiles[id] = { name, ap_factor, ae_factor, fz_ratio, rct_active, description: desc };
+
+            saveDatabase();
+            populateDropdowns();
+            renderAdminProfilesList();
+
+            document.getElementById('adm-prof-id').value = '';
+            document.getElementById('adm-prof-name').value = '';
+            document.getElementById('adm-prof-desc').value = '';
+            await customAlert("Profil erfolgreich hinzugefügt!");
+        }
+
         async function deleteProfileAdmin(id) {
+            if(Object.keys(db.profiles || {}).length <= 1) return await customAlert('Mindestens ein Profil ist nötig.');
             if(await customConfirm("Profil wirklich löschen?")) {
                 delete db.profiles[id];
                 saveDatabase();
@@ -1539,7 +1608,6 @@
                 const card = document.createElement('div');
                 card.className = "bg-slate-50 p-3.5 rounded-xl border border-slate-200 hover:border-slate-400 transition flex flex-col justify-between space-y-3 shadow-sm";
                 
-                // 1-KLICK FEEDBACK HTML
                 const hasFeedback = !!item.feedback_status;
                 const feedbackHtml = hasFeedback 
                     ? `<div class="w-full text-center bg-slate-100 border border-slate-200 text-slate-500 text-[10px] py-1.5 rounded-lg font-bold">✔ Feedback gesendet</div>`
@@ -1574,12 +1642,10 @@
         }
 
         function submitFeedback(id, status) {
-            // Finde den Job im Verlauf
             const item = db.history.find(h => h.id === id);
             if(item) {
                 item.feedback_status = status;
                 
-                // Dauerhaftes Speichern in der KI-Datenbank (wird nie gelöscht)
                 if(!db.swarm_data) db.swarm_data = [];
                 db.swarm_data.push({
                     tool_id: item.tool_id,
@@ -1589,12 +1655,14 @@
                     timestamp: Date.now()
                 });
 
-                saveDatabase(); // Sendet das Feedback an Supabase
+                saveDatabase();
+                calculate();
             }
 
-            // UI anpassen
-            document.getElementById(`feedback-actions-${id}`).classList.add('hidden');
-            document.getElementById(`feedback-done-${id}`).classList.remove('hidden');
+            const actionsEl = document.getElementById(`feedback-actions-${id}`);
+            const doneEl = document.getElementById(`feedback-done-${id}`);
+            if (actionsEl) actionsEl.classList.add('hidden');
+            if (doneEl) doneEl.classList.remove('hidden');
         }
 
         async function confirmAndPushToHistory() {
@@ -1985,7 +2053,7 @@
 
             if (physicsActive && isRctActive) {
                 fz_geo = base_fz / combined_thinning;
-                if (fz_geo > fz_nom * 4.0) fz_geo = fz_nom * 4.0; // Max 400% Boost
+                if (fz_geo > fz_nom * 4.0) fz_geo = fz_nom * 4.0;
                 
                 let boostPercent = ((fz_geo / base_fz - 1) * 100).toFixed(0);
                 if (boostPercent > 0) {
@@ -1995,7 +2063,7 @@
                 let expected_hm = base_fz * combined_thinning;
                 if (expected_hm < hm_min) {
                     fz_geo = hm_min / combined_thinning;
-                    if (fz_geo > fz_nom * 3.0) fz_geo = fz_nom * 3.0; // Sicherungslimit
+                    if (fz_geo > fz_nom * 3.0) fz_geo = fz_nom * 3.0;
                     physicsInfoHtml += `<div class="text-[11px] text-rose-600 font-semibold">⚠️ [Schab-Schutz aktiv!] hm wäre nur ${expected_hm.toFixed(4)} mm (Fräser verglüht). fz zwingend auf ${fz_geo.toFixed(4)} mm angehoben!</div>`;
                 } else {
                     physicsInfoHtml += `<div class="text-[11px] text-amber-700 font-semibold">[Intent Routing] RCT deaktiviert (Oberflächen-Fokus). hm = ${expected_hm.toFixed(4)} mm (OK).</div>`;
@@ -2082,7 +2150,7 @@
             let fz_peak = effectiveFz + runout_mm;
             let hm_peak = fz_peak * combined_thinning;
             hm_peak = Math.max(hm_peak, 0.0005); 
-            const kc_peak = Math.min(mat.kc11 / Math.pow(hm_peak, mc), 8000);
+            const kc_peak = Math.min(mat.kc11 / Math.pow(hm_peak, mc), 8000); 
             
             const fc_peak = kc_peak * ap * hm_peak; 
             const f_bend = fc_peak * 0.45; 
