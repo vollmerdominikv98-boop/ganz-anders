@@ -814,7 +814,7 @@ function handleSupabaseData(data) {
 // -------------------------------------------------------------
 // App Initialisierung
 // -------------------------------------------------------------
-export function initApp() {
+function initApp() {
     populateDropdowns();
     resetSliders(); 
     renderFavorites();
