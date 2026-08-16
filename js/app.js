@@ -75,7 +75,7 @@ export function switchAdminTab(tabName) {
         }
     });
 
-    if (tabName === 'tools') window.renderAdminToolTable();
+    if (tabName === 'tools') renderAdminToolTable(db);
     if (tabName === 'machines') renderAdminMachinesList(db);
     if (tabName === 'materials') renderAdminMaterialsList(db);
     if (tabName === 'profiles') renderAdminProfilesList(db);
@@ -87,7 +87,7 @@ export async function toggleAdmin() {
         const pwd = prompt("Bitte Admin-Passwort eingeben:");
         if (pwd === ADMIN_PASSWORD) {
             panel.classList.remove('hidden');
-            window.renderAdminToolTable();
+            renderAdminToolTable(db);
         } else if (pwd !== null) {
             await customAlert("Falsches Passwort!");
         }
@@ -698,7 +698,6 @@ window.syncApFromSlider = syncApFromSlider;
 window.syncApFromInput = syncApFromInput;
 window.syncAeFromSlider = syncAeFromSlider;
 window.syncAeFromInput = syncAeFromInput;
-window.renderFavorites = renderFavorites;
 window.loadFavorite = loadFavorite;
 window.deleteFavorite = deleteFavorite;
 window.clearHistory = clearHistory;
@@ -786,6 +785,8 @@ function handleSupabaseData(data) {
         if (data.appStateData.swarm_data) db.swarm_data = data.appStateData.swarm_data;
     }
     localStorage.setItem('toolpilot_master_db', JSON.stringify(db));
+    
+    // Cloud sync fertigt, initialisieren:
     initApp();
 }
 
@@ -794,11 +795,14 @@ window.saveSupabaseConfig = () => saveSupabaseConfig(handleSupabaseData);
 function initApp() {
     populateDropdowns();
     resetSliders(); 
-    window.renderFavorites();
-    window.renderHistory();
-    window.renderAdminToolTable();
+    renderFavorites();
+    renderHistory();
+    if(window.renderAdminToolTable) window.renderAdminToolTable();
     triggerMatchmaker();
 }
 
+// -------------------------------------------------------------
+// BOOT-SEQUENZ GANZ ZUM SCHLUSS (verhindert den Crash!)
+// -------------------------------------------------------------
 initSupabase(handleSupabaseData);
 initApp();
