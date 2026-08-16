@@ -111,7 +111,7 @@ export async function saveToolFromForm(db, onSave) {
         const vcInput = document.getElementById(`tool-vc-${matId}`);
         if (chk && chk.checked) suitableMaterials.push(matId);
         const vcVal = vcInput ? parseFloat(vcInput.value) : NaN;
-        vcMap[matId] = isNaN(vcVal) ? 100 : vcVal; // Default auf 100
+        vcMap[matId] = isNaN(vcVal) ? 100 : vcVal; 
     }
 
     let suitableProfiles = [];
@@ -240,4 +240,37 @@ export function deleteProfileAdmin(id, db, onSave) {
     if(Object.keys(db.profiles || {}).length <= 1) return customAlert('Mindestens ein Profil ist nötig.');
     delete db.profiles[id];
     if(typeof onSave === 'function') onSave();
+}
+
+export function renderProfileCheckboxes(db) {
+    const container = document.getElementById('adm-tool-profiles-container');
+    if(!container) return;
+    container.innerHTML = '';
+    for (const [profId, p] of Object.entries(db.profiles || {})) {
+        const div = document.createElement('div');
+        div.className = "flex items-center gap-1.5";
+        div.innerHTML = `
+            <input type="checkbox" id="tool-prof-${profId}" checked class="rounded border-slate-300 text-slate-800">
+            <label for="tool-prof-${profId}" class="text-slate-700 cursor-pointer text-[11px] font-medium truncate" title="${escapeHTML(p.name)}">${escapeHTML(p.name)}</label>
+        `;
+        container.appendChild(div);
+    }
+}
+
+export function renderToolMatrixInputs(db) {
+    const container = document.getElementById('adm-tool-matrix-container');
+    if(!container) return;
+    container.innerHTML = '';
+    for (const [matId, mat] of Object.entries(db.materials || {})) {
+        const div = document.createElement('div');
+        div.className = "flex items-center justify-between gap-1 bg-white p-1.5 rounded-lg border border-slate-300";
+        div.innerHTML = `
+            <label class="flex items-center gap-1.5 truncate text-slate-700 cursor-pointer flex-1 text-[11px]">
+                <input type="checkbox" id="tool-suit-${matId}" checked class="rounded border-slate-300 text-slate-800">
+                <span class="truncate font-medium">${escapeHTML(mat.name)}</span>
+            </label>
+            <input type="number" id="tool-vc-${matId}" placeholder="vc..." class="w-12 bg-slate-50 border border-slate-300 rounded p-0.5 text-slate-900 text-right text-xs font-mono">
+        `;
+        container.appendChild(div);
+    }
 }
