@@ -1,5 +1,5 @@
-import { DEFAULT_SUPABASE_URL, DEFAULT_SUPABASE_KEY } from './config.js';
-import { customAlert } from './modal.js';
+import { DEFAULT_SUPABASE_URL, DEFAULT_SUPABASE_KEY } from './config.js?v=6';
+import { customAlert } from './modal.js?v=6';
 
 let supabaseClient = null;
 
@@ -10,8 +10,6 @@ export function initSupabase(onDataFetched) {
     if (url && key && window.supabase) {
         supabaseClient = window.supabase.createClient(url, key);
         fetchDataFromSupabase(onDataFetched);
-        // ACHTUNG: listenToSupabaseRealtime ist hier absichtlich DEAKTIVIERT, 
-        // um den "Loop of Death" beim lokalen Speichern zu verhindern. 
     }
 }
 
@@ -58,4 +56,14 @@ export async function fetchDataFromSupabase(onSuccess) {
             });
         }
     } catch(e) {}
+}
+
+export async function saveSupabaseConfig(onDataFetched) {
+    const url = document.getElementById('supabase-url').value.trim();
+    const key = document.getElementById('supabase-key').value.trim();
+    if (!url || !key) return customAlert("Bitte URL und Key eingeben.");
+    localStorage.setItem('toolpilot_supabase_url', url);
+    localStorage.setItem('toolpilot_supabase_key', key);
+    initSupabase(onDataFetched);
+    await customAlert("Supabase Konfiguration gespeichert!");
 }
