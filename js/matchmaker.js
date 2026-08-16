@@ -17,11 +17,19 @@ export function runMatchmaker(db, machId, matId, rigId) {
 
     let validTools = [];
 
-    // 1. Geometrische Vorfilterung
+    // 1. Strikte Eignungsfilterung (Material & Profil & Geometrie)
     for (const [toolId, tool] of Object.entries(db.tools || {})) {
-        if (tool.suitable_materials && tool.suitable_materials.length > 0 && !tool.suitable_materials.includes(matId)) continue;
-        if (tool.suitable_profiles && tool.suitable_profiles.length > 0 && !tool.suitable_profiles.includes(profId)) continue;
+        // Material-Freigabe prüfen
+        if (tool.suitable_materials && !tool.suitable_materials.includes(matId)) {
+            continue; // Werkzeug ist für dieses Material nicht freigegeben!
+        }
         
+        // Profil-Freigabe prüfen (z.B. Schruppen vs. Schlichten gehärtet)
+        if (tool.suitable_profiles && !tool.suitable_profiles.includes(profId)) {
+            continue; // Werkzeug ist für diese Bearbeitung nicht freigegeben!
+        }
+        
+        // Geometrie-Check
         const maxD = radiusInput * 2;
         if (radiusInput > 0 && tool.diameter > maxD) continue; 
         
@@ -32,11 +40,11 @@ export function runMatchmaker(db, machId, matId, rigId) {
     }
 
     if (validTools.length === 0) {
-        resultsContainer.innerHTML = `<div class="text-xs text-rose-600 bg-rose-50 p-4 rounded-xl border border-rose-200">Kein passendes Werkzeug gefunden. Benötigt: max. Ø${(radiusInput * 2).toFixed(1)} mm, min. ${depthInput} mm Auskragung für dieses Material.</div>`;
+        resultsContainer.innerHTML = `<div class="text-xs text-rose-600 bg-rose-50 p-4 rounded-xl border border-rose-200 font-semibold">Kein passendes Werkzeug in deinem Bestand für diese Material/Profil-Kombination gefunden.</div>`;
         return;
     }
 
-    // 2. Physikalische Simulation aller Treffer
+    // 2. Physikalische Simulation aller tauglichen Werkzeuge
     let rankedResults = [];
     const profile = db.profiles[profId] || { ap_factor: 0.5, ae_factor: 0.5 };
     const isUserForcedAp = !isNaN(customAp) && customAp > 0;
@@ -48,7 +56,7 @@ export function runMatchmaker(db, machId, matId, rigId) {
         const Lmax = tool.max_overhang || (D * 3);
         const ld_ratio = Lmax / D;
 
-        // Physische Schneidenlänge lc
+        // Schneidenlänge lc
         let lc_max = tool.flute_len;
         if (!lc_max) {
             if (tool.geo_type === 'torus') lc_max = Math.max(R * 2, D * 1.0);
@@ -56,7 +64,7 @@ export function runMatchmaker(db, machId, matId, rigId) {
             else lc_max = D * 1.5;
         }
 
-        // Maximale STABILE Schnitttiefe
+        // Stabile Schnitttiefe ap_krit
         let ap_krit = 0;
         if (tool.geo_type === 'torus') {
             ap_krit = Math.min(D * 0.8, lc_max);
@@ -125,16 +133,16 @@ export function runMatchmaker(db, machId, matId, rigId) {
         }
     });
 
-    // 3. Ranking nach Stabilität & Zeitspanvolumen sortieren
+    // 3. Sortierung
     rankedResults.sort((a, b) => b.score - a.score);
 
     resultsContainer.innerHTML = '';
     if (rankedResults.length === 0) {
-        resultsContainer.innerHTML = '<div class="text-xs text-amber-600 bg-amber-50 p-4 rounded-xl border border-amber-200">Keine Schnittdaten ermittelbar.</div>';
+        resultsContainer.innerHTML = '<div class="text-xs text-amber-600 bg-amber-50 p-4 rounded-xl border border-amber-200">Keine stabilen Schnittdaten ermittelbar.</div>';
         return;
     }
 
-    // 4. Anzeige der Ergebnisse mit Drehzahl & Vorschub im Vordergrund
+    // 4. Ausgabe mit Fokus auf Drehzahl & Vorschub
     rankedResults.slice(0, 4).forEach((item, index) => { 
         const div = document.createElement('div');
         const isFaulty = item.hasChatter || item.isFluteExceeded;
@@ -183,10 +191,8 @@ export function runMatchmaker(db, machId, matId, rigId) {
                 </div>
             </div>
 
-            <!-- RECHTE SEITE: HAUPTFOKUS DREHZAHL & VORSCHUB + BUTTON -->
+            <!-- RECHTE SEITE: DREHZAHL & VORSCHUB + ÜBERNEHMEN -->
             <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 border-slate-200/60 pt-3 md:pt-0">
-                
-                <!-- GROSSER SCHNITTDATEN-BLOCK -->
                 <div class="flex items-center gap-2 bg-slate-900 text-white px-3.5 py-2 rounded-xl shadow-sm">
                     <div class="text-center pr-2 border-r border-slate-700">
                         <div class="text-[9px] uppercase font-bold text-indigo-300 leading-none">Drehzahl (n)</div>
@@ -198,7 +204,6 @@ export function runMatchmaker(db, machId, matId, rigId) {
                     </div>
                 </div>
 
-                <!-- BUTTON (Übernimmt leise ohne Aufklappen) -->
                 <button onclick="applyMatchmakerResult('${item.toolId}', ${item.ap}, ${item.ae})" class="bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 hover:border-slate-400 px-3.5 py-2.5 rounded-xl text-xs font-bold transition shadow-sm whitespace-nowrap flex items-center gap-1.5 active:scale-95">
                     <span>✔</span> Übernehmen
                 </button>
