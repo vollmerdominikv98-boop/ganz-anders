@@ -1,5 +1,5 @@
-import { calculatePhysics, getChatterLimit } from './physics.js?v=6';
-import { escapeHTML } from './config.js?v=6';
+import { calculatePhysics, getChatterLimit } from './physics.js';
+import { escapeHTML } from './config.js';
 
 export function runMatchmaker(db, machId, matId, rigId) {
     const depthInput = parseFloat(document.getElementById('mm-depth')?.value || 25);
@@ -100,7 +100,6 @@ export function runMatchmaker(db, machId, matId, rigId) {
                     <span>Ø: <strong>${item.diameter}mm</strong></span>
                     <span>ap: <strong class="${isFaulty ? 'text-rose-600 font-black' : 'text-slate-800'}">${item.ap.toFixed(2)}mm</strong></span>
                     <span>ae: <strong>${item.ae.toFixed(2)}mm</strong></span>
-                    <span class="text-slate-400">| Q: ${item.q.toFixed(1)} cm³/min</span>
                 </div>
             </div>
             <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 border-slate-200/60 pt-3 md:pt-0">
