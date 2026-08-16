@@ -165,7 +165,7 @@ export function calculatePhysics({ db, machId, matId, profId, toolId, rigId, hol
     let vc_eff_real = (Math.PI * Deff * n_eff) / 1000;
 
     // Ratter- & Stabilitätsgrenze (Chatter Limit)
-    let ap_krit = D * 2.5; // Standard-Limit
+    let ap_krit = D * 2.5;
     let hasChatter = false;
     if (ld_ratio > 3.0) {
         ap_krit = D * Math.pow((3.0 / ld_ratio), 1.5);
