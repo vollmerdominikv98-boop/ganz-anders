@@ -64,7 +64,7 @@ export function calculatePhysics({ db, machId, matId, profId, toolId, rigId, hol
     let base_fz = fz_nom * fz_ratio;
     physicsInfoHtml += `<div class="text-[11px] text-indigo-700 font-semibold">[Profil-Intent] Basis fz (Ratio ${fz_ratio.toFixed(2)}): ${base_fz.toFixed(4)} mm</div>`;
 
-    // 3. 3D-Chip Thinning (Mechanischer Flaschenhals 1)
+    // 3. 3D-Chip Thinning
     let ae_ratio = Math.min(ae / Deff, 1.0);
     let phi_s_rad = Math.acos(Math.max(-1, 1 - 2 * ae_ratio)); 
 
@@ -93,7 +93,7 @@ export function calculatePhysics({ db, machId, matId, profId, toolId, rigId, hol
         if (expected_hm < hm_min) {
             fz_geo = hm_min / combined_thinning;
             if (fz_geo > fz_nom * 3.0) fz_geo = fz_nom * 3.0;
-            physicsInfoHtml += `<div class="text-[11px] text-rose-600 font-semibold">⚠️ [Schab-Schutz aktiv!] hm wäre nur ${expected_hm.toFixed(4)} mm (Fräser verglüht). fz zwingend auf ${fz_geo.toFixed(4)} mm angehoben!</div>`;
+            physicsInfoHtml += `<div class="text-[11px] text-rose-600 font-semibold">⚠️ [Schab-Schutz aktiv!] hm wäre nur ${expected_hm.toFixed(4)} mm. fz zwingend auf ${fz_geo.toFixed(4)} mm angehoben!</div>`;
         } else {
             physicsInfoHtml += `<div class="text-[11px] text-amber-700 font-semibold">[Intent Routing] RCT deaktiviert (Oberflächen-Fokus). hm = ${expected_hm.toFixed(4)} mm (OK).</div>`;
         }
@@ -122,32 +122,32 @@ export function calculatePhysics({ db, machId, matId, profId, toolId, rigId, hol
     let k_fz_rigidity = rigidity.factor || 1.0;
     let k_vc_regrind = isRegrind ? 0.90 : 1.0;
     if (isRegrind) {
-        physicsInfoHtml += `<div class="text-[11px] text-amber-800 font-semibold">[Nachschliff] vc -10% (Beschichtungsschutz)</div>`;
+        physicsInfoHtml += `<div class="text-[11px] text-amber-800 font-semibold">[Nachschliff] vc -10%</div>`;
     }
 
     let effectiveVc = baseVc * k_vc_overhang * k_vc_holder * k_vc_regrind;
     let effectiveFz = fz_geo * k_fz_overhang * k_fz_rigidity;
 
-    // === NEU: THERMISCHER WÄCHTER (Flaschenhals vc) ===
-    if (mat.kc11 > 2000) { 
+    // Thermischer Wächter
+    if (mat.kc11 > 2000) {
         const engagement_ratio = ae / Deff;
         if (engagement_ratio > 0.15) {
-            const thermal_reduction = 1 - (engagement_ratio * 0.4); 
+            const thermal_reduction = 1 - (engagement_ratio * 0.4);
             const thermal_vc_limit = effectiveVc * thermal_reduction;
             if (thermal_vc_limit < effectiveVc) {
                 effectiveVc = thermal_vc_limit;
-                physicsInfoHtml += `<div class="text-[11px] text-orange-600 font-semibold">🔥 [Thermischer Wächter] Hohe Umschlingung bei hartem Material. vc auf ${effectiveVc.toFixed(0)} m/min abgeriegelt (Hitzestau).</div>`;
+                physicsInfoHtml += `<div class="text-[11px] text-orange-600 font-semibold">🔥 [Thermischer Wächter] vc auf ${effectiveVc.toFixed(0)} m/min abgeriegelt.</div>`;
             }
         }
     }
 
-    // === NEU: RAUTIEFEN-BEGRENZER (Flaschenhals fz) ===
+    // Rautiefen-Begrenzer
     if (profId.includes('schlichten') && R > 0) {
-        const target_Rth = 0.003; 
+        const target_Rth = 0.003;
         const fz_surface_limit = Math.sqrt(target_Rth * 8 * R);
         if (effectiveFz > fz_surface_limit) {
             effectiveFz = fz_surface_limit;
-            physicsInfoHtml += `<div class="text-[11px] text-cyan-700 font-semibold">✨ [Oberflächen-Wächter] fz hart auf ${effectiveFz.toFixed(4)} mm limitiert, um Rth < 3µm zu garantieren.</div>`;
+            physicsInfoHtml += `<div class="text-[11px] text-cyan-700 font-semibold">✨ [Oberflächen-Wächter] fz auf ${effectiveFz.toFixed(4)} mm limitiert (Rth < 3µm).</div>`;
         }
     }
 
@@ -155,7 +155,7 @@ export function calculatePhysics({ db, machId, matId, profId, toolId, rigId, hol
     if (holderType === 'spannzange') runout_mm = 0.012;
     else if (holderType === 'weldon') runout_mm = 0.020;
 
-    physicsInfoHtml += `<div class="text-[11px] text-slate-600">[Setup-Check] L/D=${ld_ratio.toFixed(1)} | Halter=${holderType} | vc(korr): ${effectiveVc.toFixed(0)} m/min</div>`;
+    physicsInfoHtml += `<div class="text-[11px] text-slate-600">[Setup] L/D=${ld_ratio.toFixed(1)} | Halter=${holderType} | vc(korr): ${effectiveVc.toFixed(0)} m/min</div>`;
 
     // 5. Kinematik
     let n_theo = (effectiveVc * 1000) / (Math.PI * Deff);
@@ -164,22 +164,24 @@ export function calculatePhysics({ db, machId, matId, profId, toolId, rigId, hol
     vf_eff = Math.min(vf_eff, mach.max_vf);
     let vc_eff_real = (Math.PI * Deff * n_eff) / 1000;
 
-    // === NEU: RATTER- / STABILITÄTSGRENZE (Chatter Limit) ===
+    // Ratter- & Stabilitätsgrenze (Chatter Limit)
+    let ap_krit = D * 2.5; // Standard-Limit
+    let hasChatter = false;
     if (ld_ratio > 3.0) {
-        const ap_krit = D * Math.pow((3.0 / ld_ratio), 1.5); 
+        ap_krit = D * Math.pow((3.0 / ld_ratio), 1.5);
         if (ap > ap_krit) {
+            hasChatter = true;
             warnings.push(`<div class="text-xs font-bold text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-300 shadow-sm flex items-start gap-2"><span class="text-base leading-none">🔔</span> <div><strong>RATTER-GEFAHR (Chatter):</strong> Schnitttiefe ap (${ap.toFixed(2)} mm) überschreitet das stabile Limit (${ap_krit.toFixed(2)} mm) für L/D=${ld_ratio.toFixed(1)}. Reduziere ap oder nimm einen kürzeren Fräser!</div></div>`);
         }
     }
 
-    // 6. Kienzle & Dynamik
+    // 6. Kienzle & Kräfte
     let hm_real = phi_s_rad > 0 ? (effectiveFz * act_ratio * 2 * ae) / (Deff * phi_s_rad) : 0.0005;
     hm_real = Math.max(hm_real, 0.0005); 
 
     const mc = mat.mc !== undefined ? mat.mc : 0.25;
     let kc_raw = mat.kc11 / Math.pow(hm_real, mc);
     const kc_real = Math.min(kc_raw, 8000); 
-    physicsInfoHtml += `<div class="text-[11px] text-slate-500">[Kienzle Engine] Reale ø-Spandicke hm: ${hm_real.toFixed(4)} mm | kc: ${kc_real.toFixed(0)} N/mm²</div>`;
 
     const Q_cm3 = (ap * ae * vf_eff) / 1000; 
     const Q_mm3 = ap * ae * vf_eff;
@@ -188,7 +190,7 @@ export function calculatePhysics({ db, machId, matId, profId, toolId, rigId, hol
 
     const mach_max_nm = mach.max_nm || 100; 
     if (torque_nm > mach_max_nm * 0.9) {
-        warnings.push(`<div class="text-xs font-bold text-rose-700 bg-rose-50 p-2.5 rounded-xl border border-rose-200 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⚠️</span> <div><strong>SPINDEL ÜBERLASTET:</strong> Drehmoment (${torque_nm.toFixed(1)} Nm) überschreitet Limit (${mach_max_nm} Nm)!</div></div>`);
+        warnings.push(`<div class="text-xs font-bold text-rose-700 bg-rose-50 p-2.5 rounded-xl border border-rose-200 shadow-sm flex items-start gap-2"><span class="text-base leading-none">⚠️</span> <div><strong>SPINDEL ÜBERLASTET:</strong> Drehmoment (${torque_nm.toFixed(1)} Nm) überschreitet Limit!</div></div>`);
     }
 
     let z_in_cut = (phi_s_rad / (2 * Math.PI)) * z;
@@ -222,6 +224,8 @@ export function calculatePhysics({ db, machId, matId, profId, toolId, rigId, hol
         vf: vf_eff,
         ap,
         ae,
+        ap_krit,
+        hasChatter,
         ap_factor,
         ae_factor,
         q: Q_cm3,
