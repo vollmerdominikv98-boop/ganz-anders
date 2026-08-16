@@ -17,7 +17,7 @@ export function runMatchmaker(db, machId, matId, rigId) {
 
     let validTools = [];
 
-    // 1. Filter: Geometrie & Eignung
+    // 1. Filter nach Geometrie
     for (const [toolId, tool] of Object.entries(db.tools || {})) {
         if (tool.suitable_materials && tool.suitable_materials.length > 0 && !tool.suitable_materials.includes(matId)) continue;
         if (tool.suitable_profiles && tool.suitable_profiles.length > 0 && !tool.suitable_profiles.includes(profId)) continue;
@@ -32,18 +32,41 @@ export function runMatchmaker(db, machId, matId, rigId) {
     }
 
     if (validTools.length === 0) {
-        resultsContainer.innerHTML = `<div class="text-xs text-rose-600 bg-rose-50 p-4 rounded-xl border border-rose-200">Kein passendes Werkzeug gefunden. Du benötigst einen Fräser mit maximal Ø${(radiusInput * 2).toFixed(1)} mm und mindestens ${depthInput} mm Auskragung für dieses Material.</div>`;
+        resultsContainer.innerHTML = `<div class="text-xs text-rose-600 bg-rose-50 p-4 rounded-xl border border-rose-200">Kein passendes Werkzeug gefunden. Benötigt: max. Ø${(radiusInput * 2).toFixed(1)} mm, min. ${depthInput} mm Auskragung.</div>`;
         return;
     }
 
-    // 2. Physikalische Simulation aller Treffer
+    // 2. Intelligente Simulation mit Rattergrenzen-Kompensation
     let rankedResults = [];
     const profile = db.profiles[profId] || { ap_factor: 0.5, ae_factor: 0.5 };
     
     validTools.forEach(toolId => {
         const tool = db.tools[toolId];
-        const ap = (!isNaN(customAp) && customAp > 0) ? customAp : tool.diameter * profile.ap_factor;
-        const ae = (!isNaN(customAe) && customAe > 0) ? customAe : tool.diameter * profile.ae_factor;
+        const D = tool.diameter;
+        const Lmax = tool.max_overhang || (D * 3);
+        const ld_ratio = Lmax / D;
+        
+        // Rattergrenze für dieses Werkzeug berechnen
+        const ap_krit = ld_ratio > 3.0 ? (D * Math.pow((3.0 / ld_ratio), 1.5)) : (D * 2.0);
+
+        let ap_sim = 0;
+        let passes = 1;
+        let isUserForcedAp = !isNaN(customAp) && customAp > 0;
+
+        if (isUserForcedAp) {
+            // Nutzer erzwingt festes ap
+            ap_sim = customAp;
+            passes = Math.max(1, Math.ceil(depthInput / ap_sim));
+        } else {
+            // KI ermittelt die maximale STABILE Schnitttiefe
+            const max_profile_ap = D * profile.ap_factor;
+            const safe_single_ap = Math.min(max_profile_ap, ap_krit * 0.95);
+            
+            passes = Math.max(1, Math.ceil(depthInput / safe_single_ap));
+            ap_sim = depthInput / passes;
+        }
+
+        const ae_sim = (!isNaN(customAe) && customAe > 0) ? customAe : (D * profile.ae_factor);
 
         const res = calculatePhysics({
             db,
@@ -55,36 +78,47 @@ export function runMatchmaker(db, machId, matId, rigId) {
             holderType: 'spannzange', 
             physicsActive: true,
             isRegrind: false,
-            ap: ap,
-            ae: ae
+            ap: ap_sim,
+            ae: ae_sim
         });
 
         if (res) {
+            // Qualitäts- & Stabilitäts-Score berechnen
+            let stabilityPenalty = 1.0;
+            if (res.hasChatter) stabilityPenalty *= 0.25; // Drastische Strafe bei Rattergefahr!
+            if (res.isOverPower) stabilityPenalty *= 0.50;
+            if (res.stress > 2500) stabilityPenalty *= 0.20;
+
+            const effective_Removal_Score = (res.q / passes) * stabilityPenalty;
+
             rankedResults.push({
                 toolId: toolId,
                 toolName: tool.name,
                 brand: tool.brand,
                 diameter: tool.diameter,
                 q: res.q, 
+                score: effective_Removal_Score,
                 rpm: res.rpm,
                 vf: res.vf,
-                ap: ap,
-                ae: ae,
+                ap: ap_sim,
+                ae: ae_sim,
+                passes: passes,
+                totalDepth: depthInput,
                 power: res.power,
-                torque: res.torque,
+                hasChatter: res.hasChatter,
+                ap_krit: res.ap_krit,
                 stress: res.stress,
-                isOverPower: res.isOverPower,
-                warnings: res.warnings
+                isOverPower: res.isOverPower
             });
         }
     });
 
-    // 3. Ranking nach Zeitspanvolumen (Q)
-    rankedResults.sort((a, b) => b.q - a.q);
+    // 3. Ranking nach stabilem Score sortieren
+    rankedResults.sort((a, b) => b.score - a.score);
 
     resultsContainer.innerHTML = '';
     if (rankedResults.length === 0) {
-        resultsContainer.innerHTML = '<div class="text-xs text-amber-600 bg-amber-50 p-4 rounded-xl border border-amber-200">Keine Schnittdaten für diese Kombination berechenbar.</div>';
+        resultsContainer.innerHTML = '<div class="text-xs text-amber-600 bg-amber-50 p-4 rounded-xl border border-amber-200">Keine stabilen Schnittdaten ermittelbar.</div>';
         return;
     }
 
@@ -92,27 +126,28 @@ export function runMatchmaker(db, machId, matId, rigId) {
     rankedResults.slice(0, 4).forEach((item, index) => { 
         const div = document.createElement('div');
         const isWinner = index === 0;
-        const borderClass = isWinner ? "border-indigo-400 bg-indigo-50/40 ring-1 ring-indigo-400" : "border-slate-200 bg-white";
-        const badge = isWinner 
-            ? `<span class="bg-indigo-600 text-white px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">Top Empfehlung</span>` 
-            : `<span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold">Platz ${index + 1}</span>`;
-
-        let warningBadge = '';
-        if (item.isOverPower) {
-            warningBadge = `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-[9px] font-bold">⚠️ Hohe Spindellast</span>`;
-        } else if (item.stress > 2500) {
-            warningBadge = `<span class="bg-rose-100 text-rose-800 px-2 py-0.5 rounded text-[9px] font-bold">⚠️ Hohe Biegespannung</span>`;
+        const borderClass = isWinner ? "border-indigo-500 bg-indigo-50/50 ring-2 ring-indigo-400 shadow-md" : "border-slate-200 bg-white";
+        
+        let statusBadge = '';
+        if (item.hasChatter) {
+            statusBadge = `<span class="bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5 rounded-full text-[10px] font-bold">⚠️ Rattergefahr (Limit: ${item.ap_krit.toFixed(1)}mm)</span>`;
+        } else if (item.passes > 1) {
+            statusBadge = `<span class="bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full text-[10px] font-bold">🟢 100% Stabil (${item.passes}× Z à ${item.ap.toFixed(2)}mm)</span>`;
+        } else {
+            statusBadge = `<span class="bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full text-[10px] font-bold">🟢 100% Stabil (1 Schnitt)</span>`;
         }
+
+        const topBadge = isWinner ? `<span class="bg-indigo-600 text-white px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">Top Empfehlung</span>` : `<span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold">Platz ${index + 1}</span>`;
 
         div.className = `p-4 rounded-2xl border ${borderClass} flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-sm transition hover:shadow-md`;
         div.innerHTML = `
-            <div class="space-y-1">
+            <div class="space-y-1.5">
                 <div class="flex items-center gap-2 flex-wrap">
-                    ${badge}
-                    ${warningBadge}
+                    ${topBadge}
+                    ${statusBadge}
                     <strong class="text-slate-900 text-sm">${item.brand ? `[${item.brand}] ` : ''}${item.toolName}</strong>
                 </div>
-                <div class="text-xs text-slate-500 font-mono flex flex-wrap gap-x-3 gap-y-0.5 pt-1">
+                <div class="text-xs text-slate-500 font-mono flex flex-wrap gap-x-3 gap-y-0.5">
                     <span>Ø: <strong class="text-slate-800">${item.diameter}mm</strong></span>
                     <span>ap: <strong class="text-slate-800">${item.ap.toFixed(2)}mm</strong></span>
                     <span>ae: <strong class="text-slate-800">${item.ae.toFixed(2)}mm</strong></span>
@@ -124,7 +159,7 @@ export function runMatchmaker(db, machId, matId, rigId) {
                     <div class="text-indigo-700 font-black font-mono text-base">${item.q.toFixed(1)} cm³/min</div>
                     <div class="text-[10px] font-mono text-slate-500">${item.rpm.toFixed(0)} U/min | ${item.vf.toFixed(0)} mm/min</div>
                 </div>
-                <button onclick="applyMatchmakerResult('${item.toolId}')" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm whitespace-nowrap">
+                <button onclick="applyMatchmakerResult('${item.toolId}', ${item.ap}, ${item.ae})" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm whitespace-nowrap">
                     Laden & Details 👉
                 </button>
             </div>
