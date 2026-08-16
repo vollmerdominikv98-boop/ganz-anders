@@ -734,7 +734,7 @@ window.importDatabaseJSON = importDatabaseJSON;
 window.triggerMatchmaker = triggerMatchmaker;
 window.syncMmToExpert = syncMmToExpert;
 
-window.applyMatchmakerResult = (toolId) => {
+window.applyMatchmakerResult = (toolId, apSuggested, aeSuggested) => {
     const mmMach = document.getElementById('mm-machine-select')?.value;
     const mmMat = document.getElementById('mm-material-select')?.value;
     const mmProf = document.getElementById('mm-profile-select')?.value;
@@ -753,15 +753,14 @@ window.applyMatchmakerResult = (toolId) => {
         window.onToolChange();
     }
 
-    const mmAp = parseFloat(document.getElementById('mm-ap')?.value);
-    const mmAe = parseFloat(document.getElementById('mm-ae')?.value);
-    if (!isNaN(mmAp) && mmAp > 0) {
-        document.getElementById('input-ap-mm').value = mmAp.toFixed(2);
-        if (document.getElementById('slider-ap')) document.getElementById('slider-ap').value = mmAp;
+    // Setze das vom Matchmaker berechnete, STABILE ap/ae ein
+    if (typeof apSuggested === 'number' && apSuggested > 0) {
+        document.getElementById('input-ap-mm').value = apSuggested.toFixed(2);
+        if (document.getElementById('slider-ap')) document.getElementById('slider-ap').value = apSuggested;
     }
-    if (!isNaN(mmAe) && mmAe > 0) {
-        document.getElementById('input-ae-mm').value = mmAe.toFixed(2);
-        if (document.getElementById('slider-ae')) document.getElementById('slider-ae').value = mmAe;
+    if (typeof aeSuggested === 'number' && aeSuggested > 0) {
+        document.getElementById('input-ae-mm').value = aeSuggested.toFixed(2);
+        if (document.getElementById('slider-ae')) document.getElementById('slider-ae').value = aeSuggested;
     }
 
     calculate();
@@ -811,9 +810,6 @@ function handleSupabaseData(data) {
     initApp();
 }
 
-// -------------------------------------------------------------
-// App Initialisierung
-// -------------------------------------------------------------
 function initApp() {
     populateDropdowns();
     resetSliders(); 
