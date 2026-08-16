@@ -1,15 +1,15 @@
-import { defaultDb, escapeHTML, ADMIN_PASSWORD } from './config.js';
-import { customAlert, customConfirm } from './modal.js';
-import { initSupabase, saveSupabaseConfig, pushDataToSupabase } from './supabase.js';
-import { calculatePhysics } from './physics.js';
-import { runMatchmaker } from './matchmaker.js';
+import { defaultDb, escapeHTML, ADMIN_PASSWORD } from './config.js?v=6';
+import { customAlert, customConfirm } from './modal.js?v=6';
+import { initSupabase, saveSupabaseConfig, pushDataToSupabase } from './supabase.js?v=6';
+import { calculatePhysics } from './physics.js?v=6';
+import { runMatchmaker } from './matchmaker.js?v=6';
 import {
     renderAdminToolTable, editToolFromAdmin, resetToolForm, saveToolFromForm,
     duplicateToolAdmin, deleteMachineAdmin, deleteMaterialAdmin, deleteProfileAdmin, toggleToolGeoFields,
     addNewMachine, addNewMaterial, addNewProfile,
     renderAdminMachinesList, renderAdminMaterialsList, renderAdminProfilesList,
     renderToolMatrixInputs, renderProfileCheckboxes
-} from './admin.js';
+} from './admin.js?v=6';
 
 let db = loadDatabase();
 let currentCalculatedResults = { rpm: 0, vf: 0, ap: 0, ae: 0, q: 0, power: 0, torque: 0, fz_eff: 0, vc_eff: 0, fc: 0, stress: 0 };
@@ -75,7 +75,7 @@ export function switchAdminTab(tabName) {
         }
     });
 
-    if (tabName === 'tools') renderAdminToolTable(db);
+    if (tabName === 'tools') window.renderAdminToolTable();
     if (tabName === 'machines') renderAdminMachinesList(db);
     if (tabName === 'materials') renderAdminMaterialsList(db);
     if (tabName === 'profiles') renderAdminProfilesList(db);
@@ -87,7 +87,7 @@ export async function toggleAdmin() {
         const pwd = prompt("Bitte Admin-Passwort eingeben:");
         if (pwd === ADMIN_PASSWORD) {
             panel.classList.remove('hidden');
-            renderAdminToolTable(db);
+            window.renderAdminToolTable();
         } else if (pwd !== null) {
             await customAlert("Falsches Passwort!");
         }
@@ -705,6 +705,7 @@ window.deleteFavorite = deleteFavorite;
 window.clearHistory = clearHistory;
 window.submitFeedback = submitFeedback;
 window.confirmAndPushToHistory = confirmAndPushToHistory;
+window.saveSupabaseConfig = () => saveSupabaseConfig(handleSupabaseData);
 window.exportDatabaseJSON = exportDatabaseJSON;
 window.importDatabaseJSON = importDatabaseJSON;
 window.resetToDefaultData = resetToDefaultData;
@@ -790,13 +791,11 @@ function handleSupabaseData(data) {
     initApp();
 }
 
-window.saveSupabaseConfig = () => saveSupabaseConfig(handleSupabaseData);
-
-export function initApp() {
+function initApp() {
     populateDropdowns();
     resetSliders(); 
-    renderFavorites();
-    renderHistory();
+    window.renderFavorites();
+    window.renderHistory();
     window.renderAdminToolTable();
     triggerMatchmaker();
 }
