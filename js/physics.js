@@ -64,7 +64,7 @@ export function calculatePhysics({ db, machId, matId, profId, toolId, rigId, hol
     let base_fz = fz_nom * fz_ratio;
     physicsInfoHtml += `<div class="text-[11px] text-indigo-700 font-semibold">[Profil-Intent] Basis fz (Ratio ${fz_ratio.toFixed(2)}): ${base_fz.toFixed(4)} mm</div>`;
 
-    // 3. 3D-Chip Thinning
+    // 3. 3D-Chip Thinning (Mechanischer Flaschenhals 1)
     let ae_ratio = Math.min(ae / Deff, 1.0);
     let phi_s_rad = Math.acos(Math.max(-1, 1 - 2 * ae_ratio)); 
 
@@ -128,6 +128,35 @@ export function calculatePhysics({ db, machId, matId, profId, toolId, rigId, hol
     let effectiveVc = baseVc * k_vc_overhang * k_vc_holder * k_vc_regrind;
     let effectiveFz = fz_geo * k_fz_overhang * k_fz_rigidity;
 
+    // === NEU: THERMISCHER WÄCHTER (Flaschenhals vc) ===
+    if (mat.kc11 > 2000) { // Zähe/Harte Werkstoffe ab 2000 N/mm²
+        const engagement_ratio = ae / Deff;
+        // Wenn der Fräser zu stark umschlungen ist, staut sich die Hitze
+        if (engagement_ratio > 0.15) {
+            const thermal_reduction = 1 - (engagement_ratio * 0.4); // Reduziert vc um bis zu 40%
+            const thermal_vc_limit = effectiveVc * thermal_reduction;
+            
+            // Flaschenhals: Wir nehmen das strenge Limit
+            if (thermal_vc_limit < effectiveVc) {
+                effectiveVc = thermal_vc_limit;
+                physicsInfoHtml += `<div class="text-[11px] text-orange-600 font-semibold">🔥 [Thermischer Wächter] Hohe Umschlingung bei hartem Material. vc auf ${effectiveVc.toFixed(0)} m/min abgeriegelt (Hitzestau).</div>`;
+            }
+        }
+    }
+
+    // === NEU: RAUTIEFEN-BEGRENZER (Flaschenhals fz) ===
+    if (profId.includes('schlichten') && R > 0) {
+        const target_Rth = 0.003; // Ziel: 3µm Rautiefe
+        // Formel: Rth ≈ fz² / (8 * R)  =>  fz_max = sqrt(Rth * 8 * R)
+        const fz_surface_limit = Math.sqrt(target_Rth * 8 * R);
+        
+        // Flaschenhals: Wir drosseln fz, falls es die Oberfläche zerstört
+        if (effectiveFz > fz_surface_limit) {
+            effectiveFz = fz_surface_limit;
+            physicsInfoHtml += `<div class="text-[11px] text-cyan-700 font-semibold">✨ [Oberflächen-Wächter] fz hart auf ${effectiveFz.toFixed(4)} mm limitiert, um Rth < 3µm zu garantieren.</div>`;
+        }
+    }
+
     let runout_mm = 0.003; 
     if (holderType === 'spannzange') runout_mm = 0.012;
     else if (holderType === 'weldon') runout_mm = 0.020;
@@ -140,6 +169,16 @@ export function calculatePhysics({ db, machId, matId, profId, toolId, rigId, hol
     let vf_eff = effectiveFz * z * n_eff;
     vf_eff = Math.min(vf_eff, mach.max_vf);
     let vc_eff_real = (Math.PI * Deff * n_eff) / 1000;
+
+    // === NEU: RATTER- / STABILITÄTSGRENZE (Chatter Limit) ===
+    // Je länger der Fräser, desto sensibler reagiert er auf die Schnitttiefe (ap)
+    if (ld_ratio > 3.0) {
+        // Empirische Stabilitätsgrenze (sinkt extrem bei L/D > 4)
+        const ap_krit = D * Math.pow((3.0 / ld_ratio), 1.5); 
+        if (ap > ap_krit) {
+            warnings.push(`<div class="text-xs font-bold text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-300 shadow-sm flex items-start gap-2"><span class="text-base leading-none">🔔</span> <div><strong>RATTER-GEFAHR (Chatter):</strong> Schnitttiefe ap (${ap.toFixed(2)} mm) überschreitet das stabile Limit (${ap_krit.toFixed(2)} mm) für L/D=${ld_ratio.toFixed(1)}. Reduziere ap oder nimm einen kürzeren Fräser!</div></div>`);
+        }
+    }
 
     // 6. Kienzle & Dynamik
     let hm_real = phi_s_rad > 0 ? (effectiveFz * act_ratio * 2 * ae) / (Deff * phi_s_rad) : 0.0005;
