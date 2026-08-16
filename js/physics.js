@@ -129,14 +129,11 @@ export function calculatePhysics({ db, machId, matId, profId, toolId, rigId, hol
     let effectiveFz = fz_geo * k_fz_overhang * k_fz_rigidity;
 
     // === NEU: THERMISCHER WÄCHTER (Flaschenhals vc) ===
-    if (mat.kc11 > 2000) { // Zähe/Harte Werkstoffe ab 2000 N/mm²
+    if (mat.kc11 > 2000) { 
         const engagement_ratio = ae / Deff;
-        // Wenn der Fräser zu stark umschlungen ist, staut sich die Hitze
         if (engagement_ratio > 0.15) {
-            const thermal_reduction = 1 - (engagement_ratio * 0.4); // Reduziert vc um bis zu 40%
+            const thermal_reduction = 1 - (engagement_ratio * 0.4); 
             const thermal_vc_limit = effectiveVc * thermal_reduction;
-            
-            // Flaschenhals: Wir nehmen das strenge Limit
             if (thermal_vc_limit < effectiveVc) {
                 effectiveVc = thermal_vc_limit;
                 physicsInfoHtml += `<div class="text-[11px] text-orange-600 font-semibold">🔥 [Thermischer Wächter] Hohe Umschlingung bei hartem Material. vc auf ${effectiveVc.toFixed(0)} m/min abgeriegelt (Hitzestau).</div>`;
@@ -146,11 +143,8 @@ export function calculatePhysics({ db, machId, matId, profId, toolId, rigId, hol
 
     // === NEU: RAUTIEFEN-BEGRENZER (Flaschenhals fz) ===
     if (profId.includes('schlichten') && R > 0) {
-        const target_Rth = 0.003; // Ziel: 3µm Rautiefe
-        // Formel: Rth ≈ fz² / (8 * R)  =>  fz_max = sqrt(Rth * 8 * R)
+        const target_Rth = 0.003; 
         const fz_surface_limit = Math.sqrt(target_Rth * 8 * R);
-        
-        // Flaschenhals: Wir drosseln fz, falls es die Oberfläche zerstört
         if (effectiveFz > fz_surface_limit) {
             effectiveFz = fz_surface_limit;
             physicsInfoHtml += `<div class="text-[11px] text-cyan-700 font-semibold">✨ [Oberflächen-Wächter] fz hart auf ${effectiveFz.toFixed(4)} mm limitiert, um Rth < 3µm zu garantieren.</div>`;
@@ -171,9 +165,7 @@ export function calculatePhysics({ db, machId, matId, profId, toolId, rigId, hol
     let vc_eff_real = (Math.PI * Deff * n_eff) / 1000;
 
     // === NEU: RATTER- / STABILITÄTSGRENZE (Chatter Limit) ===
-    // Je länger der Fräser, desto sensibler reagiert er auf die Schnitttiefe (ap)
     if (ld_ratio > 3.0) {
-        // Empirische Stabilitätsgrenze (sinkt extrem bei L/D > 4)
         const ap_krit = D * Math.pow((3.0 / ld_ratio), 1.5); 
         if (ap > ap_krit) {
             warnings.push(`<div class="text-xs font-bold text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-300 shadow-sm flex items-start gap-2"><span class="text-base leading-none">🔔</span> <div><strong>RATTER-GEFAHR (Chatter):</strong> Schnitttiefe ap (${ap.toFixed(2)} mm) überschreitet das stabile Limit (${ap_krit.toFixed(2)} mm) für L/D=${ld_ratio.toFixed(1)}. Reduziere ap oder nimm einen kürzeren Fräser!</div></div>`);
