@@ -1,20 +1,12 @@
-import { defaultDb, ADMIN_PASSWORD } from './config.js';
+import { defaultDb, escapeHTML, ADMIN_PASSWORD } from './config.js';
 import { customAlert, customConfirm } from './modal.js';
-import { initSupabase, saveSupabaseConfig, pushDataToSupabase, getIsCloudActive } from './supabase.js';
+import { initSupabase, saveSupabaseConfig, pushDataToSupabase } from './supabase.js';
 import { calculatePhysics } from './physics.js';
 import { runMatchmaker } from './matchmaker.js';
 import {
-    renderAdminToolTable,
-    editToolFromAdmin,
-    resetToolForm,
-    saveToolFromForm,
-    toggleToolGeoFields,
-    renderAdminMachinesList,
-    addNewMachine,
-    renderAdminMaterialsList,
-    addNewMaterial,
-    renderAdminProfilesList,
-    addNewProfile
+    renderAdminToolTable, editToolFromAdmin, resetToolForm, saveToolFromForm,
+    duplicateToolAdmin, deleteMachineAdmin, deleteMaterialAdmin, deleteProfileAdmin, toggleToolGeoFields,
+    addNewMachine, addNewMaterial, addNewProfile
 } from './admin.js';
 
 let db = loadDatabase();
@@ -24,33 +16,41 @@ function loadDatabase() {
     const saved = localStorage.getItem('toolpilot_master_db');
     if (saved) {
         try { 
-            const parsed = JSON.parse(saved);
-            if (parsed && parsed.tools && Object.keys(parsed.tools).length > 0) {
-                parsed.machines = Object.assign({}, defaultDb.machines, parsed.machines || {});
-                parsed.materials = Object.assign({}, defaultDb.materials, parsed.materials || {});
-                parsed.rigidity = Object.assign({}, defaultDb.rigidity, parsed.rigidity || {});
-                parsed.profiles = Object.assign({}, defaultDb.profiles, parsed.profiles || {});
-                parsed.tools = Object.assign({}, defaultDb.tools, parsed.tools || {});
-                if(!parsed.history) parsed.history = [];
-                if(!parsed.favorites) parsed.favorites = [];
-                if(!parsed.swarm_data) parsed.swarm_data = [];
-                return parsed;
+            const p = JSON.parse(saved);
+            if (p && p.tools && Object.keys(p.tools).length > 0) {
+                p.machines = Object.assign({}, defaultDb.machines, p.machines || {});
+                p.materials = Object.assign({}, defaultDb.materials, p.materials || {});
+                p.rigidity = Object.assign({}, defaultDb.rigidity, p.rigidity || {});
+                p.profiles = Object.assign({}, defaultDb.profiles, p.profiles || {});
+                p.tools = Object.assign({}, defaultDb.tools, p.tools || {});
+                if(!p.history) p.history = [];
+                if(!p.favorites) p.favorites = [];
+                if(!p.swarm_data) p.swarm_data = [];
+                return p;
             }
-        } catch (e) { console.error(e); }
+        } catch (e) { }
     }
     return JSON.parse(JSON.stringify(defaultDb));
 }
 
 function saveDatabase() {
-    localStorage.setItem('toolpilot_master_db', JSON.stringify(db));
-    if (getIsCloudActive()) {
+    // Robustheit: Limits gegen Quota-Exceeded
+    if (db.swarm_data && db.swarm_data.length > 500) db.swarm_data = db.swarm_data.slice(-500);
+    if (db.history && db.history.length > 50) db.history = db.history.slice(-50);
+    try {
+        localStorage.setItem('toolpilot_master_db', JSON.stringify(db));
         pushDataToSupabase(db);
+    } catch (e) {
+        alert("Lokaler Speicher voll! Bitte Verlauf oder Favoriten leeren.");
     }
 }
 
-// -------------------------------------------------------------
-// UI Navigation & Handlers
-// -------------------------------------------------------------
+// -- Admin Funktionen ans Window binden --
+window.duplicateToolAdmin = (id) => duplicateToolAdmin(id, db, () => { saveDatabase(); window.renderAdminToolTable(); populateDropdowns(); });
+window.deleteMachineAdmin = async (id) => { if(await customConfirm("Löschen?")) { deleteMachineAdmin(id, db, () => { saveDatabase(); populateDropdowns(); }); }};
+window.deleteMaterialAdmin = async (id) => { if(await customConfirm("Löschen?")) { deleteMaterialAdmin(id, db, () => { saveDatabase(); populateDropdowns(); }); }};
+window.deleteProfileAdmin = async (id) => { if(await customConfirm("Löschen?")) { deleteProfileAdmin(id, db, () => { saveDatabase(); populateDropdowns(); }); }};
+
 export function toggleExpertMode() {
     const panel = document.getElementById('expert-panel');
     const icon = document.getElementById('expert-toggle-icon');
@@ -81,9 +81,6 @@ export function switchAdminTab(tabName) {
     });
 
     if (tabName === 'tools') renderAdminToolTable(db);
-    if (tabName === 'machines') renderAdminMachinesList(db);
-    if (tabName === 'materials') renderAdminMaterialsList(db);
-    if (tabName === 'profiles') renderAdminProfilesList(db);
 }
 
 export async function toggleAdmin() {
@@ -135,9 +132,6 @@ export function toggleBottomSection() {
     }
 }
 
-// -------------------------------------------------------------
-// Dropdowns & Selektoren
-// -------------------------------------------------------------
 export function populateDropdowns() {
     const machSel = document.getElementById('machine-select');
     const mmMachSel = document.getElementById('mm-machine-select');
@@ -175,8 +169,6 @@ export function populateDropdowns() {
         if(db.rigidity && db.rigidity["mittel"]) rigSel.value = "mittel";
     }
 
-    renderToolMatrixInputs();
-    renderProfileCheckboxes();
     populateBrandDropdown();
 }
 
@@ -189,39 +181,6 @@ export function syncMmToExpert() {
     if (mmProf) document.getElementById('profile-select').value = mmProf;
     onMaterialOrProfileChange();
     triggerMatchmaker();
-}
-
-function renderProfileCheckboxes() {
-    const container = document.getElementById('adm-tool-profiles-container');
-    if(!container) return;
-    container.innerHTML = '';
-    for (const [profId, p] of Object.entries(db.profiles || {})) {
-        const div = document.createElement('div');
-        div.className = "flex items-center gap-1.5";
-        div.innerHTML = `
-            <input type="checkbox" id="tool-prof-${profId}" checked class="rounded border-slate-300 text-slate-800">
-            <label for="tool-prof-${profId}" class="text-slate-700 cursor-pointer text-[11px] font-medium truncate" title="${p.name}">${p.name}</label>
-        `;
-        container.appendChild(div);
-    }
-}
-
-function renderToolMatrixInputs() {
-    const container = document.getElementById('adm-tool-matrix-container');
-    if(!container) return;
-    container.innerHTML = '';
-    for (const [matId, mat] of Object.entries(db.materials || {})) {
-        const div = document.createElement('div');
-        div.className = "flex items-center justify-between gap-1 bg-white p-1.5 rounded-lg border border-slate-300";
-        div.innerHTML = `
-            <label class="flex items-center gap-1.5 truncate text-slate-700 cursor-pointer flex-1 text-[11px]">
-                <input type="checkbox" id="tool-suit-${matId}" checked class="rounded border-slate-300 text-slate-800">
-                <span class="truncate font-medium">${mat.name}</span>
-            </label>
-            <input type="number" id="tool-vc-${matId}" value="200" class="w-12 bg-slate-50 border border-slate-300 rounded p-0.5 text-slate-900 text-right text-xs font-mono">
-        `;
-        container.appendChild(div);
-    }
 }
 
 export function onMaterialOrProfileChange() {
@@ -367,9 +326,6 @@ export function toggleRegrindFields() {
     calculate();
 }
 
-// -------------------------------------------------------------
-// Slider & Synchronisation
-// -------------------------------------------------------------
 export function resetSliders() {
     if(!db.tools || !db.profiles) return;
     const toolId = document.getElementById('tool-select')?.value;
@@ -393,10 +349,8 @@ export function resetSliders() {
         let targetAp = D * p.ap_factor;
         let targetAe = D * p.ae_factor;
 
-        if (profId === 'schlichten_gehaertet') {
-            targetAp = Math.min(D * p.ap_factor, 0.25); 
-            targetAe = Math.min(D * p.ae_factor, 0.20); 
-        }
+        if (p.max_ap_limit) targetAp = Math.min(targetAp, p.max_ap_limit);
+        if (p.max_ae_limit) targetAe = Math.min(targetAe, p.max_ae_limit);
         
         if (document.getElementById('input-ap-mm')) document.getElementById('input-ap-mm').value = targetAp.toFixed(2);
         if (apS) apS.value = targetAp.toFixed(2);
@@ -430,9 +384,6 @@ export function syncAeFromInput() {
     calculate();
 }
 
-// -------------------------------------------------------------
-// CAM & Physics Runner
-// -------------------------------------------------------------
 export function calculateCamFeed() {
     if(!db.tools) return;
     const toolId = document.getElementById('tool-select')?.value;
@@ -493,7 +444,6 @@ export function calculate() {
     });
 
     if(!res) return;
-
     currentCalculatedResults = res;
 
     if (document.getElementById('val-ap-factor')) document.getElementById('val-ap-factor').innerText = `(${res.ap_factor.toFixed(2)} × D)`;
@@ -526,9 +476,6 @@ export function calculate() {
     calculateCamFeed();
 }
 
-// -------------------------------------------------------------
-// Favoriten & Verlauf
-// -------------------------------------------------------------
 export function renderFavorites() {
     const container = document.getElementById('tab-content-favorites');
     const searchInput = document.getElementById('fav-search-input');
@@ -551,7 +498,7 @@ export function renderFavorites() {
         card.className = "bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex flex-col justify-between space-y-2";
         card.innerHTML = `
             <div>
-                <span class="font-bold text-slate-900 text-xs truncate block">${fav.title}</span>
+                <span class="font-bold text-slate-900 text-xs truncate block">${escapeHTML(fav.title)}</span>
                 <div class="text-[10px] text-slate-600 font-mono mt-1">${fav.rpm} U/min | ${fav.feed_rate_vf} mm/min</div>
             </div>
             <div class="flex gap-2 pt-1">
@@ -582,8 +529,8 @@ export function renderHistory() {
         card.className = "bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex flex-col justify-between space-y-2";
         card.innerHTML = `
             <div>
-                <span class="font-bold text-slate-900 text-xs truncate block">${item.tool_name}</span>
-                <span class="text-[10px] text-slate-500">${item.mat_name}</span>
+                <span class="font-bold text-slate-900 text-xs truncate block">${escapeHTML(item.tool_name)}</span>
+                <span class="text-[10px] text-slate-500">${escapeHTML(item.mat_name)}</span>
                 <div class="text-[10px] text-slate-700 font-mono mt-1">${item.rpm} U/min | ${item.vf} mm/min</div>
             </div>
             <div class="flex gap-1.5 pt-1">
@@ -632,11 +579,35 @@ export async function confirmAndPushToHistory() {
         vf: currentCalculatedResults.vf.toFixed(0)
     });
 
-    if(db.history.length > 30) db.history.shift();
     saveDatabase();
     renderHistory();
     switchBottomTab('history');
 }
+
+window.saveCurrentToFavorites = async () => {
+    const toolId = document.getElementById('tool-select')?.value;
+    if (!toolId || !db.tools[toolId]) return await customAlert("Kein Werkzeug ausgewählt.");
+    
+    const title = prompt("Name für diesen Favoriten:", "Mein perfektes Setup");
+    if (!title) return;
+    
+    db.favorites.push({
+        id: 'fav_' + Date.now(),
+        title: title,
+        tool_id: toolId,
+        material_id: document.getElementById('material-select')?.value,
+        profile_id: document.getElementById('profile-select')?.value,
+        machine_id: document.getElementById('machine-select')?.value,
+        rpm: document.getElementById('res-rpm').innerText.split(' ')[0],
+        feed_rate_vf: document.getElementById('res-vf').innerText.split(' ')[0],
+        ap_mm: parseFloat(document.getElementById('input-ap-mm').value),
+        ae_mm: parseFloat(document.getElementById('input-ae-mm').value)
+    });
+    saveDatabase();
+    renderFavorites();
+    switchBottomTab('favorites');
+    await customAlert("Erfolgreich als Favorit gespeichert!");
+};
 
 export function loadFavorite(favId) {
     const fav = db.favorites.find(f => f.id === favId);
@@ -647,6 +618,16 @@ export function loadFavorite(favId) {
     onMaterialOrProfileChange();
     if(fav.tool_id && document.getElementById('tool-select')) document.getElementById('tool-select').value = fav.tool_id;
     onToolChange();
+    
+    if (fav.ap_mm && document.getElementById('input-ap-mm')) {
+        document.getElementById('input-ap-mm').value = fav.ap_mm.toFixed(2);
+        if(document.getElementById('slider-ap')) document.getElementById('slider-ap').value = fav.ap_mm;
+    }
+    if (fav.ae_mm && document.getElementById('input-ae-mm')) {
+        document.getElementById('input-ae-mm').value = fav.ae_mm.toFixed(2);
+        if(document.getElementById('slider-ae')) document.getElementById('slider-ae').value = fav.ae_mm;
+    }
+    
     calculate();
 }
 
@@ -664,9 +645,6 @@ export async function clearHistory() {
     }
 }
 
-// -------------------------------------------------------------
-// Backup, Werkseinstellungen & JSON
-// -------------------------------------------------------------
 export function exportDatabaseJSON() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
     const dlAnchor = document.createElement('a');
@@ -714,9 +692,7 @@ export function triggerMatchmaker() {
     runMatchmaker(db, machId, matId, rigId);
 }
 
-// -------------------------------------------------------------
-// Globale Registrierungen (Window-Zuweisung)
-// -------------------------------------------------------------
+// Window Registrierungen
 window.toggleExpertMode = toggleExpertMode;
 window.toggleAdmin = toggleAdmin;
 window.switchAdminTab = switchAdminTab;
@@ -738,12 +714,12 @@ window.deleteFavorite = deleteFavorite;
 window.clearHistory = clearHistory;
 window.submitFeedback = submitFeedback;
 window.confirmAndPushToHistory = confirmAndPushToHistory;
-window.saveSupabaseConfig = () => saveSupabaseConfig(handleSupabaseData);
 window.exportDatabaseJSON = exportDatabaseJSON;
 window.importDatabaseJSON = importDatabaseJSON;
 window.resetToDefaultData = resetToDefaultData;
 window.triggerMatchmaker = triggerMatchmaker;
 window.syncMmToExpert = syncMmToExpert;
+window.calculateCamFeed = calculateCamFeed;
 
 window.applyMatchmakerResult = (toolId, apSuggested, aeSuggested) => {
     const mmMach = document.getElementById('mm-machine-select')?.value;
@@ -784,7 +760,6 @@ window.applyMatchmakerResult = (toolId, apSuggested, aeSuggested) => {
     }
 };
 
-// Admin Werkzeug-Handler
 window.renderAdminToolTable = () => renderAdminToolTable(db);
 window.editToolFromAdmin = (id) => editToolFromAdmin(id, db);
 window.resetToolForm = resetToolForm;
@@ -794,15 +769,9 @@ window.deleteToolAdmin = async (id) => {
         delete db.tools[id];
         saveDatabase();
         populateDropdowns();
-        renderAdminToolTable(db);
+        window.renderAdminToolTable();
     }
 };
-window.toggleToolGeoFields = toggleToolGeoFields;
-
-// Admin Maschinen, Material, Profile
-window.addNewMachine = () => addNewMachine(db, () => { saveDatabase(); populateDropdowns(); renderAdminMachinesList(db); });
-window.addNewMaterial = () => addNewMaterial(db, () => { saveDatabase(); populateDropdowns(); renderAdminMaterialsList(db); });
-window.addNewProfile = () => addNewProfile(db, () => { saveDatabase(); populateDropdowns(); renderAdminProfilesList(db); });
 
 function handleSupabaseData(data) {
     if (!data) return;
@@ -820,12 +789,14 @@ function handleSupabaseData(data) {
     initApp();
 }
 
+window.saveSupabaseConfig = () => saveSupabaseConfig(handleSupabaseData);
+
 function initApp() {
     populateDropdowns();
     resetSliders(); 
-    renderFavorites();
-    renderHistory();
-    renderAdminToolTable(db);
+    window.renderFavorites();
+    window.renderHistory();
+    window.renderAdminToolTable();
     triggerMatchmaker();
 }
 
