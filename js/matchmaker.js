@@ -1,15 +1,17 @@
 import { calculatePhysics } from './physics.js';
 
 export function runMatchmaker(db, machId, matId, rigId) {
-    const depthInput = parseFloat(document.getElementById('mm-depth').value);
-    const radiusInput = parseFloat(document.getElementById('mm-radius').value);
-    const customAp = parseFloat(document.getElementById('mm-ap').value);
-    const customAe = parseFloat(document.getElementById('mm-ae').value);
-    const profId = document.getElementById('mm-profile-select').value;
+    const depthInput = parseFloat(document.getElementById('mm-depth')?.value || 25);
+    const radiusInput = parseFloat(document.getElementById('mm-radius')?.value || 5);
+    const customAp = parseFloat(document.getElementById('mm-ap')?.value);
+    const customAe = parseFloat(document.getElementById('mm-ae')?.value);
+    const profId = document.getElementById('mm-profile-select')?.value;
     const resultsContainer = document.getElementById('mm-results');
 
-    if (isNaN(depthInput) || isNaN(radiusInput) || !profId) {
-        alert("Bitte fülle Feature-Tiefe Z und den kleinsten Radius aus.");
+    if (!resultsContainer || !db || !db.tools) return;
+
+    if (isNaN(depthInput) || isNaN(radiusInput) || !profId || !matId || !machId) {
+        resultsContainer.innerHTML = '<div class="text-xs text-slate-400 italic p-6 text-center">Bitte Werkstoff, Maschine & Profil auswählen.</div>';
         return;
     }
 
@@ -33,7 +35,7 @@ export function runMatchmaker(db, machId, matId, rigId) {
         }
 
         if (validTools.length === 0) {
-            resultsContainer.innerHTML = '<div class="text-xs text-rose-600 bg-rose-50 p-4 rounded-xl border border-rose-200">Kein passendes Werkzeug gefunden. Du benötigst einen Fräser mit kleinerem Durchmesser oder größerer Auskragung.</div>';
+            resultsContainer.innerHTML = `<div class="text-xs text-rose-600 bg-rose-50 p-4 rounded-xl border border-rose-200">Kein passendes Werkzeug gefunden. Du benötigst einen Fräser mit maximal Ø${radiusInput * 2} mm und mindestens ${depthInput} mm Auskragung.</div>`;
             return;
         }
 
@@ -82,11 +84,11 @@ export function runMatchmaker(db, machId, matId, rigId) {
 
         resultsContainer.innerHTML = '';
         if (rankedResults.length === 0) {
-            resultsContainer.innerHTML = '<div class="text-xs text-amber-600 bg-amber-50 p-4 rounded-xl border border-amber-200">Werkzeuge gefunden, aber alle würden bei dieser Belastung (ap/ae) brechen oder die Spindel überlasten.</div>';
+            resultsContainer.innerHTML = '<div class="text-xs text-amber-600 bg-amber-50 p-4 rounded-xl border border-amber-200">Werkzeuge vorhanden, aber alle würden bei den aktuellen Werten überlastet.</div>';
             return;
         }
 
-        // 4. Anzeige der Top 3-5 Empfehlungen als Karten
+        // 4. Anzeige der Top-Empfehlungen als Karten
         rankedResults.slice(0, 4).forEach((item, index) => { 
             const div = document.createElement('div');
             const isWinner = index === 0;
@@ -122,5 +124,5 @@ export function runMatchmaker(db, machId, matId, rigId) {
             resultsContainer.appendChild(div);
         });
 
-    }, 250); 
+    }, 200); 
 }
