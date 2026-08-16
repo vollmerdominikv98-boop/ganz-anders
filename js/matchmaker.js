@@ -56,7 +56,7 @@ export function runMatchmaker(db, machId, matId, rigId) {
             else lc_max = D * 1.5;
         }
 
-        // Maximale STABILE Schnitttiefe für diesen Fräser
+        // Maximale STABILE Schnitttiefe
         let ap_krit = 0;
         if (tool.geo_type === 'torus') {
             ap_krit = Math.min(D * 0.8, lc_max);
@@ -71,11 +71,9 @@ export function runMatchmaker(db, machId, matId, rigId) {
         let passes = 1;
 
         if (isUserForcedAp) {
-            // Nutzer erzwingt Schnitttiefe
             ap_sim = customAp;
             passes = Math.max(1, Math.ceil(depthInput / ap_sim));
         } else {
-            // KI ermittelt automatische, 100% ratterfreie Mehrebenen-Schritte
             const safe_step = Math.min(ap_krit * 0.95, lc_max * 0.95);
             passes = Math.max(1, Math.ceil(depthInput / safe_step));
             ap_sim = depthInput / passes;
@@ -99,8 +97,8 @@ export function runMatchmaker(db, machId, matId, rigId) {
 
         if (res) {
             let stabilityPenalty = 1.0;
-            if (res.isFluteExceeded) stabilityPenalty *= 0.05; // Fast komplett ausschließen bei Kollision
-            if (res.hasChatter) stabilityPenalty *= 0.15;       // Starke Strafe bei Rattergefahr
+            if (res.isFluteExceeded) stabilityPenalty *= 0.05;
+            if (res.hasChatter) stabilityPenalty *= 0.15;
             if (res.isOverPower) stabilityPenalty *= 0.40;
             if (res.stress > 2500) stabilityPenalty *= 0.20;
 
@@ -111,7 +109,6 @@ export function runMatchmaker(db, machId, matId, rigId) {
                 toolName: tool.name,
                 brand: tool.brand,
                 diameter: tool.diameter,
-                geoType: tool.geo_type || 'shaft',
                 q: res.q, 
                 score: effectiveScore,
                 rpm: res.rpm,
@@ -119,14 +116,11 @@ export function runMatchmaker(db, machId, matId, rigId) {
                 ap: ap_sim,
                 ae: ae_sim,
                 passes: passes,
-                isUserForcedAp: isUserForcedAp,
                 power: res.power,
                 hasChatter: res.hasChatter,
                 isFluteExceeded: res.isFluteExceeded,
                 lc_max: res.lc_max,
-                ap_krit: res.ap_krit,
-                stress: res.stress,
-                isOverPower: res.isOverPower
+                ap_krit: res.ap_krit
             });
         }
     });
@@ -140,7 +134,7 @@ export function runMatchmaker(db, machId, matId, rigId) {
         return;
     }
 
-    // 4. Anzeige der Ergebnisse
+    // 4. Anzeige der Ergebnisse mit Drehzahl & Vorschub im Vordergrund
     rankedResults.slice(0, 4).forEach((item, index) => { 
         const div = document.createElement('div');
         const isFaulty = item.hasChatter || item.isFluteExceeded;
@@ -152,51 +146,61 @@ export function runMatchmaker(db, machId, matId, rigId) {
         } else if (item.hasChatter) {
             borderClass = "border-amber-300 bg-amber-50/40";
         } else if (isWinner) {
-            borderClass = "border-indigo-500 bg-indigo-50/50 ring-2 ring-indigo-400 shadow-md";
+            borderClass = "border-indigo-500 bg-indigo-50/40 ring-1 ring-indigo-400 shadow-md";
         }
         
         let statusBadge = '';
         if (item.isFluteExceeded) {
-            statusBadge = `<span class="bg-rose-100 text-rose-800 border border-rose-300 px-2 py-0.5 rounded-full text-[10px] font-bold">⛔ Schaftkollision (ap > Schneidenlänge ${item.lc_max.toFixed(1)}mm)</span>`;
+            statusBadge = `<span class="bg-rose-100 text-rose-800 border border-rose-300 px-2 py-0.5 rounded-full text-[10px] font-bold">⛔ Schaftkollision</span>`;
         } else if (item.hasChatter) {
-            statusBadge = `<span class="bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5 rounded-full text-[10px] font-bold">⚠️ Rattergefahr (${item.ap.toFixed(1)}mm > Limit ${item.ap_krit.toFixed(1)}mm)</span>`;
+            statusBadge = `<span class="bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5 rounded-full text-[10px] font-bold">⚠️ Rattergefahr</span>`;
         } else if (item.passes > 1) {
-            statusBadge = `<span class="bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full text-[10px] font-bold">🟢 100% Stabil (${item.passes}× Z à ${item.ap.toFixed(2)}mm)</span>`;
+            statusBadge = `<span class="bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full text-[10px] font-bold">🟢 ${item.passes}× Z à ${item.ap.toFixed(2)}mm</span>`;
         } else {
-            statusBadge = `<span class="bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full text-[10px] font-bold">🟢 100% Stabil (1 Schnitt)</span>`;
+            statusBadge = `<span class="bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full text-[10px] font-bold">🟢 1 Schnitt (100% Stabil)</span>`;
         }
 
-        let topBadge = '';
-        if (isWinner) {
-            topBadge = `<span class="bg-indigo-600 text-white px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">Top Empfehlung</span>`;
-        } else if (isFaulty) {
-            topBadge = `<span class="bg-rose-200 text-rose-900 px-2 py-0.5 rounded text-[10px] font-bold">Platz ${index + 1} (Ungeeignet)</span>`;
-        } else {
-            topBadge = `<span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold">Platz ${index + 1}</span>`;
-        }
+        const topBadge = isWinner 
+            ? `<span class="bg-indigo-600 text-white px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">Top Wahl</span>` 
+            : `<span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold">#${index + 1}</span>`;
 
-        div.className = `p-4 rounded-2xl border ${borderClass} flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-sm transition hover:shadow-md`;
+        div.id = `match-card-${item.toolId}`;
+        div.className = `p-4 rounded-2xl border ${borderClass} flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm transition hover:shadow-md`;
+        
         div.innerHTML = `
-            <div class="space-y-1.5">
+            <!-- LINKE SEITE: Werkzeug & Geometrie -->
+            <div class="space-y-1.5 flex-1 min-w-0">
                 <div class="flex items-center gap-2 flex-wrap">
                     ${topBadge}
                     ${statusBadge}
-                    <strong class="text-slate-900 text-sm">${item.brand ? `[${item.brand}] ` : ''}${item.toolName}</strong>
+                    <strong class="text-slate-900 text-sm truncate">${item.brand ? `[${item.brand}] ` : ''}${item.toolName}</strong>
                 </div>
-                <div class="text-xs text-slate-500 font-mono flex flex-wrap gap-x-3 gap-y-0.5">
+                <div class="text-xs text-slate-500 font-mono flex flex-wrap gap-x-3 gap-y-0.5 pt-0.5">
                     <span>Ø: <strong class="text-slate-800">${item.diameter}mm</strong></span>
                     <span>ap: <strong class="${isFaulty ? 'text-rose-600 font-black' : 'text-slate-800'}">${item.ap.toFixed(2)}mm</strong></span>
                     <span>ae: <strong class="text-slate-800">${item.ae.toFixed(2)}mm</strong></span>
-                    <span>Pc: <strong>${item.power.toFixed(1)}kW</strong></span>
+                    <span class="text-slate-400">| Q: ${item.q.toFixed(1)} cm³/min</span>
                 </div>
             </div>
-            <div class="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 border-slate-200/60 pt-2 sm:pt-0">
-                <div class="text-left sm:text-right">
-                    <div class="text-indigo-700 font-black font-mono text-base">${item.q.toFixed(1)} cm³/min</div>
-                    <div class="text-[10px] font-mono text-slate-500">${item.rpm.toFixed(0)} U/min | ${item.vf.toFixed(0)} mm/min</div>
+
+            <!-- RECHTE SEITE: HAUPTFOKUS DREHZAHL & VORSCHUB + BUTTON -->
+            <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 border-slate-200/60 pt-3 md:pt-0">
+                
+                <!-- GROSSER SCHNITTDATEN-BLOCK -->
+                <div class="flex items-center gap-2 bg-slate-900 text-white px-3.5 py-2 rounded-xl shadow-sm">
+                    <div class="text-center pr-2 border-r border-slate-700">
+                        <div class="text-[9px] uppercase font-bold text-indigo-300 leading-none">Drehzahl (n)</div>
+                        <div class="text-base font-black font-mono leading-tight tracking-tight">${item.rpm.toFixed(0)} <span class="text-[10px] font-normal text-slate-400">U/min</span></div>
+                    </div>
+                    <div class="text-center pl-1">
+                        <div class="text-[9px] uppercase font-bold text-emerald-300 leading-none">Vorschub (vf)</div>
+                        <div class="text-base font-black font-mono leading-tight tracking-tight text-emerald-400">${item.vf.toFixed(0)} <span class="text-[10px] font-normal text-slate-400">mm/min</span></div>
+                    </div>
                 </div>
-                <button onclick="applyMatchmakerResult('${item.toolId}', ${item.ap}, ${item.ae})" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm whitespace-nowrap">
-                    Laden & Details 👉
+
+                <!-- BUTTON (Übernimmt leise ohne Aufklappen) -->
+                <button onclick="applyMatchmakerResult('${item.toolId}', ${item.ap}, ${item.ae})" class="bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 hover:border-slate-400 px-3.5 py-2.5 rounded-xl text-xs font-bold transition shadow-sm whitespace-nowrap flex items-center gap-1.5 active:scale-95">
+                    <span>✔</span> Übernehmen
                 </button>
             </div>
         `;
