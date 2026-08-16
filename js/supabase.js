@@ -1,5 +1,5 @@
-import { DEFAULT_SUPABASE_URL, DEFAULT_SUPABASE_KEY } from './config.js?v=6';
-import { customAlert } from './modal.js?v=6';
+import { DEFAULT_SUPABASE_URL, DEFAULT_SUPABASE_KEY } from './config.js';
+import { customAlert } from './modal.js';
 
 let supabaseClient = null;
 
