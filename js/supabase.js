@@ -32,11 +32,9 @@ export function initSupabase(onDataFetched) {
                 
                 const statusText = document.getElementById('supabase-conn-text');
                 if(statusText) {
-                    statusText.innerText = "✅ Verbunden (SQL Adapter aktiv)";
+                    statusText.innerText = "✅ Verbunden";
                     statusText.className = "text-[11px] font-bold text-emerald-600";
                 }
-            } else {
-                console.error("Supabase CDN Skript wurde noch nicht geladen.");
             }
         } catch(e) { 
             console.error("Supabase Init Error:", e); 
@@ -77,25 +75,25 @@ export async function fetchDataFromSupabase(onSuccess) {
         ]);
 
         const arrayToObject = (array) => {
+            if (!array || !Array.isArray(array) || array.length === 0) return null;
             const obj = {};
-            (array || []).forEach(item => {
+            array.forEach(item => {
                 const { id, ...rest } = item;
-                obj[id] = rest;
+                if (id) obj[id] = rest;
             });
-            return obj;
+            return Object.keys(obj).length > 0 ? obj : null;
         };
 
         if (typeof onSuccess === 'function') {
             onSuccess({
-                machines: machinesArray && machinesArray.length > 0 ? arrayToObject(machinesArray) : null,
-                materials: materialsArray && materialsArray.length > 0 ? arrayToObject(materialsArray) : null,
-                rigidity: rigidityArray && rigidityArray.length > 0 ? arrayToObject(rigidityArray) : null,
-                profiles: profilesArray && profilesArray.length > 0 ? arrayToObject(profilesArray) : null,
-                tools: toolsArray && toolsArray.length > 0 ? arrayToObject(toolsArray) : null,
+                machines: arrayToObject(machinesArray),
+                materials: arrayToObject(materialsArray),
+                rigidity: arrayToObject(rigidityArray),
+                profiles: arrayToObject(profilesArray),
+                tools: arrayToObject(toolsArray),
                 appStateData: appState?.data || null
             });
         }
-
     } catch(e) { 
         console.error("Cloud Fetch Error:", e); 
     }
