@@ -939,24 +939,39 @@ window.toggleMatchmaker = () => {
     const panel = document.getElementById('matchmaker-panel');
     if (panel.classList.contains('hidden')) {
         panel.classList.remove('hidden');
+        
+        const machSel = document.getElementById('mm-machine-select');
+        machSel.innerHTML = '';
+        for (const [id, m] of Object.entries(db.machines || {})) { machSel.add(new Option(m.name, id)); }
+        machSel.value = document.getElementById('machine-select').value; 
+
+        const matSel = document.getElementById('mm-material-select');
+        matSel.innerHTML = '';
+        for (const [id, m] of Object.entries(db.materials || {})) { matSel.add(new Option(m.name, id)); }
+        matSel.value = document.getElementById('material-select').value;
+
         const profSel = document.getElementById('mm-profile-select');
         profSel.innerHTML = '';
-        for (const [id, p] of Object.entries(db.profiles || {})) {
-            profSel.add(new Option(p.name, id));
-        }
+        for (const [id, p] of Object.entries(db.profiles || {})) { profSel.add(new Option(p.name, id)); }
+        profSel.value = document.getElementById('profile-select').value;
+
     } else {
         panel.classList.add('hidden');
     }
 };
+
 window.runMatchmaker = () => {
-    const machId = document.getElementById('machine-select').value;
-    const matId = document.getElementById('material-select').value;
-    const rigId = document.getElementById('rigidity-select').value;
+    const machId = document.getElementById('mm-machine-select').value;
+    const matId = document.getElementById('mm-material-select').value;
+    const rigId = document.getElementById('rigidity-select').value; 
     runMatchmaker(db, machId, matId, rigId);
 };
+
 window.applyMatchmakerResult = (toolId) => {
-    const profId = document.getElementById('mm-profile-select').value;
-    document.getElementById('profile-select').value = profId;
+    document.getElementById('machine-select').value = document.getElementById('mm-machine-select').value;
+    document.getElementById('material-select').value = document.getElementById('mm-material-select').value;
+    document.getElementById('profile-select').value = document.getElementById('mm-profile-select').value;
+    
     window.onMaterialOrProfileChange();
     
     const tool = db.tools[toolId];
