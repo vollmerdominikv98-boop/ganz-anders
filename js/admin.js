@@ -51,39 +51,13 @@ export function duplicateToolAdmin(id, db, onSave) {
     if(typeof onSave === 'function') onSave();
 }
 
-export function deleteMachineAdmin(id, db, onSave) {
-    if(Object.keys(db.machines || {}).length <= 1) return customAlert('Mindestens eine Maschine ist nötig.');
-    delete db.machines[id];
-    if(typeof onSave === 'function') onSave();
-}
-
-export function deleteMaterialAdmin(id, db, onSave) {
-    if(Object.keys(db.materials || {}).length <= 1) return customAlert('Mindestens ein Material ist nötig.');
-    delete db.materials[id];
-    if(typeof onSave === 'function') onSave();
-}
-
-export function deleteProfileAdmin(id, db, onSave) {
-    if(Object.keys(db.profiles || {}).length <= 1) return customAlert('Mindestens ein Profil ist nötig.');
-    delete db.profiles[id];
-    if(typeof onSave === 'function') onSave();
-}
-
-export function renderToolMatrixInputs(db) {
-    const container = document.getElementById('adm-tool-matrix-container');
-    if(!container) return;
-    container.innerHTML = '';
-    for (const [matId, mat] of Object.entries(db.materials || {})) {
-        const div = document.createElement('div');
-        div.className = "flex items-center justify-between gap-1 bg-white p-1.5 rounded-lg border border-slate-300";
-        div.innerHTML = `
-            <label class="flex items-center gap-1.5 truncate text-slate-700 cursor-pointer flex-1 text-[11px]">
-                <input type="checkbox" id="tool-suit-${matId}" checked class="rounded border-slate-300 text-slate-800">
-                <span class="truncate font-medium">${escapeHTML(mat.name)}</span>
-            </label>
-            <input type="number" id="tool-vc-${matId}" placeholder="vc..." class="w-12 bg-slate-50 border border-slate-300 rounded p-0.5 text-slate-900 text-right text-xs font-mono">
-        `;
-        container.appendChild(div);
+export function toggleToolGeoFields() {
+    const geoType = document.getElementById('adm-tool-geotype').value;
+    const radiusContainer = document.getElementById('adm-tool-radius-container');
+    if(geoType === 'shaft') {
+        radiusContainer.classList.add('hidden');
+    } else {
+        radiusContainer.classList.remove('hidden');
     }
 }
 
@@ -100,7 +74,7 @@ export function editToolFromAdmin(id, db) {
     document.getElementById('adm-tool-overhang').value = t.max_overhang || 30;
     document.getElementById('adm-tool-radius').value = t.radius || 0;
     document.getElementById('adm-tool-fznom').value = t.fz_nom || (t.diameter * 0.007);
-    if (window.toggleToolGeoFields) window.toggleToolGeoFields();
+    toggleToolGeoFields();
 
     for (const matId of Object.keys(db.materials || {})) {
         const chk = document.getElementById(`tool-suit-${matId}`);
@@ -137,7 +111,7 @@ export async function saveToolFromForm(db, onSave) {
         const vcInput = document.getElementById(`tool-vc-${matId}`);
         if (chk && chk.checked) suitableMaterials.push(matId);
         const vcVal = vcInput ? parseFloat(vcInput.value) : NaN;
-        vcMap[matId] = isNaN(vcVal) ? 100 : vcVal; // Default auf 100 wenn nichts eingegeben wurde
+        vcMap[matId] = isNaN(vcVal) ? 100 : vcVal; // Default auf 100
     }
 
     let suitableProfiles = [];
@@ -196,6 +170,12 @@ export async function addNewMachine(db, onSave) {
     if(typeof onSave === 'function') onSave();
 }
 
+export function deleteMachineAdmin(id, db, onSave) {
+    if(Object.keys(db.machines || {}).length <= 1) return customAlert('Mindestens eine Maschine ist nötig.');
+    delete db.machines[id];
+    if(typeof onSave === 'function') onSave();
+}
+
 export function renderAdminMaterialsList(db) {
     const container = document.getElementById('adm-materials-list');
     if(!container) return;
@@ -219,6 +199,12 @@ export async function addNewMaterial(db, onSave) {
     if (!db.materials) db.materials = {};
     db.materials[id] = { name, kc11, mc };
     document.getElementById('adm-mat-id').value = ''; document.getElementById('adm-mat-name').value = '';
+    if(typeof onSave === 'function') onSave();
+}
+
+export function deleteMaterialAdmin(id, db, onSave) {
+    if(Object.keys(db.materials || {}).length <= 1) return customAlert('Mindestens ein Material ist nötig.');
+    delete db.materials[id];
     if(typeof onSave === 'function') onSave();
 }
 
@@ -247,5 +233,11 @@ export async function addNewProfile(db, onSave) {
     if (!db.profiles) db.profiles = {};
     db.profiles[id] = { name, ap_factor, ae_factor, fz_ratio, rct_active };
     document.getElementById('adm-prof-id').value = ''; document.getElementById('adm-prof-name').value = '';
+    if(typeof onSave === 'function') onSave();
+}
+
+export function deleteProfileAdmin(id, db, onSave) {
+    if(Object.keys(db.profiles || {}).length <= 1) return customAlert('Mindestens ein Profil ist nötig.');
+    delete db.profiles[id];
     if(typeof onSave === 'function') onSave();
 }
