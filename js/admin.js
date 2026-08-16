@@ -1,5 +1,5 @@
-import { customAlert } from './modal.js';
-import { escapeHTML } from './config.js';
+import { customAlert } from './modal.js?v=6';
+import { escapeHTML } from './config.js?v=6';
 
 export function renderAdminToolTable(db) {
     const tbody = document.getElementById('adm-tool-table-body');
