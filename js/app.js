@@ -665,7 +665,7 @@ export async function clearHistory() {
 }
 
 // -------------------------------------------------------------
-// Backup & JSON
+// Backup, Werkseinstellungen & JSON
 // -------------------------------------------------------------
 export function exportDatabaseJSON() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
@@ -695,6 +695,16 @@ export async function importDatabaseJSON(event) {
         }
     };
     reader.readAsText(file);
+}
+
+export async function resetToDefaultData() {
+    if(await customConfirm("Datenbank auf Werkseinstellungen zurücksetzen? Dies überschreibt die lokalen Werkzeuge mit dem bereinigten Standard-Katalog!")) {
+        localStorage.removeItem('toolpilot_master_db');
+        db = JSON.parse(JSON.stringify(defaultDb));
+        saveDatabase();
+        initApp();
+        await customAlert("Erfolgreich auf Werkseinstellungen zurückgesetzt! Der bereinigte Werkzeugstamm ist jetzt aktiv.");
+    }
 }
 
 export function triggerMatchmaker() {
@@ -731,10 +741,10 @@ window.confirmAndPushToHistory = confirmAndPushToHistory;
 window.saveSupabaseConfig = () => saveSupabaseConfig(handleSupabaseData);
 window.exportDatabaseJSON = exportDatabaseJSON;
 window.importDatabaseJSON = importDatabaseJSON;
+window.resetToDefaultData = resetToDefaultData;
 window.triggerMatchmaker = triggerMatchmaker;
 window.syncMmToExpert = syncMmToExpert;
 
-// LEISE ÜBERNAHME: Werte werden synchronisiert, Nerd-Modus bleibt geschlossen!
 window.applyMatchmakerResult = (toolId, apSuggested, aeSuggested) => {
     const mmMach = document.getElementById('mm-machine-select')?.value;
     const mmMat = document.getElementById('mm-material-select')?.value;
@@ -765,7 +775,6 @@ window.applyMatchmakerResult = (toolId, apSuggested, aeSuggested) => {
 
     calculate();
 
-    // Optisches Feedback direkt auf der gewählten Karte
     document.querySelectorAll('[id^="match-card-"]').forEach(card => {
         card.classList.remove('ring-2', 'ring-emerald-500', 'border-emerald-500');
     });
