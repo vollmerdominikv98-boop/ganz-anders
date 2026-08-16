@@ -2,6 +2,7 @@ import { defaultDb, ADMIN_PASSWORD } from './config.js';
 import { customAlert, customConfirm } from './modal.js';
 import { initSupabase, saveSupabaseConfig, pushDataToSupabase, getIsCloudActive } from './supabase.js';
 import { calculatePhysics } from './physics.js';
+import { runMatchmaker } from './matchmaker.js';
 import {
     renderAdminToolTable,
     editToolFromAdmin,
@@ -934,6 +935,48 @@ export async function resetToDefaultData() {
 // -------------------------------------------------------------
 // Globale Funktionszuweisung (für inline HTML onclick-Events)
 // -------------------------------------------------------------
+window.toggleMatchmaker = () => {
+    const panel = document.getElementById('matchmaker-panel');
+    if (panel.classList.contains('hidden')) {
+        panel.classList.remove('hidden');
+        const profSel = document.getElementById('mm-profile-select');
+        profSel.innerHTML = '';
+        for (const [id, p] of Object.entries(db.profiles || {})) {
+            profSel.add(new Option(p.name, id));
+        }
+    } else {
+        panel.classList.add('hidden');
+    }
+};
+window.runMatchmaker = () => {
+    const machId = document.getElementById('machine-select').value;
+    const matId = document.getElementById('material-select').value;
+    const rigId = document.getElementById('rigidity-select').value;
+    runMatchmaker(db, machId, matId, rigId);
+};
+window.applyMatchmakerResult = (toolId) => {
+    const profId = document.getElementById('mm-profile-select').value;
+    document.getElementById('profile-select').value = profId;
+    window.onMaterialOrProfileChange();
+    
+    const tool = db.tools[toolId];
+    if(tool) {
+        if(tool.brand) {
+            document.getElementById('brand-select').value = tool.brand;
+            window.onBrandChange();
+        }
+        if(tool.line) {
+            document.getElementById('line-select').value = tool.line;
+            window.onLineChange();
+        }
+        document.getElementById('tool-select').value = toolId;
+        window.onToolChange();
+    }
+    
+    document.getElementById('matchmaker-panel').classList.add('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
 window.toggleAdmin = toggleAdmin;
 window.switchAdminTab = switchAdminTab;
 window.switchBottomTab = switchBottomTab;
