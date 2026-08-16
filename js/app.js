@@ -3,8 +3,6 @@ import { customAlert, customConfirm } from './modal.js';
 import { initSupabase, saveSupabaseConfig, pushDataToSupabase } from './supabase.js';
 import { calculatePhysics } from './physics.js';
 import { runMatchmaker } from './matchmaker.js';
-
-// WICHTIG: Alle Funktionen fehlerfrei aus admin.js importiert!
 import {
     renderAdminToolTable, editToolFromAdmin, resetToolForm, saveToolFromForm,
     duplicateToolAdmin, deleteMachineAdmin, deleteMaterialAdmin, deleteProfileAdmin, toggleToolGeoFields,
@@ -446,6 +444,7 @@ export function calculate() {
     });
 
     if(!res) return;
+
     currentCalculatedResults = res;
 
     if (document.getElementById('val-ap-factor')) document.getElementById('val-ap-factor').innerText = `(${res.ap_factor.toFixed(2)} × D)`;
@@ -674,9 +673,9 @@ export function triggerMatchmaker() {
 window.renderAdminToolTable = () => renderAdminToolTable(db);
 window.editToolFromAdmin = (id) => editToolFromAdmin(id, db);
 window.resetToolForm = resetToolForm;
-window.saveToolFromForm = () => saveToolFromForm(db, () => { saveDatabase(); populateDropdowns(); renderAdminToolTable(db); });
-window.duplicateToolAdmin = (id) => duplicateToolAdmin(id, db, () => { saveDatabase(); populateDropdowns(); renderAdminToolTable(db); });
-window.deleteToolAdmin = async (id) => { if(await customConfirm("Löschen?")) { delete db.tools[id]; saveDatabase(); populateDropdowns(); renderAdminToolTable(db); }};
+window.saveToolFromForm = () => saveToolFromForm(db, () => { saveDatabase(); populateDropdowns(); window.renderAdminToolTable(db); });
+window.duplicateToolAdmin = (id) => duplicateToolAdmin(id, db, () => { saveDatabase(); populateDropdowns(); window.renderAdminToolTable(db); });
+window.deleteToolAdmin = async (id) => { if(await customConfirm("Löschen?")) { delete db.tools[id]; saveDatabase(); populateDropdowns(); window.renderAdminToolTable(db); }};
 window.toggleToolGeoFields = toggleToolGeoFields;
 window.addNewMachine = () => addNewMachine(db, () => { saveDatabase(); populateDropdowns(); renderAdminMachinesList(db); });
 window.deleteMachineAdmin = async (id) => { if(await customConfirm("Löschen?")) { deleteMachineAdmin(id, db, () => { saveDatabase(); populateDropdowns(); renderAdminMachinesList(db); }); }};
@@ -793,11 +792,11 @@ function handleSupabaseData(data) {
 
 window.saveSupabaseConfig = () => saveSupabaseConfig(handleSupabaseData);
 
-function initApp() {
+export function initApp() {
     populateDropdowns();
     resetSliders(); 
-    window.renderFavorites();
-    window.renderHistory();
+    renderFavorites();
+    renderHistory();
     window.renderAdminToolTable();
     triggerMatchmaker();
 }
