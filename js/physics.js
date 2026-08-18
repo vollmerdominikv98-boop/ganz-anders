@@ -1,24 +1,70 @@
 import { evaluateSwarmAI } from './swarm.js';
 
-export function getChatterLimit(D, Lmax, geo_type, lc_max, ae_ratio = 1.0) {
-    const ld_ratio = Lmax / D;
-    let baseLimit;
-    if (geo_type === 'torus') {
-        baseLimit = Math.min(D * 0.8, lc_max);
-    } else if (geo_type === 'ball') {
-        baseLimit = D / 2;
+/**
+ * Ermittelt die maximal zulässige axiale Zustelltiefe (ap) vor Ratter-/Bruchgefahr.
+ *
+ * DREI-EBENEN-MODELL (siehe README-Hinweis unten):
+ *  1) HERSTELLERDATEN: Wenn im Werkzeug hinterlegt (mfr_ap_slot / mfr_ap_light aus
+ *     einem realen Datenblatt), werden ausschließlich diese verwendet - keine Schätzung.
+ *  2) FAUSTREGEL-FALLBACK: Fehlen Herstellerdaten, greift eine konservative, an
+ *     Sandvik-Coromant-Anwendungsrichtlinien orientierte Notlösung:
+ *     - Voller Eingriff (ae_ratio=1): klassisches L/D-Verhältnis-Grundmaß (wie zuvor)
+ *     - Leichter Eingriff (ae_ratio<=20%): bis 2xD nutzbar (Prinzip Slicing/Trochoidal-Fräsen,
+ *       vgl. Sandvik Coromant "Slicing methods": "ap <= 2 x Dc" bei ae <= 20% D)
+ *     Dazwischen wird linear interpoliert. Physikalisch harte Grenze bleibt immer lc_max
+ *     (reale Schneidenlänge) - die kann nie überschritten werden, unabhängig von der Quelle.
+ *  3) EINFAHR-FAKTOR (apConfidence, aus swarm.js): Bei unbestätigten/neuen Kombinationen
+ *     wird das Ergebnis zusätzlich gedrosselt und erst nach bestätigten Praxis-Schnitten
+ *     schrittweise freigegeben - das gleicht die fehlende Systemsteifigkeits-Messung
+ *     (Klopftest) über echte Produktionsdaten aus, statt sie zu erraten.
+ *
+ * WICHTIG: Ohne gemessene Frequenzgangfunktion (FRF) des realen Aufbaus (Spindel-Halter-
+ * Werkzeug) ist KEINE dieser drei Ebenen eine exakte Stabilitätsberechnung im Sinne der
+ * regenerativen Rattertheorie (Tlusty/Altintas-Budak). Ebene 1 ist die verlässlichste
+ * Quelle (validiert vom Hersteller), Ebene 2 ist eine dokumentierte, konservative
+ * Branchen-Faustregel, Ebene 3 kalibriert über echte Produktionsergebnisse nach.
+ */
+export function getChatterLimit({ D, Lmax, geo_type, lc_max, ae_ratio = 1.0, mfrApSlot, mfrApLight, apConfidence = 1.0 }) {
+    const hasMfrData = typeof mfrApSlot === 'number' && mfrApSlot > 0 && typeof mfrApLight === 'number' && mfrApLight > 0;
+
+    let slotAnchor, lightAnchor, source;
+
+    if (hasMfrData) {
+        // Ebene 1: reale, vom Hersteller getestete Werte - keine Schätzung
+        slotAnchor = Math.min(mfrApSlot, lc_max);
+        lightAnchor = Math.min(mfrApLight, lc_max);
+        source = 'Hersteller';
     } else {
-        const ld_safe = Math.max(ld_ratio, 2.0);
-        baseLimit = Math.min(D * (6.0 / Math.pow(ld_safe, 1.3)), lc_max);
+        // Ebene 2: konservative Faustregel (kein Herstellerwert vorhanden)
+        const ld_ratio = Lmax / D;
+        if (geo_type === 'torus') {
+            slotAnchor = Math.min(D * 0.8, lc_max);
+        } else if (geo_type === 'ball') {
+            slotAnchor = Math.min(D / 2, lc_max);
+        } else {
+            const ld_safe = Math.max(ld_ratio, 2.0);
+            slotAnchor = Math.min(D * (6.0 / Math.pow(ld_safe, 1.3)), lc_max);
+        }
+        // Sandvik-Richtwert Slicing/Trochoidal-Fräsen: ae <= 20% D erlaubt ap bis 2xD
+        lightAnchor = Math.min(D * 2, lc_max);
+        source = 'Faustregel';
     }
 
-    // Geringe radiale Zustellung (ae) senkt die Schnittkraft-Anregung deutlich -
-    // dadurch ist axial ein deutlich tieferer, ratterfreier Schnitt möglich (typ. beim Schlichten/HSC).
-    // Näherung: Anregung/Kraft skaliert ~ mit ae, Stabilitätsgrenze also ~ 1/sqrt(ae_ratio).
-    // Bei vollem Eingriff (ae_ratio=1) bleibt das Basislimit praktisch unverändert.
-    const safeRatio = Math.min(Math.max(ae_ratio, 0.05), 1.0);
-    const engagementBoost = Math.min(1 / Math.sqrt(safeRatio), 3.0); // bis zu 3x bei sehr kleiner Zustellung
-    return Math.min(baseLimit * engagementBoost, lc_max);
+    // Lineare Interpolation zwischen ae_ratio=0.2 (leicht) und ae_ratio=1.0 (voll)
+    const r = Math.min(Math.max(ae_ratio, 0), 1.0);
+    let rawLimit;
+    if (r >= 1.0) rawLimit = slotAnchor;
+    else if (r <= 0.2) rawLimit = lightAnchor;
+    else {
+        const t = (r - 0.2) / 0.8; // 0 = leicht, 1 = voll
+        rawLimit = lightAnchor + t * (slotAnchor - lightAnchor);
+    }
+
+    // Ebene 3: Einfahr-Faktor aus Produktionshistorie
+    const confidence = Math.min(Math.max(apConfidence, 0.1), 1.0);
+    const value = Math.min(rawLimit * confidence, lc_max);
+
+    return { value, source, confidence, isBreakIn: confidence < 0.999 };
 }
 
 export function calculatePhysics({ db, machId, matId, profId, toolId, rigId, holderType, physicsActive, isRegrind, customD, customR, ap, ae }) {
@@ -88,9 +134,16 @@ export function calculatePhysics({ db, machId, matId, profId, toolId, rigId, hol
     if (n_theo > mach.max_rpm) warnings.push(`<div class="text-[11px] font-bold text-amber-700 bg-amber-50 p-2 rounded border border-amber-200">⚠️ <strong>Drehzahl-Limit:</strong> Maschine limitiert auf ${mach.max_rpm} U/min.</div>`);
     if ((effectiveFz * z * n_theo) > mach.max_vf) warnings.push(`<div class="text-[11px] font-bold text-amber-700 bg-amber-50 p-2 rounded border border-amber-200">⚠️ <strong>Vorschub-Limit:</strong> Maschine limitiert auf ${mach.max_vf} mm/min.</div>`);
 
-    const ap_krit = getChatterLimit(D, Lmax, tool.geo_type, lc_max, ae_ratio);
+    const ap_krit_result = getChatterLimit({
+        D, Lmax, geo_type: tool.geo_type, lc_max, ae_ratio,
+        mfrApSlot: tool.mfr_ap_slot, mfrApLight: tool.mfr_ap_light,
+        apConfidence: swarm.apConfidence
+    });
+    const ap_krit = ap_krit_result.value;
     const hasChatter = ap > ap_krit * 1.05;
-    if (hasChatter) warnings.push(`<div class="text-xs font-bold text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-300 shadow-sm flex items-start gap-2"><span class="text-base leading-none">🔔</span> <div><strong>RATTER-GEFAHR:</strong> ap (${ap.toFixed(1)}mm) > Limit (${ap_krit.toFixed(1)}mm)!</div></div>`);
+    const sourceLabel = ap_krit_result.source === 'Hersteller' ? 'Herstellerdaten' : 'Faustregel (Sandvik-Richtwert, unbestätigt)';
+    physicsInfoHtml += `<div class="text-[10px] text-slate-400 font-mono">📐 ap-Limit-Quelle: ${sourceLabel} · Grenze: ${ap_krit.toFixed(1)}mm${ap_krit_result.isBreakIn ? ` · Einfahr-Faktor ${(ap_krit_result.confidence * 100).toFixed(0)}%` : ''}</div>`;
+    if (hasChatter) warnings.push(`<div class="text-xs font-bold text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-300 shadow-sm flex items-start gap-2"><span class="text-base leading-none">🔔</span> <div><strong>RATTER-GEFAHR:</strong> ap (${ap.toFixed(1)}mm) > Limit (${ap_krit.toFixed(1)}mm, Quelle: ${sourceLabel})!</div></div>`);
 
     let hm_real = Math.max(phi_s_rad > 0 ? (effectiveFz * act_ratio * 2 * ae) / (Deff * phi_s_rad) : 0.0005, 0.0005); 
     const kc_real = Math.min(mat.kc11 / Math.pow(hm_real, mat.mc !== undefined ? mat.mc : 0.25), 8000); 
@@ -110,6 +163,7 @@ export function calculatePhysics({ db, machId, matId, profId, toolId, rigId, hol
         ap_factor: profile.ap_factor || 0, ae_factor: profile.ae_factor || 0, q: Q_cm3, power: power_kw, torque: torque_nm, fz_eff: effectiveFz, vc_eff: (Math.PI * Deff * n_eff) / 1000,
         fc: kc_real * ap * hm_real * Math.max(1.0, (phi_s_rad / (2 * Math.PI)) * z), stress: sigma_b,
         isOverPower: power_kw > (mach.max_kw * 0.85), isOverTorque: torque_nm > (mach.max_nm || 100) * 0.9,
+        apLimitSource: ap_krit_result.source, isBreakIn: ap_krit_result.isBreakIn, apConfidence: ap_krit_result.confidence,
         warnings, physicsInfoHtml
     };
 }
