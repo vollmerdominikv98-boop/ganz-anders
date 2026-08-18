@@ -40,16 +40,18 @@ export function runMatchmaker(db, machId, matId, rigId) {
         
         const ap_krit = getChatterLimit(D, tool.max_overhang || (D * 3), tool.geo_type, lc_max);
 
-        let ap_sim = customAp;
-        let passes = isUserForcedAp ? Math.max(1, Math.ceil(depthInput / ap_sim)) : 1;
-
-        if (!isUserForcedAp) {
+        let safe_step;
+        if (isUserForcedAp) {
+            // "ap fix" ist ein Wunsch-Maximalwert - trotzdem nie über das physikalische Limit des Werkzeugs gehen
+            safe_step = Math.min(customAp, ap_krit * 0.95, lc_max * 0.95);
+        } else {
             let maxProfileAp = D * profile.ap_factor;
             if (profile.max_ap_limit) maxProfileAp = Math.min(maxProfileAp, profile.max_ap_limit);
-            const safe_step = Math.min(ap_krit * 0.95, lc_max * 0.95, maxProfileAp);
-            passes = Math.max(1, Math.ceil(depthInput / safe_step));
-            ap_sim = depthInput / passes;
+            safe_step = Math.min(ap_krit * 0.95, lc_max * 0.95, maxProfileAp);
         }
+
+        const passes = Math.max(1, Math.ceil(depthInput / safe_step));
+        const ap_sim = depthInput / passes;
 
         let ae_sim = (!isNaN(customAe) && customAe > 0) ? customAe : (D * profile.ae_factor);
         if (profile.max_ae_limit) ae_sim = Math.min(ae_sim, profile.max_ae_limit);
