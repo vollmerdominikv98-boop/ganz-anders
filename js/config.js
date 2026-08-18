@@ -3,6 +3,13 @@ export const DEFAULT_SUPABASE_KEY = "";
 export const ADMIN_PASSWORD = "cnc2026";
 
 export const defaultDb = {
+    // HINWEIS "mfr_ap_slot" / "mfr_ap_light" (optional, pro Werkzeug in der Admin-Oberfläche pflegbar):
+    // Reale, aus dem Datenblatt des Werkzeugherstellers übernommene ap-Grenzwerte -
+    // "mfr_ap_slot" = max. ap bei vollem radialen Eingriff (Nutfräsen/ae=D)
+    // "mfr_ap_light" = max. ap bei leichtem radialen Eingriff (ae <= 20% D, z.B. Schlichten/Trochoidal)
+    // Sind beide Werte gepflegt, nutzt die App AUSSCHLIESSLICH diese (Ebene 1: Herstellerdaten).
+    // Fehlen sie, greift automatisch eine konservative Faustregel (Ebene 2, siehe physics.js).
+    // Ohne belegbare Quelle werden hier bewusst KEINE Werte vorbefüllt.
     machines: {
         "dmg_5achs": { "name": "DMG DMU 75 Monoblock", "max_rpm": 15000, "max_vf": 30000, "max_kw": 18, "max_nm": 130 },
         "dmg_3achs": { "name": "DMG Mori DMC 850V", "max_rpm": 15000, "max_vf": 30000, "max_kw": 15, "max_nm": 85 }
