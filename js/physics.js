@@ -1,15 +1,24 @@
 import { evaluateSwarmAI } from './swarm.js';
 
-export function getChatterLimit(D, Lmax, geo_type, lc_max) {
+export function getChatterLimit(D, Lmax, geo_type, lc_max, ae_ratio = 1.0) {
     const ld_ratio = Lmax / D;
+    let baseLimit;
     if (geo_type === 'torus') {
-        return Math.min(D * 0.8, lc_max);
+        baseLimit = Math.min(D * 0.8, lc_max);
     } else if (geo_type === 'ball') {
-        return D / 2;
+        baseLimit = D / 2;
     } else {
         const ld_safe = Math.max(ld_ratio, 2.0);
-        return Math.min(D * (6.0 / Math.pow(ld_safe, 1.3)), lc_max);
+        baseLimit = Math.min(D * (6.0 / Math.pow(ld_safe, 1.3)), lc_max);
     }
+
+    // Geringe radiale Zustellung (ae) senkt die Schnittkraft-Anregung deutlich -
+    // dadurch ist axial ein deutlich tieferer, ratterfreier Schnitt möglich (typ. beim Schlichten/HSC).
+    // Näherung: Anregung/Kraft skaliert ~ mit ae, Stabilitätsgrenze also ~ 1/sqrt(ae_ratio).
+    // Bei vollem Eingriff (ae_ratio=1) bleibt das Basislimit praktisch unverändert.
+    const safeRatio = Math.min(Math.max(ae_ratio, 0.05), 1.0);
+    const engagementBoost = Math.min(1 / Math.sqrt(safeRatio), 3.0); // bis zu 3x bei sehr kleiner Zustellung
+    return Math.min(baseLimit * engagementBoost, lc_max);
 }
 
 export function calculatePhysics({ db, machId, matId, profId, toolId, rigId, holderType, physicsActive, isRegrind, customD, customR, ap, ae }) {
@@ -79,7 +88,7 @@ export function calculatePhysics({ db, machId, matId, profId, toolId, rigId, hol
     if (n_theo > mach.max_rpm) warnings.push(`<div class="text-[11px] font-bold text-amber-700 bg-amber-50 p-2 rounded border border-amber-200">⚠️ <strong>Drehzahl-Limit:</strong> Maschine limitiert auf ${mach.max_rpm} U/min.</div>`);
     if ((effectiveFz * z * n_theo) > mach.max_vf) warnings.push(`<div class="text-[11px] font-bold text-amber-700 bg-amber-50 p-2 rounded border border-amber-200">⚠️ <strong>Vorschub-Limit:</strong> Maschine limitiert auf ${mach.max_vf} mm/min.</div>`);
 
-    const ap_krit = getChatterLimit(D, Lmax, tool.geo_type, lc_max);
+    const ap_krit = getChatterLimit(D, Lmax, tool.geo_type, lc_max, ae_ratio);
     const hasChatter = ap > ap_krit * 1.05;
     if (hasChatter) warnings.push(`<div class="text-xs font-bold text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-300 shadow-sm flex items-start gap-2"><span class="text-base leading-none">🔔</span> <div><strong>RATTER-GEFAHR:</strong> ap (${ap.toFixed(1)}mm) > Limit (${ap_krit.toFixed(1)}mm)!</div></div>`);
 
