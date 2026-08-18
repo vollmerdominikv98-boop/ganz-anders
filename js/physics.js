@@ -98,7 +98,7 @@ export function calculatePhysics({ db, machId, matId, profId, toolId, rigId, hol
 
     return {
         rpm: n_eff, vf: vf_eff, ap, ae, lc_max, ap_krit, hasChatter, isFluteExceeded: ap > lc_max,
-        ap_factor, ae_factor, q: Q_cm3, power: power_kw, torque: torque_nm, fz_eff: effectiveFz, vc_eff: (Math.PI * Deff * n_eff) / 1000,
+        ap_factor: profile.ap_factor || 0, ae_factor: profile.ae_factor || 0, q: Q_cm3, power: power_kw, torque: torque_nm, fz_eff: effectiveFz, vc_eff: (Math.PI * Deff * n_eff) / 1000,
         fc: kc_real * ap * hm_real * Math.max(1.0, (phi_s_rad / (2 * Math.PI)) * z), stress: sigma_b,
         isOverPower: power_kw > (mach.max_kw * 0.85), isOverTorque: torque_nm > (mach.max_nm || 100) * 0.9,
         warnings, physicsInfoHtml
