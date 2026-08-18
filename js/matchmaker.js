@@ -1,4 +1,5 @@
 import { calculatePhysics, getChatterLimit } from './physics.js';
+import { evaluateSwarmAI } from './swarm.js';
 import { escapeHTML } from './config.js';
 
 export function runMatchmaker(db, machId, matId, rigId) {
@@ -44,7 +45,15 @@ export function runMatchmaker(db, machId, matId, rigId) {
         if (profile.max_ae_limit) ae_sim = Math.min(ae_sim, profile.max_ae_limit);
         const ae_ratio_est = Math.min(ae_sim / D, 1.0);
 
-        const ap_krit = getChatterLimit(D, tool.max_overhang || (D * 3), tool.geo_type, lc_max, ae_ratio_est);
+        // Ebene 3: Einfahr-Faktor aus der Produktionshistorie dieser exakten Kombination
+        const swarm = evaluateSwarmAI(db, toolId, matId, profId);
+
+        const chatterLimit = getChatterLimit({
+            D, Lmax: tool.max_overhang || (D * 3), geo_type: tool.geo_type, lc_max,
+            ae_ratio: ae_ratio_est, mfrApSlot: tool.mfr_ap_slot, mfrApLight: tool.mfr_ap_light,
+            apConfidence: swarm.apConfidence
+        });
+        const ap_krit = chatterLimit.value;
 
         let safe_step;
         if (isUserForcedAp) {
@@ -72,7 +81,8 @@ export function runMatchmaker(db, machId, matId, rigId) {
                 toolId, brand: tool.brand, toolName: tool.name, diameter: D,
                 q: res.q, score: (res.q / passes) * stabilityPenalty, rpm: res.rpm, vf: res.vf,
                 ap: ap_sim, ae: ae_sim, passes, power: res.power, hasChatter: res.hasChatter,
-                isFluteExceeded: res.isFluteExceeded, lc_max: res.lc_max, ap_krit: res.ap_krit
+                isFluteExceeded: res.isFluteExceeded, lc_max: res.lc_max, ap_krit: res.ap_krit,
+                apLimitSource: chatterLimit.source, isBreakIn: chatterLimit.isBreakIn, apConfidence: chatterLimit.confidence
             });
         }
     });
@@ -92,19 +102,22 @@ export function runMatchmaker(db, machId, matId, rigId) {
             `<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full text-[10px] font-bold">🟢 ${item.passes > 1 ? `${item.passes}× Z` : '1 Schnitt'} (Stabil)</span>`);
 
         const topBadge = isWinner ? `<span class="bg-indigo-600 text-white px-2 py-0.5 rounded-full text-[10px] font-black uppercase">Top Wahl</span>` : `<span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold">#${index + 1}</span>`;
+        const sourceBadge = `<span class="text-slate-400 text-[9px] font-mono" title="Datenquelle des ap-Limits">${item.apLimitSource === 'Hersteller' ? '📋 Herstellerwert' : '📐 Faustregel'}</span>`;
+        const breakInBadge = item.isBreakIn ? `<span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full text-[10px] font-bold" title="Neue/unbestätigte Kombination - ap vorsichtshalber gedrosselt">🐣 Einfahren (${(item.apConfidence * 100).toFixed(0)}%)</span>` : '';
 
         div.id = `match-card-${item.toolId}`;
         div.className = `p-4 rounded-2xl border ${borderClass} flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm transition hover:shadow-md`;
         
         div.innerHTML = `
             <div class="space-y-1.5 flex-1 min-w-0">
-                <div class="flex items-center gap-2 flex-wrap">${topBadge}${statusBadge}
+                <div class="flex items-center gap-2 flex-wrap">${topBadge}${statusBadge}${breakInBadge}
                     <strong class="text-slate-900 text-sm truncate">${item.brand ? `[${escapeHTML(item.brand)}] ` : ''}${escapeHTML(item.toolName)}</strong>
                 </div>
                 <div class="text-xs text-slate-500 font-mono flex flex-wrap gap-x-3 gap-y-0.5 pt-0.5">
                     <span>Ø: <strong>${item.diameter}mm</strong></span>
                     <span>ap: <strong class="${isFaulty ? 'text-rose-600 font-black' : 'text-slate-800'}">${item.ap.toFixed(2)}mm</strong></span>
                     <span>ae: <strong>${item.ae.toFixed(2)}mm</strong></span>
+                    ${sourceBadge}
                 </div>
             </div>
             <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 border-slate-200/60 pt-3 md:pt-0">
