@@ -37,8 +37,14 @@ export function runMatchmaker(db, machId, matId, rigId) {
         const tool = db.tools[toolId];
         const D = tool.diameter;
         let lc_max = tool.flute_len || (tool.geo_type === 'torus' ? Math.max((tool.radius||0) * 2, D * 1.0) : (tool.geo_type === 'ball' ? D * 0.5 : D * 1.5));
-        
-        const ap_krit = getChatterLimit(D, tool.max_overhang || (D * 3), tool.geo_type, lc_max);
+
+        // ae zuerst bestimmen: eine kleine Schlicht-Zustellung senkt die Schnittkraft massiv
+        // und erlaubt dadurch axial ein viel tieferes, ratterfreies ap (siehe getChatterLimit).
+        let ae_sim = (!isNaN(customAe) && customAe > 0) ? customAe : (D * profile.ae_factor);
+        if (profile.max_ae_limit) ae_sim = Math.min(ae_sim, profile.max_ae_limit);
+        const ae_ratio_est = Math.min(ae_sim / D, 1.0);
+
+        const ap_krit = getChatterLimit(D, tool.max_overhang || (D * 3), tool.geo_type, lc_max, ae_ratio_est);
 
         let safe_step;
         if (isUserForcedAp) {
@@ -52,9 +58,6 @@ export function runMatchmaker(db, machId, matId, rigId) {
 
         const passes = Math.max(1, Math.ceil(depthInput / safe_step));
         const ap_sim = depthInput / passes;
-
-        let ae_sim = (!isNaN(customAe) && customAe > 0) ? customAe : (D * profile.ae_factor);
-        if (profile.max_ae_limit) ae_sim = Math.min(ae_sim, profile.max_ae_limit);
 
         const res = calculatePhysics({ db, machId, matId, profId, toolId, rigId, holderType: 'spannzange', physicsActive: true, isRegrind: false, ap: ap_sim, ae: ae_sim });
 
